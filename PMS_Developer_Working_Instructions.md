@@ -90,9 +90,9 @@ sudo usermod -aG docker $USER
 # Install Claude Code
 npm install -g @anthropic-ai/claude-code
 
-# Authenticate
-claude auth login
-# Follow the browser prompt to sign in with your Anthropic account
+# Verify
+claude --version
+# Launch Claude Code and follow the authentication prompt on first run
 ```
 
 ### GitHub Spec Kit
@@ -110,13 +110,21 @@ specify check
 npm install -g notebooklm-cli
 
 # Verify
-nlm --help
+nlm-cli --help
 ```
+
+### Install NotebookLM Skills into Claude Code
+
+```bash
+nlm-cli init --ai claude
+```
+
+This installs the NotebookLM Skills into Claude Code, enabling MCP-based notebook operations (creating notebooks, adding sources, generating learning materials). Notebook operations are performed through Claude Code's MCP tools, not directly from the terminal.
 
 ### Authenticate with NotebookLM
 
 ```bash
-nlm auth
+nlm login
 # A browser window opens — sign in with your company Google Workspace account
 # Credentials are saved locally for future sessions
 ```
@@ -130,6 +138,8 @@ nlm auth
 > | PMS: Test Evidence & Traceability | `<NLM_TEST_ID>` | Test reports, RTM, coverage |
 > | PMS: Quality & Security Evidence | `<NLM_QS_ID>` | SonarQube, CodeRabbit, Snyk reports |
 > | PMS: HIPAA & FDA Compliance | `<NLM_COMPLIANCE_ID>` | Regulatory evidence, SBOM |
+>
+> **Note:** Notebook operations (creating notebooks, adding sources) are performed through Claude Code's MCP tools (`notebooklm-mcp:*`), not via CLI commands. Querying notebooks for context is done through the NotebookLM web interface at [notebooklm.google.com](https://notebooklm.google.com).
 
 ### SonarQube
 
@@ -197,7 +207,7 @@ npm run verify-setup
 # ✓ Docker running
 # ✓ Database connection
 # ✓ All CLI tools installed
-# ✓ NotebookLM authentication
+# ✓ NotebookLM Skills installed (nlm-cli)
 # ✓ Snyk authentication
 # ✓ SonarQube connectivity
 ```
@@ -235,7 +245,8 @@ The repository root contains a `CLAUDE.md` file that instructs Claude Code how t
 Before you start working on features, confirm you have:
 
 - [ ] GitHub repository access (push to feature branches, create PRs)
-- [ ] NotebookLM access to all five PMS notebooks
+- [ ] NotebookLM Skills installed (`nlm-cli init --ai claude`) and authenticated (`nlm login`)
+- [ ] NotebookLM access to all five PMS notebooks (via [notebooklm.google.com](https://notebooklm.google.com))
 - [ ] SonarQube/SonarCloud access to the pms-healthcare project
 - [ ] CodeRabbit reviews appearing on your test PR
 - [ ] Snyk access to the pms-healthcare organization
@@ -260,28 +271,21 @@ Before you start working on features, confirm you have:
 
 1. **Query NotebookLM for context:**
 
-```bash
-nlm notebook query --notebook <NLM_REQ_ID> \
-  --question "What are the detailed requirements for medication
-  interaction checking? Include SYS-REQ-0006 and all related
-  SUB-MM requirements."
-```
+Open the **PMS: Requirements** notebook at [notebooklm.google.com](https://notebooklm.google.com) and ask:
+
+> "What are the detailed requirements for medication interaction checking? Include SYS-REQ-0006 and all related SUB-MM requirements."
 
 2. **Review the traceability matrix** to understand what already exists:
 
-```bash
-nlm notebook query --notebook <NLM_REQ_ID> \
-  --question "What is the current implementation status of
-  SUB-MM-0001 and SUB-MM-0002 in the traceability matrix?"
-```
+In the same notebook, ask:
+
+> "What is the current implementation status of SUB-MM-0001 and SUB-MM-0002 in the traceability matrix?"
 
 3. **Check architecture decisions:**
 
-```bash
-nlm notebook query --notebook <NLM_ARCH_ID> \
-  --question "What architectural decisions have been made about
-  the clinical alerts pipeline and drug interaction checking?"
-```
+Open the **PMS: Architecture & Design** notebook and ask:
+
+> "What architectural decisions have been made about the clinical alerts pipeline and drug interaction checking?"
 
 ### Afternoon: Create the Specification
 
@@ -336,12 +340,16 @@ Spec-Kit phase: Specify + Plan"
 
 10. **Push spec to NotebookLM:**
 
-```bash
-nlm source add --notebook <NLM_REQ_ID> \
-  --file .specify/specs/medication-interaction-alerts.md
-nlm source add --notebook <NLM_ARCH_ID> \
-  --file .specify/plans/medication-interaction-alerts-plan.md
+In Claude Code, ask it to add the spec and plan as sources to the appropriate notebooks:
+
 ```
+"Add .specify/specs/medication-interaction-alerts.md as a source
+to the PMS: Requirements notebook (<NLM_REQ_ID>), and add
+.specify/plans/medication-interaction-alerts-plan.md as a source
+to the PMS: Architecture & Design notebook (<NLM_ARCH_ID>)."
+```
+
+Claude Code will use the `notebooklm-mcp:source_add` MCP tool to upload these files.
 
 ### End of Day 1: Status Update
 
@@ -491,12 +499,15 @@ claude
 
 4. **Push evidence to NotebookLM:**
 
-```bash
-nlm source add --notebook <NLM_TEST_ID> \
-  --file docs/coverage-report.md
-nlm source add --notebook <NLM_REQ_ID> \
-  --file docs/traceability-matrix.md
+In Claude Code, ask it to add the evidence as sources:
+
 ```
+"Add docs/coverage-report.md as a source to the PMS: Test Evidence
+notebook (<NLM_TEST_ID>), and add docs/traceability-matrix.md as a
+source to the PMS: Requirements notebook (<NLM_REQ_ID>)."
+```
+
+Claude Code will use the `notebooklm-mcp:source_add` MCP tool to upload these files.
 
 ### Midday: Mark PR as Ready for Review
 
@@ -555,15 +566,18 @@ gh pr merge --squash
 # Get the merged PR review data
 gh pr view <PR_NUMBER> --comments --json comments \
   > docs/reviews/pr-<PR_NUMBER>-review.json
-
-claude
-# "Summarize the CodeRabbit review and SonarQube results for
-# PR #<PR_NUMBER>. Map findings to requirement IDs. Generate
-# docs/reviews/pr-<PR_NUMBER>-evidence-summary.md"
-
-nlm source add --notebook <NLM_QS_ID> \
-  --file docs/reviews/pr-<PR_NUMBER>-evidence-summary.md
 ```
+
+In Claude Code:
+
+```
+"Summarize the CodeRabbit review and SonarQube results for
+PR #<PR_NUMBER>. Map findings to requirement IDs. Generate
+docs/reviews/pr-<PR_NUMBER>-evidence-summary.md. Then add it
+as a source to the PMS: Quality & Security notebook (<NLM_QS_ID>)."
+```
+
+Claude Code will generate the summary and use `notebooklm-mcp:source_add` to upload it.
 
 14. **Update CLAUDE.md if any architectural decisions were made.**
 
@@ -613,12 +627,11 @@ gh pr view <PR_NUMBER>
 
 # Check if CI passed
 gh pr checks <PR_NUMBER>
-
-# Query NotebookLM for context on the requirements involved
-nlm notebook query --notebook <NLM_REQ_ID> \
-  --question "What are the requirements and acceptance criteria
-  for <FEATURE_NAME>?"
 ```
+
+Query NotebookLM for context on the requirements involved by opening the **PMS: Requirements** notebook at [notebooklm.google.com](https://notebooklm.google.com) and asking:
+
+> "What are the requirements and acceptance criteria for \<FEATURE_NAME\>?"
 
 ### Review Checklist
 
@@ -677,19 +690,15 @@ git rebase develop
 
 ### Query NotebookLM Before Coding
 
-Before writing code, always check what already exists:
+Before writing code, always check what already exists. Open the relevant notebooks at [notebooklm.google.com](https://notebooklm.google.com):
 
-```bash
-# Check for existing patterns you should follow
-nlm notebook query --notebook <NLM_ARCH_ID> \
-  --question "What design patterns are used for <SIMILAR_FEATURE>
-  and what architectural constraints apply?"
+- In the **PMS: Architecture & Design** notebook, ask:
 
-# Check debugging knowledge for known issues
-nlm notebook query --notebook <NLM_QS_ID> \
-  --question "Are there known issues or gotchas related to
-  <TECHNOLOGY_OR_MODULE> in the PMS codebase?"
-```
+  > "What design patterns are used for \<SIMILAR_FEATURE\> and what architectural constraints apply?"
+
+- In the **PMS: Quality & Security** notebook, ask:
+
+  > "Are there known issues or gotchas related to \<TECHNOLOGY_OR_MODULE\> in the PMS codebase?"
 
 ### Implement Using the Spec-Driven Process
 
@@ -726,24 +735,23 @@ Resume where you left off. If you encounter a bug or unexpected behavior:
 
 1. **Check the debugging notebook first:**
 
-```bash
-nlm notebook query --notebook <NLM_QS_ID> \
-  --question "Has anyone encountered <ERROR_MESSAGE_OR_ISSUE>
-  in the PMS project? What was the solution?"
-```
+Open the **PMS: Quality & Security** notebook at [notebooklm.google.com](https://notebooklm.google.com) and ask:
+
+> "Has anyone encountered \<ERROR_MESSAGE_OR_ISSUE\> in the PMS project? What was the solution?"
 
 2. **If no solution found, solve it and add the solution back:**
 
-```bash
-# After solving the issue
-claude
-# "Document the bug I just fixed: <DESCRIPTION>.
-# Generate a debugging note for docs/debugging/<ISSUE>.md
-# that includes the error message, root cause, and fix."
+In Claude Code:
 
-nlm source add --notebook <NLM_QS_ID> \
-  --file docs/debugging/<ISSUE>.md
 ```
+"Document the bug I just fixed: <DESCRIPTION>.
+Generate a debugging note for docs/debugging/<ISSUE>.md
+that includes the error message, root cause, and fix.
+Then add it as a source to the PMS: Quality & Security
+notebook (<NLM_QS_ID>)."
+```
+
+Claude Code will generate the document and use `notebooklm-mcp:source_add` to upload it.
 
 ---
 
@@ -828,15 +836,17 @@ claude
 
 ### Push Updated Evidence to NotebookLM
 
-```bash
-# If you updated the RTM or coverage report
-nlm source add --notebook <NLM_REQ_ID> \
-  --file docs/traceability-matrix.md
+In Claude Code, ask it to sync updated artifacts:
 
-# If you created or updated an architecture decision
-nlm source add --notebook <NLM_ARCH_ID> \
-  --file docs/adr/<NEW_DECISION>.md
 ```
+"Add docs/traceability-matrix.md as a source to the PMS: Requirements
+notebook (<NLM_REQ_ID>)."
+
+"Add docs/adr/<NEW_DECISION>.md as a source to the PMS: Architecture
+& Design notebook (<NLM_ARCH_ID>)."
+```
+
+Claude Code will use the `notebooklm-mcp:source_add` MCP tool to upload these files.
 
 ### Update Your Sprint Status
 
@@ -872,8 +882,11 @@ Jot down for tomorrow's standup:
 
 ```bash
 # === NotebookLM ===
-nlm notebook query --notebook <ID> --question "..."   # Query a notebook
-nlm source add --notebook <ID> --file <FILE>           # Add source
+nlm-cli --help                                         # Show CLI installer commands
+nlm-cli init --ai claude                               # Install skills into Claude Code
+nlm login                                              # Authenticate with Google account
+# Notebook operations (create, add sources) are done via Claude Code MCP tools
+# Querying notebooks is done at notebooklm.google.com
 
 # === GitHub Spec Kit ===
 /specify                    # Define specifications

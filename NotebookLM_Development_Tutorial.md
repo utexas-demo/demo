@@ -89,30 +89,42 @@ npm install -g notebooklm-cli
 ### Verify Installation
 
 ```bash
-nlm --help
+nlm-cli --help
 ```
 
-This displays all available commands, including notebook management, source operations, querying, and visualization tools.
+This displays the available commands: `init` (install skills to your AI assistant), `update` (update to latest version), and `versions` (show version info).
 
-> **💡 Tip:** If the command is not found after installation, ensure your npm global bin directory is in your system PATH.
+> **💡 Tip:** If the command is not found after installation, ensure your npm global bin directory is in your system PATH. Note: the binary is `nlm-cli`, not `nlm`.
 
 ---
 
-## Step 2: Authenticate with Your Google Account
+## Step 2: Authenticate and Install Skills
 
 *Video reference: 1:01*
 
-Before you can interact with NotebookLM, you need to link your Google account to the CLI.
+Before you can interact with NotebookLM, you need to install the NotebookLM Skills into your AI assistant and authenticate with your Google account.
+
+### Install NotebookLM Skills
 
 ```bash
-nlm auth
+nlm-cli init --ai claude
 ```
 
-This opens a Chrome browser window where you sign in with your Google account. Once authenticated, NotebookLM saves your credentials locally so you do not need to sign in again for subsequent sessions.
+This installs the NotebookLM Skills into Claude Code, enabling MCP-based notebook operations (creating notebooks, adding sources, generating learning materials). Supported AI assistants: `claude`, `cursor`, `windsurf`, `continue`.
+
+### Authenticate
+
+```bash
+nlm login
+```
+
+This opens a browser window where you sign in with your Google account. Once authenticated, credentials are saved locally so you do not need to sign in again for subsequent sessions.
 
 1. **Run the command above** — A browser window will open automatically.
 2. **Sign in with Google** — Use the Google account associated with your NotebookLM.
 3. **Return to your terminal** — The CLI confirms authentication was successful.
+
+> **⚠️ Important:** All notebook operations (creating notebooks, adding sources, generating content) are performed through Claude Code's MCP tools (`notebooklm-mcp:*`), not via direct terminal commands. Querying notebooks is done through the NotebookLM web interface at [notebooklm.google.com](https://notebooklm.google.com).
 
 ---
 
@@ -132,17 +144,23 @@ Create an instructions file (e.g., `CLAUDE.md` or `AGENTS.md`) that tells your A
 
 ### B. Create the Notebook
 
-```bash
-nlm notebook create --title "Project: My App"
+In Claude Code, ask it to create a notebook:
+
+```
+"Create a NotebookLM notebook titled 'Project: My App'."
 ```
 
-Save the returned notebook ID in your instructions file so the agent always knows which notebook to update.
+Claude Code will use the `notebooklm-mcp:notebook_create` MCP tool. Save the returned notebook ID in your instructions file so the agent always knows which notebook to update.
 
 ### C. Automate Updates
 
-```bash
-nlm source add --notebook <ID> --file ./docs/feature-auth.md
+In Claude Code, ask it to add sources:
+
 ```
+"Add ./docs/feature-auth.md as a source to the 'Project: My App' notebook (<ID>)."
+```
+
+Claude Code will use the `notebooklm-mcp:source_add` MCP tool to upload the file.
 
 > **💡 Best Practice:** Keep your notebook organized by topic. Use separate sources for architecture decisions, API documentation, feature specs, and meeting notes.
 
@@ -157,12 +175,9 @@ NotebookLM excels at research because it grounds answers in the sources you prov
 1. **Delegate the research topic** — Tell your AI agent what to research. It will find relevant sources and compile them.
 2. **Create a research notebook** — The agent creates a new NotebookLM notebook and uploads all collected sources.
 3. **Clear agent context** — Once sources are safely in NotebookLM, clear the agent's conversation context to avoid token bloat.
-4. **Query the notebook** — Instead of re-reading all sources, the agent queries for specific findings:
+4. **Query the notebook** — Instead of re-reading all sources, query for specific findings through the NotebookLM web interface at [notebooklm.google.com](https://notebooklm.google.com):
 
-```bash
-nlm notebook query --notebook <ID> \
-  --question "What are the key findings on X?"
-```
+> "What are the key findings on X?"
 
 The response comes grounded in your uploaded sources with citations, ensuring high accuracy and traceability.
 
@@ -191,10 +206,14 @@ repomix --output codebase.txt
 
 ### C. Create a Notebook and Add the Source
 
-```bash
-nlm notebook create --title "Codebase: repo-name"
-nlm source add --notebook <ID> --file ./codebase.txt
+In Claude Code, ask it to create a notebook and add the source:
+
 ```
+"Create a NotebookLM notebook titled 'Codebase: repo-name'
+and add ./codebase.txt as a source."
+```
+
+Claude Code will use the `notebooklm-mcp:notebook_create` and `notebooklm-mcp:source_add` MCP tools.
 
 ### D. Visualize the Codebase
 
@@ -218,8 +237,10 @@ Instead of relying on generic web searches for debugging, build a curated knowle
 
 ### A. Create a Debugging Notebook
 
-```bash
-nlm notebook create --title "Debugging Handbook"
+In Claude Code, ask it to create the notebook:
+
+```
+"Create a NotebookLM notebook titled 'Debugging Handbook'."
 ```
 
 ### B. Add Curated Sources
@@ -229,10 +250,15 @@ nlm notebook create --title "Debugging Handbook"
 - Relevant GitHub repository READMEs and issue threads
 - Blog posts with proven solutions to common errors
 
-```bash
-nlm source add --notebook <ID> --url https://docs.example.com/troubleshooting
-nlm source add --notebook <ID> --file ./debugging-notes.md
+In Claude Code, ask it to add sources:
+
 ```
+"Add the following sources to the Debugging Handbook notebook (<ID>):
+- URL: https://docs.example.com/troubleshooting
+- File: ./debugging-notes.md"
+```
+
+Claude Code will use the `notebooklm-mcp:source_add` MCP tool for each source.
 
 ### C. Configure Agent Priority
 
@@ -257,23 +283,25 @@ NotebookLM notebooks can serve as a shared context layer accessible by multiple 
 
 ### A. Push Documentation to NotebookLM
 
-```bash
-nlm notebook create --title "App Documentation Hub"
-nlm source add --notebook <ID> --file ./docs/api-reference.md
-nlm source add --notebook <ID> --file ./docs/architecture.md
-nlm source add --notebook <ID> --file ./docs/deployment-guide.md
+In Claude Code, ask it to create the notebook and add sources:
+
 ```
+"Create a NotebookLM notebook titled 'App Documentation Hub'
+and add the following files as sources:
+- ./docs/api-reference.md
+- ./docs/architecture.md
+- ./docs/deployment-guide.md"
+```
+
+Claude Code will use `notebooklm-mcp:notebook_create` and `notebooklm-mcp:source_add` MCP tools.
 
 ### B. Enable Cross-Tool Access
 
-Any agent or tool with the notebook ID can query this shared knowledge base:
+Any agent or MCP-compatible tool with the notebook ID can manage this shared knowledge base. To query the notebook, use the NotebookLM web interface at [notebooklm.google.com](https://notebooklm.google.com):
 
-```bash
-nlm notebook query --notebook <ID> \
-  --question "How is authentication handled in this app?"
-```
+> "How is authentication handled in this app?"
 
-Claude, Cursor, Codex, or any MCP-compatible tool can all tap into the same curated knowledge.
+Claude Code, Cursor, Windsurf, or any MCP-compatible tool can add sources to the same notebook via `notebooklm-mcp:source_add`.
 
 ---
 
@@ -310,8 +338,10 @@ Perform security audits where every finding is backed by authoritative sources, 
 
 ### A. Create a Security Handbook Notebook
 
-```bash
-nlm notebook create --title "Security Handbook"
+In Claude Code, ask it to create the notebook:
+
+```
+"Create a NotebookLM notebook titled 'Security Handbook'."
 ```
 
 ### B. Add Security Sources
@@ -321,18 +351,21 @@ nlm notebook create --title "Security Handbook"
 - CVE database entries relevant to your dependencies
 - Custom security policies and compliance requirements
 
-```bash
-nlm source add --notebook <ID> --url https://cheatsheetseries.owasp.org/
-nlm source add --notebook <ID> --file ./security/internal-policy.md
+In Claude Code, ask it to add sources:
+
 ```
+"Add the following sources to the Security Handbook notebook (<ID>):
+- URL: https://cheatsheetseries.owasp.org/
+- File: ./security/internal-policy.md"
+```
+
+Claude Code will use the `notebooklm-mcp:source_add` MCP tool for each source.
 
 ### C. Run Grounded Security Checks
 
-```bash
-nlm notebook query --notebook <ID> \
-  --question "Review this code for SQL injection vulnerabilities \
-  and cite the relevant OWASP guidelines"
-```
+Open the **Security Handbook** notebook at [notebooklm.google.com](https://notebooklm.google.com) and ask:
+
+> "Review this code for SQL injection vulnerabilities and cite the relevant OWASP guidelines."
 
 > **⚠️ Security Note:** While NotebookLM-grounded audits are valuable, they should complement — not replace — professional security reviews and automated scanning tools for production systems.
 
@@ -423,16 +456,21 @@ Always use /specify, /plan, /analyze before implementing.
 
 ### C. Create NotebookLM Knowledge Bases
 
-```bash
-nlm notebook create --title "PMS: Requirements (IEEE 830)"
-nlm notebook create --title "PMS: Architecture & Design"
-nlm notebook create --title "PMS: Test Evidence & Traceability"
-nlm notebook create --title "PMS: Quality & Security Evidence"
-nlm notebook create --title "PMS: HIPAA & FDA Compliance"
+In Claude Code, ask it to create the notebooks:
 
-nlm source add --notebook <COMPLIANCE_ID> \
-  --url https://www.hhs.gov/hipaa/for-professionals/security/
 ```
+"Create the following NotebookLM notebooks:
+1. 'PMS: Requirements (IEEE 830)'
+2. 'PMS: Architecture & Design'
+3. 'PMS: Test Evidence & Traceability'
+4. 'PMS: Quality & Security Evidence'
+5. 'PMS: HIPAA & FDA Compliance'
+
+Then add https://www.hhs.gov/hipaa/for-professionals/security/
+as a source to the HIPAA & FDA Compliance notebook."
+```
+
+Claude Code will use `notebooklm-mcp:notebook_create` and `notebooklm-mcp:source_add` MCP tools.
 
 > **💡 Best Practice:** Store all notebook IDs in your CLAUDE.md so every agent session can immediately access the right knowledge base.
 
@@ -476,18 +514,19 @@ Example decomposition for the Medication Management subsystem:
 
 ### C. Push Requirements to NotebookLM
 
-```bash
-nlm source add --notebook <NLM_REQ_ID> \
-  --file .specify/specs/system-requirements.md
-nlm source add --notebook <NLM_REQ_ID> \
-  --file .specify/specs/sub-pr-requirements.md
-nlm source add --notebook <NLM_REQ_ID> \
-  --file .specify/specs/sub-mm-requirements.md
-nlm source add --notebook <NLM_REQ_ID> \
-  --file .specify/specs/sub-cw-requirements.md
-nlm source add --notebook <NLM_REQ_ID> \
-  --file .specify/specs/sub-ra-requirements.md
+In Claude Code, ask it to add all requirement specs as sources:
+
 ```
+"Add the following files as sources to the PMS: Requirements
+notebook (<NLM_REQ_ID>):
+- .specify/specs/system-requirements.md
+- .specify/specs/sub-pr-requirements.md
+- .specify/specs/sub-mm-requirements.md
+- .specify/specs/sub-cw-requirements.md
+- .specify/specs/sub-ra-requirements.md"
+```
+
+Claude Code will use the `notebooklm-mcp:source_add` MCP tool for each file.
 
 > **💡 IEEE 830 Compliance:** Each requirement must be uniquely identifiable, unambiguous, verifiable, and traceable. The hierarchical ID scheme (SYS-REQ → SUB-XX) ensures every subsystem requirement traces back to a system-level need.
 
@@ -531,15 +570,16 @@ This view answers: "Does every test verify a real requirement?"
 
 ### D. Push RTM to NotebookLM
 
-```bash
-nlm source add --notebook <NLM_REQ_ID> \
-  --file docs/traceability-matrix.md
+In Claude Code, ask it to add the RTM:
 
-# Now any agent can query traceability:
-nlm notebook query --notebook <NLM_REQ_ID> \
-  --question "Which subsystem requirements trace to SYS-REQ-0006
-  and what is their current test status?"
 ```
+"Add docs/traceability-matrix.md as a source to the PMS: Requirements
+notebook (<NLM_REQ_ID>)."
+```
+
+Now anyone can query traceability through the NotebookLM web interface at [notebooklm.google.com](https://notebooklm.google.com). Open the **PMS: Requirements** notebook and ask:
+
+> "Which subsystem requirements trace to SYS-REQ-0006 and what is their current test status?"
 
 > **🔴 Regulatory Requirement:** For FDA-regulated medical software (IEC 62304), the traceability matrix is a mandatory deliverable. Storing it in NotebookLM ensures auditors and developers can query specific traceability chains on demand.
 
@@ -591,17 +631,20 @@ describe('Drug Interaction Checker', () => {
 ```bash
 # Run tests and generate coverage report
 npm test -- --reporter=json > test-results.json
-
-# Cross-reference with requirements
-claude "Parse test-results.json and cross-reference with
-  docs/traceability-matrix.md. Generate a coverage report
-  showing: requirements with passing tests, requirements with
-  failing tests, and requirements with no tests."
-
-# Push to NotebookLM
-nlm source add --notebook <NLM_TEST_ID> \
-  --file docs/coverage-report.md
 ```
+
+In Claude Code:
+
+```
+"Parse test-results.json and cross-reference with
+docs/traceability-matrix.md. Generate a coverage report
+showing: requirements with passing tests, requirements with
+failing tests, and requirements with no tests. Save it as
+docs/coverage-report.md. Then add it as a source to the
+PMS: Test Evidence notebook (<NLM_TEST_ID>)."
+```
+
+Claude Code will generate the report and use `notebooklm-mcp:source_add` to upload it.
 
 ### D. Coverage Summary Dashboard
 
@@ -623,26 +666,28 @@ The final step of Part II ties everything together: NotebookLM becomes the livin
 
 ### A. Consolidate All Artifacts
 
-```bash
-# Specifications from Spec Kit
-nlm source add --notebook <NLM_REQ_ID> --file .specify/specs/*.md
+In Claude Code, ask it to add all artifacts as sources to their respective notebooks:
 
-# Technical plans
-nlm source add --notebook <NLM_ARCH_ID> --file .specify/plans/*.md
-
-# Traceability matrix
-nlm source add --notebook <NLM_REQ_ID> --file docs/traceability-matrix.md
-
-# Test evidence and coverage reports
-nlm source add --notebook <NLM_TEST_ID> --file docs/coverage-report.md
-nlm source add --notebook <NLM_TEST_ID> --file docs/test-evidence/*.md
-
-# Architecture decision records
-nlm source add --notebook <NLM_ARCH_ID> --file docs/adr/*.md
-
-# HIPAA compliance evidence
-nlm source add --notebook <NLM_COMPLIANCE_ID> --file docs/hipaa-assessment.md
 ```
+"Add the following sources to the appropriate NotebookLM notebooks:
+
+PMS: Requirements notebook (<NLM_REQ_ID>):
+- All files in .specify/specs/
+- docs/traceability-matrix.md
+
+PMS: Architecture & Design notebook (<NLM_ARCH_ID>):
+- All files in .specify/plans/
+- All files in docs/adr/
+
+PMS: Test Evidence notebook (<NLM_TEST_ID>):
+- docs/coverage-report.md
+- All files in docs/test-evidence/
+
+PMS: HIPAA & FDA Compliance notebook (<NLM_COMPLIANCE_ID>):
+- docs/hipaa-assessment.md"
+```
+
+Claude Code will use the `notebooklm-mcp:source_add` MCP tool for each file.
 
 ### B. Query Patterns for Requirements Engineering
 
@@ -758,20 +803,21 @@ jobs:
 
 ### D. Push Evidence to NotebookLM
 
-```bash
-# After each CI run, export and push quality evidence:
-claude "Extract the SonarQube quality gate results from
-  .sonarqube/ and generate a quality-report.md with metrics,
-  findings, and requirement traceability mappings."
+After each CI run, use Claude Code to export and push quality evidence:
 
-nlm source add --notebook <NLM_QS_ID> \
-  --file docs/quality-reports/quality-report-$(date +%Y%m%d).md
-
-# Query historical quality trends:
-nlm notebook query --notebook <NLM_QS_ID> \
-  --question "What is the trend in code coverage for the
-  Medication Management subsystem over the last 5 reports?"
 ```
+"Extract the SonarQube quality gate results from .sonarqube/
+and generate a quality-report.md with metrics, findings, and
+requirement traceability mappings. Save it as
+docs/quality-reports/quality-report-<TODAY>.md. Then add it
+as a source to the PMS: Quality & Security notebook (<NLM_QS_ID>)."
+```
+
+Claude Code will generate the report and use `notebooklm-mcp:source_add` to upload it.
+
+To query historical quality trends, open the **PMS: Quality & Security** notebook at [notebooklm.google.com](https://notebooklm.google.com) and ask:
+
+> "What is the trend in code coverage for the Medication Management subsystem over the last 5 reports?"
 
 > **💡 Quality Gate as Gatekeeper:** Configure GitHub branch protection rules to require a passing SonarQube quality gate before merging PRs.
 
@@ -845,17 +891,20 @@ CodeRabbit posts reviews directly as GitHub PR comments, creating a permanent au
 # Extract review evidence using GitHub CLI
 gh pr view <PR_NUMBER> --comments --json comments \
   > docs/reviews/pr-<PR_NUMBER>-review.json
-
-# Have Claude summarize with requirement traceability
-claude "Summarize the CodeRabbit review from
-  docs/reviews/pr-<PR_NUMBER>-review.json.
-  Map each finding to a requirement ID.
-  Generate pr-<PR_NUMBER>-review-summary.md"
-
-# Push to NotebookLM
-nlm source add --notebook <NLM_QS_ID> \
-  --file docs/reviews/pr-<PR_NUMBER>-review-summary.md
 ```
+
+In Claude Code:
+
+```
+"Summarize the CodeRabbit review from
+docs/reviews/pr-<PR_NUMBER>-review.json.
+Map each finding to a requirement ID.
+Generate docs/reviews/pr-<PR_NUMBER>-review-summary.md.
+Then add it as a source to the PMS: Quality & Security
+notebook (<NLM_QS_ID>)."
+```
+
+Claude Code will generate the summary and use `notebooklm-mcp:source_add` to upload it.
 
 ### E. Review Metrics Dashboard
 
@@ -1003,34 +1052,43 @@ snyk sbom --format cyclonedx > docs/sbom-cyclonedx.json
 
 # Generate SBOM in SPDX format
 snyk sbom --format spdx > docs/sbom-spdx.json
-
-# Push to compliance notebook
-nlm source add --notebook <NLM_COMPLIANCE_ID> \
-  --file docs/sbom-cyclonedx.json
 ```
+
+In Claude Code, push to the compliance notebook:
+
+```
+"Add docs/sbom-cyclonedx.json as a source to the PMS: HIPAA & FDA
+Compliance notebook (<NLM_COMPLIANCE_ID>)."
+```
+
+Claude Code will use the `notebooklm-mcp:source_add` MCP tool.
 
 ### E. Push Security Evidence to NotebookLM
 
+After each security scan, use Claude Code to archive evidence:
+
+```
+"Analyze snyk-deps.json, snyk-code.sarif, and
+snyk-container.json. Generate a security-report.md that:
+1. Lists all findings by severity
+2. Maps each to the relevant SYS-REQ/SUB requirement
+3. Notes remediation status and PR references
+4. Compares with previous report for trend analysis
+Save it as docs/security/security-report-<TODAY>.md.
+Then add it as a source to the PMS: Quality & Security
+notebook (<NLM_QS_ID>)."
+```
+
+Claude Code will generate the report and use `notebooklm-mcp:source_add` to upload it.
+
 ```bash
-# After each security scan, archive evidence:
-claude "Analyze snyk-deps.json, snyk-code.sarif, and
-  snyk-container.json. Generate a security-report.md that:
-  1. Lists all findings by severity
-  2. Maps each to the relevant SYS-REQ/SUB requirement
-  3. Notes remediation status and PR references
-  4. Compares with previous report for trend analysis"
-
-nlm source add --notebook <NLM_QS_ID> \
-  --file docs/security/security-report-$(date +%Y%m%d).md
-
 # Continuous monitoring baseline
 snyk monitor --json-file-output=snyk-monitor.json
-
-# Query security posture at any time:
-nlm notebook query --notebook <NLM_QS_ID> \
-  --question "What critical vulnerabilities are currently
-  unresolved and which requirements do they affect?"
 ```
+
+To query security posture at any time, open the **PMS: Quality & Security** notebook at [notebooklm.google.com](https://notebooklm.google.com) and ask:
+
+> "What critical vulnerabilities are currently unresolved and which requirements do they affect?"
 
 > **🔴 HIPAA Compliance:** The HIPAA Security Rule requires covered entities to conduct risk analysis and implement security measures. Snyk scans, combined with the SBOM and vulnerability-to-requirement mapping, provide documentary evidence of ongoing security due diligence. Store all evidence with retention policies of at least 6 years per HIPAA requirements.
 
@@ -1082,7 +1140,7 @@ jobs:
 
       - name: Generate Evidence Summary
         run: |
-          claude "Compile all scan results from artifacts/
+          claude --print "Compile all scan results from artifacts/
             into a unified evidence-summary.md with:
             1. SonarQube quality gate status and metrics
             2. CodeRabbit review findings summary
@@ -1092,8 +1150,9 @@ jobs:
 
       - name: Push to NotebookLM
         run: |
-          nlm source add --notebook $NLM_QS_ID \
-            --file docs/evidence-summary.md
+          # Use Claude Code to add the evidence summary via MCP
+          claude --print "Add docs/evidence-summary.md as a source to \
+            NotebookLM notebook $NLM_QS_ID using notebooklm-mcp:source_add"
         env:
           NLM_QS_ID: ${{ vars.NLM_QS_NOTEBOOK_ID }}
 ```
