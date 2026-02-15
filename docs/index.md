@@ -5,11 +5,14 @@ This directory is the single source of truth for all project context, decisions,
 ## Architecture Decisions
 
 - [ADR-0001: Use Repository-Based Knowledge Management](architecture/0001-repo-based-knowledge-management.md)
+- [ADR-0002: Multi-Repository Structure with Shared Docs Submodule](architecture/0002-multi-repo-structure.md)
+- [ADR-0003: Backend Tech Stack — FastAPI with Async SQLAlchemy](architecture/0003-backend-tech-stack.md)
+- [ADR-0004: Frontend Tech Stack — Next.js with Tailwind CSS](architecture/0004-frontend-tech-stack.md)
+- [ADR-0005: Android Tech Stack — Kotlin with Jetpack Compose](architecture/0005-android-tech-stack.md)
 
 ## Features
 
-<!-- Add links to feature docs as they are completed -->
-_No features documented yet._
+- [Initial Project Scaffolds](features/initial-project-scaffolds.md) — Backend, frontend, and Android app scaffolding
 
 ## Bug Fixes
 
@@ -18,10 +21,9 @@ _No bug fixes documented yet._
 
 ## API Contracts
 
-<!-- Add links to API docs as they are defined -->
-_No API contracts documented yet._
+- [Backend API Endpoints](api/backend-endpoints.md) — Full REST API reference for pms-backend
 
 ## Configuration & Dependencies
 
-<!-- Add links to config docs as they are established -->
-_No configuration documented yet._
+- [Project Setup Guide](config/project-setup.md) — How to clone, install, and run all three projects
+- [Dependencies Overview](config/dependencies.md) — All libraries and why they were chosen
