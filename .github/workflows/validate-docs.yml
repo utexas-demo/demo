@@ -1,0 +1,94 @@
+name: Validate Docs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    name: Validate Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check requirement files exist
+        run: |
+          required_files=(
+            "docs/specs/requirements/SYS-REQ.md"
+            "docs/specs/requirements/SUB-PR.md"
+            "docs/specs/requirements/SUB-CW.md"
+            "docs/specs/requirements/SUB-MM.md"
+            "docs/specs/requirements/SUB-RA.md"
+            "docs/specs/requirements/traceability-matrix.md"
+            "docs/specs/system-spec.md"
+            "docs/specs/testing-strategy.md"
+            "docs/index.md"
+          )
+          missing=0
+          for f in "${required_files[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "MISSING: $f"
+              missing=$((missing + 1))
+            fi
+          done
+          if [ $missing -gt 0 ]; then
+            echo "ERROR: $missing required file(s) missing"
+            exit 1
+          fi
+          echo "All required files present"
+
+      - name: Check index.md links resolve
+        run: |
+          broken=0
+          while IFS= read -r line; do
+            # Extract relative paths from markdown links like [text](path)
+            path=$(echo "$line" | grep -oP '\]\(\K[^)]+' | head -1)
+            if [ -n "$path" ] && [[ ! "$path" =~ ^https?:// ]]; then
+              resolved="docs/$path"
+              if [ ! -f "$resolved" ]; then
+                echo "BROKEN LINK in index.md: $path"
+                broken=$((broken + 1))
+              fi
+            fi
+          done < docs/index.md
+          if [ $broken -gt 0 ]; then
+            echo "ERROR: $broken broken link(s) in index.md"
+            exit 1
+          fi
+          echo "All index.md links resolve"
+
+      - name: Check requirement IDs are unique
+        run: |
+          # Extract all requirement IDs (SYS-REQ-NNNN, SUB-XX-NNNN) from requirement files
+          ids=$(grep -hoP '(SYS-REQ|SUB-[A-Z]{2})-\d{4}' docs/specs/requirements/SYS-REQ.md docs/specs/requirements/SUB-*.md | sort)
+          dupes=$(echo "$ids" | uniq -d)
+          if [ -n "$dupes" ]; then
+            echo "ERROR: Duplicate requirement IDs found:"
+            echo "$dupes"
+            exit 1
+          fi
+          count=$(echo "$ids" | wc -l | tr -d ' ')
+          echo "All $count requirement IDs are unique"
+
+      - name: Check traceability matrix references valid test cases
+        run: |
+          # Extract test case IDs from the traceability matrix
+          test_ids=$(grep -hoP 'TST-[A-Z]{2,3}-\d{4}' docs/specs/requirements/traceability-matrix.md | sort -u)
+          # Extract test case IDs defined in the testing strategy
+          defined_ids=$(grep -hoP 'TST-[A-Z]{2,3}-\d{4}' docs/specs/testing-strategy.md | sort -u)
+          # Also check requirement files for test case references
+          req_test_ids=$(grep -hoP 'TST-[A-Z]{2,3}-\d{4}' docs/specs/requirements/SYS-REQ.md docs/specs/requirements/SUB-*.md | sort -u)
+
+          invalid=0
+          for id in $test_ids; do
+            if ! echo "$defined_ids" | grep -q "^${id}$" && ! echo "$req_test_ids" | grep -q "^${id}$"; then
+              echo "WARNING: Test case $id in traceability matrix not found in testing-strategy.md or requirement files"
+              invalid=$((invalid + 1))
+            fi
+          done
+          if [ $invalid -gt 0 ]; then
+            echo "WARNING: $invalid test case reference(s) may need review"
+          fi
+          echo "Traceability matrix check complete"

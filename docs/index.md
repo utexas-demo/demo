@@ -28,6 +28,15 @@ _No bug fixes documented yet._
 - [Project Setup Guide](config/project-setup.md) — How to clone, install, and run all three projects
 - [Dependencies Overview](config/dependencies.md) — All libraries and why they were chosen
 
+## Release Management
+
+- [ADR-0006: Release Management Strategy](architecture/0006-release-management-strategy.md) — Independent versioning, feature flags, 4-environment pipeline
+- [Release Process](config/release-process.md) — Step-by-step release workflow, approval gates, rollback strategy
+- [Feature Flag Registry](config/feature-flags.md) — Flag naming, lifecycle, per-environment state
+- [Environment Configuration](config/environments.md) — Dev, QA, Staging, Production environment setup
+- [Subsystem Versions](specs/subsystem-versions.md) — Per-subsystem version tracking tied to requirement completion
+- [Release Compatibility Matrix](specs/release-compatibility-matrix.md) — Tested version combinations across repos
+
 ## Specifications & Requirements
 
 - [System Specification](specs/system-spec.md) — System-level scope, context, and subsystem decomposition
