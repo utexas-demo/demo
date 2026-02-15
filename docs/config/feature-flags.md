@@ -30,6 +30,9 @@ Examples:
 | `FEATURE_SUB_RA_0003_AUDIT_LOG_QUERY` | SUB-RA-0003 | Audit log query interface with filters | Create | off | off | off | off |
 | `FEATURE_SUB_RA_0007_CSV_EXPORT` | SUB-RA-0007 | Report export to CSV format | Create | off | off | off | off |
 | `FEATURE_SYS_REQ_0004_FHIR_EXCHANGE` | SYS-REQ-0004 | HL7 FHIR R4 patient data exchange | Create | off | off | off | off |
+| `FEATURE_SUB_PR_0009_WOUND_ASSESSMENT` | SUB-PR-0009 | AI wound/condition photo assessment via MONAI + TensorRT | Create | off | off | off | off |
+| `FEATURE_SUB_PR_0010_PATIENT_ID_VERIFY` | SUB-PR-0010 | Patient identity verification via ArcFace + TensorRT | Create | off | off | off | off |
+| `FEATURE_SUB_PR_0011_DOCUMENT_OCR` | SUB-PR-0011 | Document OCR text extraction via PaddleOCR + TensorRT | Create | off | off | off | off |
 
 ## Flag Lifecycle
 

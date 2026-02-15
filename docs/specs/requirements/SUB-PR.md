@@ -23,6 +23,9 @@ The Patient Records subsystem manages patient demographics, contact information,
 | SUB-PR-0006 | — | Validate patient email uniqueness across the system | Test | Placeholder |
 | SUB-PR-0007 | — | Support patient search by last name, date of birth, or ID | Test | Not Started |
 | SUB-PR-0008 | — | Return paginated results for patient list queries (default: 20 per page) | Test | Not Started |
+| SUB-PR-0009 | — | Capture and assess wound/condition photos with AI severity classification | Test | Not Started |
+| SUB-PR-0010 | — | Verify patient identity via photo comparison against stored embedding | Test | Not Started |
+| SUB-PR-0011 | — | Extract patient data from scanned documents via OCR | Test | Not Started |
 
 ## Implementation Mapping
 
@@ -36,3 +39,6 @@ The Patient Records subsystem manages patient demographics, contact information,
 | SUB-PR-0006 | `models/patient.py` (unique constraint) | — | — | TST-PR-0006 |
 | SUB-PR-0007 | — | — | — | TST-PR-0007 |
 | SUB-PR-0008 | — | — | — | TST-PR-0008 |
+| SUB-PR-0009 | `routers/vision.py`, `services/vision_service.py` | — | — | TST-PR-0009 |
+| SUB-PR-0010 | `routers/vision.py`, `services/vision_service.py` | — | — | TST-PR-0010 |
+| SUB-PR-0011 | `routers/vision.py`, `services/vision_service.py` | — | — | TST-PR-0011 |

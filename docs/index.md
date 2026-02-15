@@ -37,11 +37,17 @@ _No bug fixes documented yet._
 - [Subsystem Versions](specs/subsystem-versions.md) — Per-subsystem version tracking tied to requirement completion
 - [Release Compatibility Matrix](specs/release-compatibility-matrix.md) — Tested version combinations across repos
 
+## Edge Deployment
+
+- [ADR-0007: Jetson Thor Edge Deployment](architecture/0007-jetson-thor-edge-deployment.md) — Edge-only deployment on NVIDIA Jetson Thor with on-device vision inference
+- [Vision Capabilities](features/vision-capabilities.md) — Wound assessment, patient ID verification, and document OCR
+- [Jetson Deployment Guide](config/jetson-deployment.md) — Setup, docker-compose, Wi-Fi 7 network config
+
 ## Specifications & Requirements
 
 - [System Specification](specs/system-spec.md) — System-level scope, context, and subsystem decomposition
 - [System Requirements (SYS-REQ)](specs/requirements/SYS-REQ.md) — 10 system-level requirements
-- [Patient Records (SUB-PR)](specs/requirements/SUB-PR.md) — 8 subsystem requirements
+- [Patient Records (SUB-PR)](specs/requirements/SUB-PR.md) — 11 subsystem requirements
 - [Clinical Workflow (SUB-CW)](specs/requirements/SUB-CW.md) — 8 subsystem requirements
 - [Medication Management (SUB-MM)](specs/requirements/SUB-MM.md) — 9 subsystem requirements
 - [Reporting & Analytics (SUB-RA)](specs/requirements/SUB-RA.md) — 7 subsystem requirements

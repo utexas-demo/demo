@@ -36,6 +36,9 @@
 | TST-PR-0004 | SSN encryption at rest via encryption_service | pms-backend | SUB-PR-0004, SYS-REQ-0002 | — | — |
 | TST-PR-0005 | Audit log entries created on patient access | pms-backend | SUB-PR-0005, SYS-REQ-0003 | — | — |
 | TST-PR-0006 | Patient email uniqueness validation | pms-backend | SUB-PR-0006 | — | — |
+| TST-PR-0009 | Wound assessment endpoint returns valid response | pms-backend | SUB-PR-0009 | — | — |
+| TST-PR-0010 | Patient ID verification endpoint returns match result | pms-backend | SUB-PR-0010 | — | — |
+| TST-PR-0011 | Document OCR endpoint returns extracted text and fields | pms-backend | SUB-PR-0011 | — | — |
 | TST-CW-0001 | Verify encounter endpoints require auth token | pms-backend | SUB-CW-0001, SYS-REQ-0001 | — | — |
 | TST-CW-0003 | Encounter CRUD and status lifecycle | pms-backend | SUB-CW-0003 | PASS | RUN-2026-02-15-001 |
 | TST-MM-0001 | Drug interaction check within 5 seconds | pms-backend | SUB-MM-0001, SYS-REQ-0006 | PASS | RUN-2026-02-15-001 |
@@ -76,12 +79,12 @@
 
 | Subsystem | Total Reqs | With Tests | Passing | Failing | No Tests | Coverage |
 |---|---|---|---|---|---|---|
-| Patient Records (PR) | 8 | 3 | 1 | 0 | 5 | 37.5% |
+| Patient Records (PR) | 11 | 3 | 1 | 0 | 8 | 27.3% |
 | Clinical Workflow (CW) | 8 | 2 | 1 | 0 | 6 | 25.0% |
 | Medication Mgmt (MM) | 9 | 3 | 2 | 0 | 6 | 33.3% |
 | Reporting (RA) | 7 | 0 | 0 | 0 | 7 | 0.0% |
 | System (SYS) | 10 | 2 | 2 | 0 | 8 | 20.0% |
-| **TOTAL** | **42** | **10** | **6** | **0** | **32** | **23.8%** |
+| **TOTAL** | **45** | **10** | **6** | **0** | **35** | **22.2%** |
 
 > **Gap Analysis:** 32 requirements lack test coverage. Priority for next sprint: implement CRUD tests (SUB-PR-0003 through 0008), then RBAC tests (SUB-*-0002), then audit trail tests (SUB-*-0004/0005).
 

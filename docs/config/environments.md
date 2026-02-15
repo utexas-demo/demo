@@ -64,6 +64,20 @@
 | `LOG_LEVEL` | `DEBUG` | `INFO` | `INFO` | `INFO` |
 | `FEATURE_*` | Per developer | QA-controlled | PO-controlled | CCB-controlled |
 
+## Jetson Thor (Edge)
+
+- **Hardware:** NVIDIA Jetson Thor T5000 (ARM64, Blackwell GPU, 128 GB LPDDR5X)
+- **OS:** Ubuntu 24.04 LTS (JetPack 7.x)
+- **Deploy trigger:** Manual `docker compose up` on-device
+- **Database:** Local PostgreSQL in Docker, persistent volume, encrypted at rest
+- **Feature flags:** Locally configured in `.env` on the Jetson
+- **Access:** Android clients on local Wi-Fi 7 network only
+- **HIPAA controls:** Full — all PHI stays on-device, no cloud egress, AES-256 encryption, audit logging
+- **Logging:** Info-level, structured JSON, local audit trail
+- **GPU:** CUDA 13, TensorRT 10.13 — used for vision inference (wound assessment, patient ID, OCR)
+- **Network:** Wi-Fi 7 (802.11be), static IP recommended for stable client connections
+- **Ports:** Backend :8000, Frontend :3000, PostgreSQL :5432 (internal only)
+
 ## Promotion Flow
 
 ```
