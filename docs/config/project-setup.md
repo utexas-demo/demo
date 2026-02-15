@@ -6,7 +6,7 @@
 |---|---|---|
 | Python | 3.12+ | pms-backend |
 | PostgreSQL | 16+ | pms-backend |
-| Node.js | 22+ | pms-frontend |
+| Node.js | 24+ | pms-frontend |
 | Android Studio | Ladybug 2024.2+ | pms-android |
 | JDK | 17+ | pms-android |
 | Git | 2.x | All |
