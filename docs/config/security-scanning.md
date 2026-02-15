@@ -10,11 +10,11 @@ This document describes the three security scanning tools integrated across all 
 
 | Project Key | Repository |
 |---|---|
-| `ammar-utexas_pms-backend` | pms-backend |
-| `ammar-utexas_pms-frontend` | pms-frontend |
-| `ammar-utexas_pms-android` | pms-android |
+| `utexas-demo_pms-backend` | pms-backend |
+| `utexas-demo_pms-frontend` | pms-frontend |
+| `utexas-demo_pms-android` | pms-android |
 
-**Organization:** `ammar-utexas`
+**Organization:** `utexas-demo`
 
 ### Configuration Files
 
@@ -24,14 +24,13 @@ Each repo contains:
 
 ### Quality Gates
 
-The default SonarCloud quality gate applies:
+A custom **PMS Quality Gate** is configured in SonarCloud and assigned to all three projects. It enforces on new code:
+- No critical issues
 - No new bugs
 - No new vulnerabilities
-- No new security hotspots reviewed as unsafe
-- Code coverage on new code >= 80%
-- Duplicated lines on new code < 3%
+- Code coverage >= 80%
 
-The quality gate step uses `continue-on-error: true` until thresholds are tuned for the project.
+The quality gate is **enforced** — CI will fail if the gate does not pass. The `continue-on-error` flag has been removed from the workflow.
 
 ### Required Secret
 
@@ -42,8 +41,9 @@ The quality gate step uses `continue-on-error: true` until thresholds are tuned 
 ### Setup Steps
 
 1. Log in to [sonarcloud.io](https://sonarcloud.io) with your GitHub account
-2. Create the organization `ammar-utexas` (or import from GitHub)
+2. Create the organization `utexas-demo` (or import from GitHub)
 3. Create 3 projects matching the `sonar.projectKey` values above
+4. Disable **Automatic Analysis** in each project (Administration > Analysis Method) — CI-based analysis is used instead
 4. Generate a token and add it as `SONAR_TOKEN` in GitHub secrets
 5. Push the workflow files — scans will run automatically on the next PR
 
@@ -124,4 +124,4 @@ After merging the configuration files and setting up secrets:
 2. **CodeRabbit:** Open a PR — CodeRabbit should post a review comment automatically
 3. **Snyk:** Open a PR — the `Snyk Security Scan` check should appear; findings appear in GitHub Security tab
 
-All three tools use `continue-on-error: true` initially. Once baselines are established, remove this flag to enforce quality gates.
+SonarCloud quality gates are enforced (CI fails on gate failure). Snyk uses `continue-on-error: true` to report findings without blocking CI. CodeRabbit runs in `chill` profile (suggestions only).
