@@ -1,0 +1,238 @@
+# Requirements Governance & Conflict Analysis
+
+**Document ID:** PMS-GOV-001
+**Version:** 1.0
+**Date:** 2026-02-16
+**Parent:** [System Specification](system-spec.md)
+
+---
+
+## 1. Purpose
+
+This document defines the governance procedures for evolving the PMS three-tier requirements decomposition (System → Domain → Platform) and provides a systematic conflict and race condition analysis across all 35 domain requirements and 69 platform requirements.
+
+---
+
+## 2. Governance Procedures
+
+### 2.1 Procedure: Adding a New Platform
+
+Use this when a new deployable component is introduced (e.g., an iOS app or a desktop client).
+
+| Step | Action | Artifacts Updated |
+|---|---|---|
+| 1 | **Assign platform code** — choose a unique 2–3 letter code (e.g., `IOS`). Verify it does not collide with existing codes (BE, WEB, AND, AI). | — |
+| 2 | **Register in system-spec.md** — add a row to Section 8.1 (Platform Codes) with the code, platform name, repository, and technology. | `system-spec.md` |
+| 3 | **Audit every domain requirement** — for each of the 35 domain requirements across SUB-PR, SUB-CW, SUB-MM, and SUB-RA, determine if the new platform requires a platform-specific requirement. Record the decision (yes/no) and rationale. | Governance log |
+| 4 | **Create platform requirements** — for each "yes" decision, add a row to the Platform Decomposition section of the relevant `SUB-*.md`. Use the format `SUB-{domain}-{NNNN}-{PLATFORM}`. | `SUB-PR.md`, `SUB-CW.md`, `SUB-MM.md`, `SUB-RA.md` |
+| 5 | **Create test case stubs** — add `TST-{domain}-{NNNN}-{PLATFORM}` entries to the backward traceability section of `traceability-matrix.md`. | `traceability-matrix.md` |
+| 6 | **Update platform traceability summary** — add a column for the new platform in the Platform Traceability Summary section and set initial statuses. | `traceability-matrix.md` |
+| 7 | **Update coverage summary** — add a row for the new platform in the Coverage Summary by Platform table. | `traceability-matrix.md` |
+| 8 | **Update testing strategy** — add the platform code to the Test Naming Convention section and add platform-specific test runner commands. | `testing-strategy.md` |
+| 9 | **Update index.md** — update the platform requirement count in the Specifications & Requirements section. | `index.md` |
+| 10 | **Run conflict analysis** — execute Sections 4 and 5 of this document for the new platform. Document any new conflicts. | This document |
+
+**Approval gate:** Steps 1–3 require tech lead sign-off before proceeding to step 4.
+
+### 2.2 Procedure: Adding a New Domain Subsystem
+
+Use this when a new functional domain is introduced (e.g., SUB-BL for Billing or SUB-SC for Scheduling).
+
+| Step | Action | Artifacts Updated |
+|---|---|---|
+| 1 | **Assign subsystem code** — choose a unique 2-letter code (e.g., `BL`). Verify it does not collide with existing codes (PR, CW, MM, RA). | — |
+| 2 | **Register in system-spec.md** — add a row to Section 4 (Subsystem Decomposition) with the code, subsystem name, scope, and primary actor. | `system-spec.md` |
+| 3 | **Create subsystem requirements document** — create `docs/docs/specs/requirements/SUB-{CODE}.md` following the template structure of existing subsystem docs. Include: scope, requirements table, and platform decomposition sections. | `SUB-{CODE}.md` (new) |
+| 4 | **Define domain requirements** — enumerate all domain requirements with IDs `SUB-{CODE}-NNNN`. Link each to a parent SYS-REQ where applicable. | `SUB-{CODE}.md` |
+| 5 | **Decompose into platform requirements** — for each domain requirement, create platform-specific requirements for each applicable platform (BE, WEB, AND, AI). | `SUB-{CODE}.md` |
+| 6 | **Update SYS-REQ.md** — for any system requirement that the new subsystem satisfies, add the new SUB-{CODE}-NNNN to the "Decomposes To" field. | `SYS-REQ.md` |
+| 7 | **Update traceability matrix** — add forward traceability rows, backward traceability test stubs, and platform traceability summary for the new subsystem. | `traceability-matrix.md` |
+| 8 | **Update index.md** — add the new subsystem to the Specifications & Requirements section and update counts. | `index.md` |
+| 9 | **Run conflict analysis** — execute Sections 3, 4, and 5 of this document for the new subsystem. Document any new intra-domain, cross-domain, and platform conflicts. | This document |
+
+**Approval gate:** Steps 1–4 require product owner sign-off before platform decomposition.
+
+### 2.3 Procedure: Decomposing a System Requirement
+
+Use this when a new SYS-REQ is added or an existing one needs re-decomposition.
+
+| Step | Action | Artifacts Updated |
+|---|---|---|
+| 1 | **Define or update the system requirement** — add/modify the entry in `SYS-REQ.md` with ID, description, priority, rationale, and acceptance criteria. | `SYS-REQ.md` |
+| 2 | **Identify affected subsystems** — determine which of the 4 subsystems (PR, CW, MM, RA) must implement aspects of this requirement. | Governance log |
+| 3 | **Create domain requirements** — in each affected `SUB-*.md`, add a domain requirement that traces to the system requirement via the Parent field. | `SUB-PR.md`, `SUB-CW.md`, `SUB-MM.md`, `SUB-RA.md` |
+| 4 | **Decompose into platform requirements** — for each new domain requirement, determine which platforms (BE, WEB, AND, AI) require implementation and add platform requirements. | `SUB-*.md` |
+| 5 | **Update "Decomposes To"** — in `SYS-REQ.md`, update the requirement's "Decomposes To" field listing all new SUB-*-NNNN IDs with their platform annotations. | `SYS-REQ.md` |
+| 6 | **Update traceability matrix** — add forward and backward traceability entries. Create test case stubs for each new platform requirement. | `traceability-matrix.md` |
+| 7 | **Verify strict rollup** — confirm that the system requirement's verification status correctly reflects the strict rollup rule: "Verified" only when ALL domain requirements are verified, each domain requirement verified only when ALL its platform requirements are verified. | `traceability-matrix.md` |
+| 8 | **Run conflict analysis** — check Sections 3, 4, and 5 for new conflicts introduced by the decomposition. | This document |
+
+**Approval gate:** Step 2 decisions (subsystem mapping) require architecture review.
+
+---
+
+## 3. Intra-Domain Conflict Analysis
+
+Conflicts where two or more requirements within the same domain subsystem impose contradictory or ambiguous obligations.
+
+### SUB-PR — Patient Records (4 conflicts)
+
+| ID | Conflict | Requirements | Severity | Resolution |
+|---|---|---|---|---|
+| DC-PR-01 | **Encryption standard mismatch** — SUB-PR-0004 specifies Fernet (AES-128-CBC) for SSN encryption, but its parent SYS-REQ-0002 mandates AES-256. The domain requirement is marked "Verified" while the system requirement is only "Partial." | SUB-PR-0004 vs SYS-REQ-0002 | High | Planned migration to AES-256-GCM before production. SUB-PR-0004 status should be annotated as "Verified (dev)" until migration completes. Re-verify after migration. |
+| DC-PR-02 | **Unbounded list vs pagination** — SUB-PR-0003 (CRUD) includes a list endpoint that returns all active patients. SUB-PR-0008 requires paginated results (default 20/page). If both are implemented independently, the list endpoint in SUB-PR-0003 contradicts the pagination constraint. | SUB-PR-0003 vs SUB-PR-0008 | Medium | SUB-PR-0008 supersedes the list behavior of SUB-PR-0003. When SUB-PR-0008 is implemented, the existing list endpoint must be refactored to default to paginated results. Add a note to SUB-PR-0003 that the list behavior is interim. |
+| DC-PR-03 | **AI vision resource contention** — SUB-PR-0009 (wound assessment), SUB-PR-0010 (patient ID verification), and SUB-PR-0011 (document OCR) all require edge AI inference on the same Jetson Thor device. No requirement specifies priority, queuing, or resource sharing. | SUB-PR-0009, SUB-PR-0010, SUB-PR-0011 | Medium | Add a shared non-functional requirement for AI inference queuing: requests must be serialized per device with a configurable timeout. Define priority order: patient ID verification > wound assessment > document OCR. |
+| DC-PR-04 | **Email uniqueness during concurrent creation** — SUB-PR-0006 (unique email) is enforced at the database constraint level, but SUB-PR-0003 (CRUD) does not specify behavior when the constraint is violated during concurrent operations. The service layer checks uniqueness before insert, creating a TOCTOU gap. | SUB-PR-0006 vs SUB-PR-0003 | Low | The database unique constraint catches concurrent violations. The service layer should handle `IntegrityError` from the DB and return 409, not rely solely on the pre-check. Current implementation already does this correctly. |
+
+### SUB-CW — Clinical Workflow (3 conflicts)
+
+| ID | Conflict | Requirements | Severity | Resolution |
+|---|---|---|---|---|
+| DC-CW-01 | **Lifecycle vs transition validation ambiguity** — SUB-CW-0003 defines the lifecycle states (scheduled → in_progress → completed/cancelled) and SUB-CW-0007 requires transition validation. Neither specifies the complete valid transition set. Can "cancelled" be reached from any state? Can "completed" only come from "in_progress"? | SUB-CW-0003 vs SUB-CW-0007 | High | Define the explicit state machine: `scheduled → in_progress`, `scheduled → cancelled`, `in_progress → completed`, `in_progress → cancelled`. No transitions from terminal states (completed, cancelled). Add this to SUB-CW-0007's acceptance criteria. |
+| DC-CW-02 | **Emergency encounter lifecycle exception** — SUB-CW-0006 defines encounter type "emergency" but SUB-CW-0003's lifecycle starts at "scheduled." Emergency encounters may need to skip "scheduled" and begin directly in "in_progress." | SUB-CW-0006 vs SUB-CW-0003 | Medium | Allow the transition `created → in_progress` for emergency encounters (bypassing "scheduled"). Add a creation-time rule: if type = emergency, initial status = in_progress. Document this exception in SUB-CW-0003. |
+| DC-CW-03 | **Alert timing vs encounter finalization** — SUB-CW-0005 triggers clinical alerts based on encounter notes. If a note is added during the transition from in_progress → completed, the alert may fire after the encounter is finalized, leaving no opportunity for the clinician to act within the encounter context. | SUB-CW-0005 vs SUB-CW-0003 | Medium | Alerts must be evaluated before status transitions to "completed" are committed. Add a pre-transition hook: if the encounter has pending unacknowledged critical alerts, block the transition to "completed" until the clinician acknowledges or overrides. |
+
+### SUB-MM — Medication Management (3 conflicts)
+
+| ID | Conflict | Requirements | Severity | Resolution |
+|---|---|---|---|---|
+| DC-MM-01 | **Interaction check latency vs encryption overhead** — SUB-MM-0001 requires drug interaction checks within 5 seconds. SUB-MM-0003 requires encryption of prescription PHI. Decrypting patient medication history to run interaction checks adds latency that may exceed the 5-second SLA under load. | SUB-MM-0001 vs SUB-MM-0003 | High | The interaction checker should operate on medication IDs (not PHI), avoiding the need to decrypt PHI during the check. Only the prescription record (patient name, dosage instructions) needs encryption; drug interaction lookup keys (RxNorm codes) should be stored in plaintext. |
+| DC-MM-02 | **Prescription cancellation vs refill tracking** — SUB-MM-0008 allows prescription cancellation. SUB-MM-0009 tracks remaining refills. Neither specifies whether a cancelled prescription's remaining refills can be reinstated, or whether cancellation zeroes the refill count. | SUB-MM-0008 vs SUB-MM-0009 | Medium | Cancellation sets refills_remaining to 0 and is irreversible. A new prescription must be created if the medication is needed again. Add to SUB-MM-0008 acceptance criteria: "Cancellation is a terminal state; cancelled prescriptions cannot be reactivated." |
+| DC-MM-03 | **RBAC role ambiguity for status transitions** — SUB-MM-0007 defines roles (physician prescribe, nurse view, pharmacist dispense) but SUB-MM-0008 defines status transitions (active → completed/cancelled). Which role(s) can cancel a prescription? Can a pharmacist complete a prescription upon final dispense? | SUB-MM-0007 vs SUB-MM-0008 | Medium | Define transition-to-role mapping: physician can cancel (override), pharmacist can mark completed (upon final dispense), nurse cannot change status. Add this mapping to SUB-MM-0007 acceptance criteria. |
+
+### SUB-RA — Reporting & Analytics (1 conflict)
+
+| ID | Conflict | Requirements | Severity | Resolution |
+|---|---|---|---|---|
+| DC-RA-01 | **Audit log access role gap** — SUB-RA-0003 provides an audit log query interface (required by SYS-REQ-0003 for HIPAA compliance). SUB-RA-0005 restricts report access to administrator and billing roles. Compliance officers need audit log access but the system defines no compliance officer role (SYS-REQ-0005 specifies only 4 roles: physician, nurse, administrator, billing). | SUB-RA-0003 vs SUB-RA-0005 | High | Either (a) extend the role model to include a "compliance" role with audit-read-only access, which requires updating SYS-REQ-0005, or (b) grant administrators audit log access and designate compliance duties to the administrator role. Option (b) is recommended for v1.0 with option (a) deferred to a future RBAC enhancement. |
+
+**Total intra-domain conflicts: 11**
+
+---
+
+## 4. Cross-Platform Conflict Analysis
+
+Conflicts where platform-specific requirements across different subsystems or platforms impose contradictory obligations on a shared component, API, or resource.
+
+### Backend (BE) — 5 conflicts
+
+| ID | Conflict | Requirements | Severity | Resolution |
+|---|---|---|---|---|
+| PC-BE-01 | **Inconsistent encryption implementations** — SUB-PR-0004-BE uses Fernet (AES-128-CBC) for patient SSN encryption. SUB-MM-0003-BE requires AES-256 for prescription PHI. Both will use the same `encryption_service.py`. A single module cannot simultaneously provide Fernet and AES-256-GCM without a migration strategy or dual-mode support. | SUB-PR-0004-BE vs SUB-MM-0003-BE | High | When SUB-MM-0003-BE is implemented, migrate `encryption_service.py` to AES-256-GCM for all PHI (resolving DC-PR-01 simultaneously). Implement a versioned-envelope approach: new writes use AES-256-GCM, reads detect format (Fernet vs GCM) and decrypt accordingly. Backfill existing Fernet data in a one-time migration. |
+| PC-BE-02 | **Shared auth middleware coupling** — SUB-PR-0001-BE, SUB-CW-0001-BE, SUB-MM-0006-BE, and SUB-RA-0004-BE all enforce JWT auth through the same `middleware/auth.py`. A change to the auth middleware (e.g., adding MFA token validation for SYS-REQ-0001) affects all four subsystems simultaneously. There is no subsystem-scoped auth configuration. | SUB-PR-0001-BE, SUB-CW-0001-BE, SUB-MM-0006-BE, SUB-RA-0004-BE | Medium | This is acceptable for a monolithic backend. The auth middleware should remain shared (DRY principle). Mitigate regression risk by maintaining TST-AUTH-0001 as a cross-cutting system test. When MFA is added, all four subsystem auth requirements are satisfied simultaneously. |
+| PC-BE-03 | **Inconsistent audit logging** — SUB-PR-0005-BE is implemented (all 5 router methods call `audit_service.log_action`). SUB-CW-0004-BE, SUB-MM-0004-BE are placeholders. When encounter and medication audit logging is implemented, the audit schema, field names, and action strings must match the pattern established by patient audit logging — but no formal audit event catalog exists. | SUB-PR-0005-BE vs SUB-CW-0004-BE vs SUB-MM-0004-BE | Medium | Create an audit event catalog defining: action strings (CREATE, READ, UPDATE, DELETE, DEACTIVATE), resource_type values (patient, encounter, prescription), and required fields. Existing patient audit calls already set the pattern; formalize it before implementing encounter/medication audit logging. |
+| PC-BE-04 | **Role matrix inconsistency across subsystems** — SUB-PR-0002-BE grants access to admin/physician/nurse (with admin/physician for updates). SUB-RA-0005-BE restricts to administrator/billing. SUB-MM-0007-BE introduces pharmacist (not in SYS-REQ-0005's role list). The system defines 4 roles but the subsystems collectively reference 5 (physician, nurse, administrator, billing, pharmacist). | SUB-PR-0002-BE vs SUB-MM-0007-BE vs SUB-RA-0005-BE | High | Update SYS-REQ-0005 to define 5 roles (add pharmacist), or clarify that pharmacist is a specialization of an existing role. Create a consolidated RBAC matrix document mapping every endpoint to allowed roles. |
+| PC-BE-05 | **Interaction check SLA under CRUD load** — SUB-MM-0001-BE requires a 5-second response for interaction checks. During peak load, concurrent CRUD operations (SUB-PR-0003-BE, SUB-CW-0003-BE) compete for the same database connection pool. No priority mechanism exists for safety-critical queries. | SUB-MM-0001-BE vs SUB-PR-0003-BE, SUB-CW-0003-BE | Medium | Implement a dedicated connection pool (or priority queue) for medication-safety queries. Alternatively, set the database connection pool size large enough that CRUD load does not block interaction checks. Add SLA monitoring for the interaction check endpoint. |
+
+### Web Frontend (WEB) — 2 conflicts
+
+| ID | Conflict | Requirements | Severity | Resolution |
+|---|---|---|---|---|
+| PC-WEB-01 | **Shared auth guard module** — SUB-PR-0001-WEB, SUB-CW-0001-WEB, SUB-MM-0006-WEB, and SUB-RA-0004-WEB all reference `lib/auth.ts` for auth guards. Different subsystems may need different guard behaviors (e.g., reports require admin/billing role check in the guard, while patient pages allow nurse access). A single auth guard implementation risks either over-permitting or under-permitting. | SUB-PR-0001-WEB, SUB-CW-0001-WEB, SUB-MM-0006-WEB, SUB-RA-0004-WEB | Medium | `lib/auth.ts` should provide a parameterized guard (e.g., `requireRole(['admin', 'physician'])`) rather than a single hardcoded check. Each page passes its allowed roles. The guard is shared; the role lists are subsystem-specific. |
+| PC-WEB-02 | **Inconsistent patient data between list and dashboard** — SUB-PR-0008-WEB shows paginated patient lists with current data. SUB-RA-0001-WEB shows patient volume dashboards with aggregated data. If the dashboard caches aggregated counts while the patient list shows real-time data, the numbers may disagree within the same user session. | SUB-PR-0008-WEB vs SUB-RA-0001-WEB | Low | Add a cache TTL and "last refreshed" timestamp to the dashboard. Accept eventual consistency (reporting data may lag real-time data by up to the cache TTL). Document this in SUB-RA-0001-WEB acceptance criteria. |
+
+### Android (AND) — 2 conflicts
+
+| ID | Conflict | Requirements | Severity | Resolution |
+|---|---|---|---|---|
+| PC-AND-01 | **Camera resource contention** — SUB-PR-0009-AND (wound assessment), SUB-PR-0010-AND (patient ID verification), and SUB-PR-0011-AND (document OCR) all require camera access. Android's CameraX allows only one active camera session. Rapid switching between features without proper lifecycle management will cause `CameraAccessException` or ANR. | SUB-PR-0009-AND, SUB-PR-0010-AND, SUB-PR-0011-AND | High | Implement a `CameraSessionManager` singleton that serializes camera access. Each vision feature requests and releases the camera through this manager. Use Kotlin coroutines with a `Mutex` to prevent concurrent access. |
+| PC-AND-02 | **Shared auth interceptor coupling** — SUB-PR-0001-AND, SUB-CW-0001-AND, SUB-MM-0006-AND, and SUB-RA-0004-AND all share `AuthInterceptor.kt`. The interceptor handles token refresh, but if multiple concurrent API calls trigger refresh simultaneously, duplicate refresh requests are sent. | SUB-PR-0001-AND, SUB-CW-0001-AND, SUB-MM-0006-AND, SUB-RA-0004-AND | Medium | Implement token refresh synchronization in `AuthInterceptor.kt`: use a `Mutex` to serialize refresh attempts. The first caller performs the refresh; subsequent callers wait and reuse the new token. OkHttp's `Authenticator` interface supports this pattern natively. |
+
+**Total cross-platform conflicts: 9**
+
+---
+
+## 5. Race Condition Analysis
+
+Race conditions identified per platform where concurrent operations can produce incorrect, inconsistent, or unsafe states.
+
+### Backend (BE) — 8 race conditions
+
+| ID | Race Condition | Requirements | Severity | Mitigation |
+|---|---|---|---|---|
+| RC-BE-01 | **Concurrent patient update (lost update)** — Two clinicians open the same patient record simultaneously. Both read version N, make different edits, and submit. The second write silently overwrites the first with no conflict detection. Neither `SUB-PR-0003-BE` nor the patient model implements optimistic locking. | SUB-PR-0003-BE | High | Add a `version` column (integer, auto-increment on update) to the patient model. The update endpoint must include the version in the request body. If the version in the database doesn't match, return 409 Conflict. This is standard optimistic concurrency control. |
+| RC-BE-02 | **Concurrent encounter status transition** — Two users simultaneously transition the same encounter from "scheduled" to "in_progress." Both read the current status as "scheduled," both pass the transition validation, and both write "in_progress." The audit trail shows two transitions but only one is semantically valid. | SUB-CW-0003-BE, SUB-CW-0007-BE | High | Use `SELECT ... FOR UPDATE` when reading encounter status before transitioning. This serializes concurrent transitions at the database row level. Alternatively, use an optimistic locking approach (version column) as described in RC-BE-01. |
+| RC-BE-03 | **Prescription saved before interaction check completes** — A physician submits a new prescription. The backend starts an async interaction check (SUB-MM-0001-BE) but also saves the prescription immediately (SUB-MM-0008-BE). If the interaction check finds a contraindication, the prescription is already persisted and potentially visible to pharmacists. | SUB-MM-0001-BE vs SUB-MM-0008-BE | Critical | The interaction check must complete before the prescription is committed to the database. Implement this as a synchronous pre-save hook: `validate → check interactions → save`. If the check finds a contraindicated interaction, reject the save. For major/moderate interactions, save with a "pending_review" status and require prescriber acknowledgment. |
+| RC-BE-04 | **Audit log timestamp ordering ambiguity** — Concurrent requests to different endpoints (e.g., patient read + encounter create) produce audit entries with identical or very close timestamps. When querying the audit log (SUB-RA-0003-BE), the order of operations is ambiguous. | SUB-PR-0005-BE, SUB-CW-0004-BE, SUB-MM-0004-BE | Low | Use a monotonically increasing sequence (database serial/bigserial on `audit_log.id`) as the primary ordering key rather than timestamp alone. The current schema already uses integer PK for audit_log, which provides this ordering. Document that ordering is by ID, not timestamp. |
+| RC-BE-05 | **Duplicate email TOCTOU** — The patient service checks email uniqueness with a SELECT before INSERT. Between the check and the insert, another concurrent request may insert a patient with the same email. The check passes for both, but the second insert violates the unique constraint. | SUB-PR-0006-BE, SUB-PR-0003-BE | Medium | The database unique constraint on `email` is the authoritative enforcement. The service-layer pre-check is a UX optimization (fast feedback), not a safety mechanism. The service must catch `IntegrityError` from the database on insert/update and translate it to HTTP 409. Current implementation handles this correctly. |
+| RC-BE-06 | **Patient deactivation during active encounter** — An administrator deactivates a patient (SUB-PR-0003-BE) while a physician has an in_progress encounter for that patient (SUB-CW-0003-BE). The encounter references a now-inactive patient. Should the encounter be auto-cancelled? Should deactivation be blocked? | SUB-PR-0003-BE vs SUB-CW-0003-BE | High | Block patient deactivation if the patient has any encounter in non-terminal status (scheduled or in_progress). Return 409 with a message listing the blocking encounter IDs. The administrator must first complete or cancel the open encounters, then deactivate. |
+| RC-BE-07 | **Prescription status change during interaction check** — A pharmacist cancels a prescription (SUB-MM-0008-BE) while an interaction check (SUB-MM-0001-BE) is running against the patient's active medications. The interaction check may include or exclude the cancelled prescription depending on when the cancellation commits. | SUB-MM-0001-BE vs SUB-MM-0008-BE | Medium | The interaction check should read active medications within a single database transaction with `REPEATABLE READ` isolation. This provides a consistent snapshot regardless of concurrent status changes. The check result reflects the state at check-start time. |
+| RC-BE-08 | **Concurrent refill decrement** — Two pharmacy terminals simultaneously process a refill for the same prescription (SUB-MM-0009-BE). Both read `refills_remaining = 1`, both decrement to 0, and both dispense. The patient receives one extra fill. | SUB-MM-0009-BE | Critical | Use an atomic update: `UPDATE prescriptions SET refills_remaining = refills_remaining - 1 WHERE id = ? AND refills_remaining > 0`. Check the affected row count — if 0, the refill was already claimed. Do not read-then-write in application code. |
+
+### Web Frontend (WEB) — 2 race conditions
+
+| ID | Race Condition | Requirements | Severity | Mitigation |
+|---|---|---|---|---|
+| RC-WEB-01 | **Token refresh thundering herd** — Multiple API calls fail with 401 simultaneously (token expired). Each call independently triggers a token refresh via `lib/auth.ts`. Multiple refresh requests hit the backend concurrently, but only the first succeeds — subsequent ones may use an invalidated refresh token. | SUB-PR-0001-WEB, SUB-CW-0001-WEB, SUB-MM-0006-WEB, SUB-RA-0004-WEB | High | Implement a token refresh lock: a single Promise that all concurrent callers await. The first caller initiates the refresh; subsequent callers queue behind the same Promise and receive the new token when the refresh completes. Use a module-scoped `refreshPromise` variable. |
+| RC-WEB-02 | **Stale form submission (lost update)** — A clinician opens a patient edit form, reads version N. Another clinician updates the same patient to version N+1. The first clinician submits their edit, unknowingly overwriting version N+1's changes. No optimistic concurrency check exists on the frontend. | SUB-PR-0003-WEB | Medium | Include the patient `version` (or `updated_at`) in the edit form's hidden state. On submission, the backend (per RC-BE-01) rejects the update with 409 if the version doesn't match. The frontend must handle 409 by showing a conflict resolution dialog or prompting the user to reload. |
+
+### Android (AND) — 2 race conditions
+
+| ID | Race Condition | Requirements | Severity | Mitigation |
+|---|---|---|---|---|
+| RC-AND-01 | **Camera lifecycle race** — The user rapidly switches between wound assessment (SUB-PR-0009-AND), patient ID verification (SUB-PR-0010-AND), and document OCR (SUB-PR-0011-AND). CameraX's `unbind` from the previous feature may not complete before `bind` for the next feature. This causes `IllegalStateException` or a black camera preview. | SUB-PR-0009-AND, SUB-PR-0010-AND, SUB-PR-0011-AND | High | Use a `CameraSessionManager` with a state machine: `IDLE → BINDING → ACTIVE → UNBINDING → IDLE`. All camera operations go through this manager. Transitions are serialized via a coroutine `Mutex`. Feature switching requests queue behind the current unbind operation. |
+| RC-AND-02 | **Offline-sync conflict** — The Android app supports offline data entry (SUB-PR-0003-AND, SUB-CW-0003-AND). While offline, a clinician creates or modifies records. When connectivity restores, the sync pushes local changes to the backend, which may conflict with changes made by other users during the offline period. | SUB-PR-0003-AND, SUB-CW-0003-AND | High | Implement last-write-wins with conflict detection: each sync request includes the `version` or `updated_at` from when the record was last fetched. The backend returns 409 for conflicts. The Android app maintains a conflict queue and presents a resolution UI showing local vs server versions. |
+
+**Total race conditions: 12**
+
+---
+
+## 6. Summary
+
+| Category | Count | Critical | High | Medium | Low |
+|---|---|---|---|---|---|
+| Intra-domain conflicts | 11 | 0 | 4 | 5 | 2 |
+| Cross-platform conflicts | 9 | 0 | 3 | 5 | 1 |
+| Race conditions | 12 | 2 | 6 | 3 | 1 |
+| **Total** | **32** | **2** | **13** | **13** | **4** |
+
+### Critical Items Requiring Immediate Attention
+
+1. **RC-BE-03** — Prescription must not be saved before interaction check completes. Patient safety risk.
+2. **RC-BE-08** — Concurrent refill decrement must be atomic. Medication dispensing error risk.
+
+### High-Priority Items for Next Sprint
+
+1. **DC-PR-01 / PC-BE-01** — Encryption standard migration (Fernet → AES-256-GCM).
+2. **DC-CW-01** — Define explicit encounter state machine.
+3. **PC-BE-04** — Consolidate RBAC role matrix across all subsystems.
+4. **DC-RA-01** — Resolve compliance officer role gap for audit log access.
+5. **RC-BE-01** — Add optimistic locking to patient model.
+6. **RC-BE-02** — Serialize concurrent encounter status transitions.
+7. **RC-BE-06** — Block patient deactivation during active encounters.
+8. **RC-WEB-01** — Implement token refresh lock.
+9. **RC-AND-01** — Implement camera session manager.
+10. **RC-AND-02** — Implement offline-sync conflict resolution.
+11. **PC-AND-01** — Camera resource contention (related to RC-AND-01).
+12. **DC-MM-01** — Separate interaction check keys from encrypted PHI.
+13. **DC-PR-03** — Define AI inference queuing and priority.
+
+---
+
+## Appendix A: Conflict Cross-Reference to Requirements
+
+Quick lookup: which requirement IDs are involved in conflicts or race conditions.
+
+| Requirement | Conflict/Race IDs |
+|---|---|
+| SYS-REQ-0001 | PC-BE-02, PC-WEB-01, PC-AND-02, RC-WEB-01 |
+| SYS-REQ-0002 | DC-PR-01, PC-BE-01 |
+| SYS-REQ-0003 | PC-BE-03, DC-RA-01, RC-BE-04 |
+| SYS-REQ-0005 | PC-BE-04, DC-RA-01 |
+| SYS-REQ-0006 | DC-MM-01, PC-BE-05, RC-BE-03 |
+| SUB-PR-0003 | DC-PR-02, DC-PR-04, RC-BE-01, RC-BE-06, RC-WEB-02, RC-AND-02 |
+| SUB-PR-0004 | DC-PR-01, PC-BE-01 |
+| SUB-PR-0006 | DC-PR-04, RC-BE-05 |
+| SUB-PR-0009 | DC-PR-03, PC-AND-01, RC-AND-01 |
+| SUB-PR-0010 | DC-PR-03, PC-AND-01, RC-AND-01 |
+| SUB-PR-0011 | DC-PR-03, PC-AND-01, RC-AND-01 |
+| SUB-CW-0003 | DC-CW-01, DC-CW-02, DC-CW-03, RC-BE-02, RC-BE-06, RC-AND-02 |
+| SUB-CW-0005 | DC-CW-03 |
+| SUB-CW-0007 | DC-CW-01, RC-BE-02 |
+| SUB-MM-0001 | DC-MM-01, PC-BE-05, RC-BE-03, RC-BE-07 |
+| SUB-MM-0003 | DC-MM-01, PC-BE-01 |
+| SUB-MM-0007 | DC-MM-03 |
+| SUB-MM-0008 | DC-MM-02, DC-MM-03, RC-BE-03, RC-BE-07 |
+| SUB-MM-0009 | DC-MM-02, RC-BE-08 |
+| SUB-RA-0003 | DC-RA-01, RC-BE-04 |
+| SUB-RA-0005 | DC-RA-01, PC-BE-04 |

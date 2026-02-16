@@ -46,11 +46,14 @@ _No bug fixes documented yet._
 
 ## Specifications & Requirements
 
-- [System Specification](specs/system-spec.md) — System-level scope, context, and subsystem decomposition
-- [System Requirements (SYS-REQ)](specs/requirements/SYS-REQ.md) — 10 system-level requirements
-- [Patient Records (SUB-PR)](specs/requirements/SUB-PR.md) — 11 subsystem requirements
-- [Clinical Workflow (SUB-CW)](specs/requirements/SUB-CW.md) — 8 subsystem requirements
-- [Medication Management (SUB-MM)](specs/requirements/SUB-MM.md) — 9 subsystem requirements
-- [Reporting & Analytics (SUB-RA)](specs/requirements/SUB-RA.md) — 7 subsystem requirements
-- [Traceability Matrix (RTM)](specs/requirements/traceability-matrix.md) — Forward & backward traceability, test run log, coverage summary
-- [Testing Strategy](specs/testing-strategy.md) — Test levels, naming conventions, run record format
+The PMS uses a **three-tier requirements decomposition**: System (SYS-REQ) → Domain (SUB-*) → Platform (SUB-*-BE/WEB/AND/AI). There are 10 system requirements, 35 domain requirements, and 69 platform requirements across 4 platforms.
+
+- [System Specification](specs/system-spec.md) — System-level scope, context, subsystem decomposition, and platform codes
+- [System Requirements (SYS-REQ)](specs/requirements/SYS-REQ.md) — 10 system-level requirements with platform annotations
+- [Patient Records (SUB-PR)](specs/requirements/SUB-PR.md) — 11 domain requirements, 25 platform requirements (BE=11, WEB=4, AND=7, AI=3)
+- [Clinical Workflow (SUB-CW)](specs/requirements/SUB-CW.md) — 8 domain requirements, 14 platform requirements (BE=8, WEB=3, AND=3)
+- [Medication Management (SUB-MM)](specs/requirements/SUB-MM.md) — 9 domain requirements, 13 platform requirements (BE=9, WEB=2, AND=2)
+- [Reporting & Analytics (SUB-RA)](specs/requirements/SUB-RA.md) — 7 domain requirements, 17 platform requirements (BE=7, WEB=5, AND=5)
+- [Traceability Matrix (RTM)](specs/requirements/traceability-matrix.md) — Forward & backward traceability, platform traceability summary, test run log, coverage summary
+- [Testing Strategy](specs/testing-strategy.md) — Test levels, platform-scoped naming conventions, run record format
+- [Requirements Governance & Conflict Analysis](specs/requirements-governance.md) — Governance procedures, 11 domain conflicts, 9 platform conflicts, 12 race conditions
