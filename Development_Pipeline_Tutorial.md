@@ -810,17 +810,56 @@ SonarQube performs static code analysis across 30+ languages, measuring code qua
 
 ### A. Configure SonarQube for the PMS Project
 
-Create a `sonar-project.properties` file in the repository root:
+Create a `sonar-project.properties` file in the repository root. The configuration varies by platform:
+
+**Frontend (TypeScript/Node.js):**
 
 ```properties
-sonar.projectKey=pms-healthcare
-sonar.projectName=Patient Management System
-sonar.sources=src
-sonar.tests=test
-sonar.language=ts
+sonar.projectKey=utexas-demo_pms-frontend
+sonar.organization=utexas-demo
+sonar.sources=src/
+sonar.tests=src/
+sonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts,**/*.spec.tsx
 sonar.javascript.lcov.reportPaths=coverage/lcov.info
-sonar.qualitygate.wait=true
+sonar.sourceEncoding=UTF-8
 ```
+
+**Backend (Python):**
+
+```properties
+sonar.projectKey=utexas-demo_pms-backend
+sonar.organization=utexas-demo
+sonar.sources=src/
+sonar.tests=tests/
+sonar.python.coverage.reportPaths=coverage.xml
+sonar.python.version=3.12
+sonar.sourceEncoding=UTF-8
+```
+
+**Android (Kotlin):**
+
+```properties
+sonar.projectKey=utexas-demo_pms-android
+sonar.organization=utexas-demo
+sonar.sources=app/src/main/
+sonar.tests=app/src/test/
+sonar.java.binaries=app/build/intermediates/javac/debug/classes
+sonar.junit.reportPaths=app/build/test-results/testDevDebugUnitTest
+sonar.coverage.jacoco.xmlReportPaths=app/build/reports/coverage/test/dev/debug/report.xml
+sonar.sourceEncoding=UTF-8
+```
+
+> **Android Coverage with JaCoCo:** The Android Gradle Plugin (AGP 8+) has built-in JaCoCo support. Enable it by adding `enableUnitTestCoverage = true` in the `debug` build type of `app/build.gradle.kts`:
+>
+> ```kotlin
+> buildTypes {
+>     debug {
+>         enableUnitTestCoverage = true
+>     }
+> }
+> ```
+>
+> Then run `./gradlew createDevDebugUnitTestCoverageReport` in CI to generate the XML report. The `sonar.coverage.jacoco.xmlReportPaths` property points SonarCloud to the AGP output path (`app/build/reports/coverage/test/{flavor}/{buildType}/report.xml`).
 
 ### B. GitHub Actions Workflow for SonarQube
 
