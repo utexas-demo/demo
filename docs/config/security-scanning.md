@@ -102,8 +102,9 @@ CodeRabbit is instructed to verify:
 Each repo contains `.github/workflows/snyk-security.yml` with:
 - Separate jobs for each scan type
 - `--severity-threshold=medium` to filter low-severity findings
-- SARIF output uploaded to GitHub Code Scanning via `github/codeql-action/upload-sarif@v3`
-- `continue-on-error: true` so scans report findings without blocking CI
+- SARIF output uploaded to GitHub Code Scanning via `github/codeql-action/upload-sarif@v4`
+- `continue-on-error: true` on both scan and SARIF upload steps — scans report findings without blocking CI
+- SARIF upload uses `continue-on-error` because GitHub Code Scanning requires GitHub Advanced Security, which may not be available on all plans for private repos
 
 ### Evidence Storage
 
@@ -123,6 +124,36 @@ Each repo contains `.github/workflows/snyk-security.yml` with:
 2. Copy your auth token from Account Settings
 3. Add it as `SNYK_TOKEN` in GitHub secrets (org level recommended)
 4. Push the workflow files — scans will run automatically on the next PR
+
+---
+
+## CI Workflow Configuration
+
+### Docker Image Registry
+
+The backend and frontend CI workflows (`.github/workflows/ci.yml`) build and push Docker images to GitHub Container Registry (GHCR). The `IMAGE_NAME` env var must match the GitHub organization:
+
+| Repo | IMAGE_NAME |
+|---|---|
+| pms-backend | `utexas-demo/pms-backend` |
+| pms-frontend | `utexas-demo/pms-frontend` |
+
+Images are pushed on `main` branch and version tags. The workflow uses `GITHUB_TOKEN` with `packages: write` permission — no additional secrets needed.
+
+### Frontend Docker Build
+
+The frontend Dockerfile uses a multi-stage build with Next.js standalone output. Two requirements:
+
+1. **`next.config.ts`** must include `output: "standalone"` — this tells Next.js to produce a self-contained `server.js` in `.next/standalone/`
+2. **`public/` directory** must exist in the repo (even if empty, with a `.gitkeep`) — the Dockerfile copies it into the runner stage
+
+### Action Version Notes
+
+| Action | Version | Notes |
+|---|---|---|
+| `sonarsource/sonarqube-scan-action` | `@v6` | Updated from `@v5`; `@v2` had a security vulnerability |
+| `sonarsource/sonarqube-quality-gate-action` | `@v1` | Updated from `@master` |
+| `github/codeql-action/upload-sarif` | `@v4` | Updated from `@v3`; v3 deprecated December 2026 |
 
 ---
 

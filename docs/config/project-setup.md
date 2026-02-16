@@ -14,9 +14,9 @@
 ## Clone All Repos
 
 ```bash
-git clone --recurse-submodules git@github.com:ammar-utexas/pms-backend.git
-git clone --recurse-submodules git@github.com:ammar-utexas/pms-frontend.git
-git clone --recurse-submodules git@github.com:ammar-utexas/pms-android.git
+git clone --recurse-submodules git@github.com:utexas-demo/pms-backend.git
+git clone --recurse-submodules git@github.com:utexas-demo/pms-frontend.git
+git clone --recurse-submodules git@github.com:utexas-demo/pms-android.git
 ```
 
 ## Backend Setup
