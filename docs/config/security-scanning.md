@@ -22,6 +22,16 @@ Each repo contains:
 - `sonar-project.properties` — project key, source/test paths, coverage report paths
 - `.github/workflows/sonarqube.yml` — CI workflow that runs tests, generates coverage, and invokes SonarCloud
 
+### Coverage Configuration Per Repo
+
+| Repo | Test Command | Coverage Tool | Report Path |
+|---|---|---|---|
+| pms-backend | `pytest --cov=src/pms --cov-report=xml` | pytest-cov | `coverage.xml` |
+| pms-frontend | `npm test -- --coverage --coverage.reporter=lcov` | v8 (via Vitest) | `coverage/lcov.info` |
+| pms-android | `./gradlew createDevDebugUnitTestCoverageReport` | JaCoCo (AGP built-in) | `app/build/reports/coverage/test/dev/debug/report.xml` |
+
+**Android JaCoCo setup:** The `app/build.gradle.kts` has `enableUnitTestCoverage = true` in the `debug` build type, which enables AGP's built-in JaCoCo instrumentation. The CI workflow runs the `createDevDebugUnitTestCoverageReport` Gradle task to generate the XML report. The `sonar-project.properties` file points `sonar.coverage.jacoco.xmlReportPaths` to the AGP output path.
+
 ### Quality Gates
 
 A custom **PMS Quality Gate** is configured in SonarCloud and assigned to all three projects. It enforces on new code:
@@ -44,8 +54,8 @@ The quality gate is **enforced** — CI will fail if the gate does not pass. The
 2. Create the organization `utexas-demo` (or import from GitHub)
 3. Create 3 projects matching the `sonar.projectKey` values above
 4. Disable **Automatic Analysis** in each project (Administration > Analysis Method) — CI-based analysis is used instead
-4. Generate a token and add it as `SONAR_TOKEN` in GitHub secrets
-5. Push the workflow files — scans will run automatically on the next PR
+5. Generate a token and add it as `SONAR_TOKEN` in GitHub secrets
+6. Push the workflow files — scans will run automatically on the next PR
 
 ---
 
@@ -70,7 +80,7 @@ CodeRabbit is instructed to verify:
 ### Setup Steps
 
 1. Install the CodeRabbit GitHub App from [github.com/marketplace/coderabbit](https://github.com/marketplace/coderabbit)
-2. Grant access to the `ammar-utexas` organization repositories
+2. Grant access to the `utexas-demo` organization repositories
 3. No secrets required — CodeRabbit reads `.coderabbit.yaml` from each repo automatically
 
 ---
