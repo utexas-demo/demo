@@ -1,7 +1,7 @@
 # Requirements Traceability Matrix (RTM)
 
 **Document ID:** PMS-RTM-001
-**Version:** 1.3
+**Version:** 1.4
 **Date:** 2026-02-16
 **Last Updated:** 2026-02-16
 
@@ -113,16 +113,106 @@
 
 ---
 
+## Platform Traceability Summary
+
+Compact view of platform requirement status per domain requirement. Domain status uses **strict rollup**: a domain req is "Verified" only when all platform reqs are verified.
+
+### SUB-PR — Patient Records (25 platform reqs)
+
+| Domain Req | Domain Status | BE | WEB | AND | AI |
+|---|---|---|---|---|---|
+| SUB-PR-0001 | Partial | Implemented | Scaffolded | Scaffolded | — |
+| SUB-PR-0002 | Partial | Implemented | — | — | — |
+| SUB-PR-0003 | Partial | Verified | Not Started | Not Started | — |
+| SUB-PR-0004 | Verified | Verified | — | — | — |
+| SUB-PR-0005 | Implemented | Implemented | — | — | — |
+| SUB-PR-0006 | Verified | Verified | — | — | — |
+| SUB-PR-0007 | Not Started | Not Started | Not Started | Not Started | — |
+| SUB-PR-0008 | Not Started | Not Started | Not Started | Not Started | — |
+| SUB-PR-0009 | Not Started | Not Started | — | Not Started | Not Started |
+| SUB-PR-0010 | Not Started | Not Started | — | Not Started | Not Started |
+| SUB-PR-0011 | Not Started | Not Started | — | Not Started | Not Started |
+
+### SUB-CW — Clinical Workflow (14 platform reqs)
+
+| Domain Req | Domain Status | BE | WEB | AND | AI |
+|---|---|---|---|---|---|
+| SUB-CW-0001 | Placeholder | Placeholder | Scaffolded | Scaffolded | — |
+| SUB-CW-0002 | Placeholder | Placeholder | — | — | — |
+| SUB-CW-0003 | Placeholder | Placeholder | Not Started | Not Started | — |
+| SUB-CW-0004 | Placeholder | Placeholder | — | — | — |
+| SUB-CW-0005 | Not Started | Not Started | — | — | — |
+| SUB-CW-0006 | Placeholder | Placeholder | Not Started | Not Started | — |
+| SUB-CW-0007 | Not Started | Not Started | — | — | — |
+| SUB-CW-0008 | Placeholder | Placeholder | — | — | — |
+
+### SUB-MM — Medication Management (13 platform reqs)
+
+| Domain Req | Domain Status | BE | WEB | AND | AI |
+|---|---|---|---|---|---|
+| SUB-MM-0001 | Placeholder | Placeholder | Not Started | Not Started | — |
+| SUB-MM-0002 | Placeholder | Placeholder | — | — | — |
+| SUB-MM-0003 | Placeholder | Placeholder | — | — | — |
+| SUB-MM-0004 | Placeholder | Placeholder | — | — | — |
+| SUB-MM-0005 | Not Started | Not Started | — | — | — |
+| SUB-MM-0006 | Placeholder | Placeholder | Scaffolded | Scaffolded | — |
+| SUB-MM-0007 | Placeholder | Placeholder | — | — | — |
+| SUB-MM-0008 | Placeholder | Placeholder | — | — | — |
+| SUB-MM-0009 | Not Started | Not Started | — | — | — |
+
+### SUB-RA — Reporting & Analytics (17 platform reqs)
+
+| Domain Req | Domain Status | BE | WEB | AND | AI |
+|---|---|---|---|---|---|
+| SUB-RA-0001 | Placeholder | Placeholder | Not Started | Not Started | — |
+| SUB-RA-0002 | Placeholder | Placeholder | Not Started | Not Started | — |
+| SUB-RA-0003 | Not Started | Not Started | Not Started | Not Started | — |
+| SUB-RA-0004 | Placeholder | Placeholder | Scaffolded | Scaffolded | — |
+| SUB-RA-0005 | Placeholder | Placeholder | — | — | — |
+| SUB-RA-0006 | Placeholder | Placeholder | Not Started | Not Started | — |
+| SUB-RA-0007 | Not Started | Not Started | — | — | — |
+
+### Coverage Summary by Platform
+
+| Platform | Total Reqs | Verified | Implemented | Partial | Scaffolded | Placeholder | Not Started |
+|---|---|---|---|---|---|---|---|
+| BE | 35 | 3 | 2 | 0 | 0 | 16 | 14 |
+| WEB | 14 | 0 | 0 | 0 | 5 | 0 | 9 |
+| AND | 17 | 0 | 0 | 0 | 4 | 0 | 13 |
+| AI | 3 | 0 | 0 | 0 | 0 | 0 | 3 |
+| **Total** | **69** | **3** | **2** | **0** | **9** | **16** | **39** |
+
+### Test ID Migration Note
+
+Existing test IDs are preserved as-is in the backward traceability section. The following aliases map legacy IDs to the new platform-scoped convention:
+
+| Legacy ID | New Convention Alias | Notes |
+|---|---|---|
+| TST-PR-0003a … TST-PR-0003l | TST-PR-0003-BE-a … TST-PR-0003-BE-l | Backend CRUD tests |
+| TST-PR-0004a, TST-PR-0004b | TST-PR-0004-BE-a, TST-PR-0004-BE-b | Backend encryption tests |
+| TST-PR-0006a, TST-PR-0006b | TST-PR-0006-BE-a, TST-PR-0006-BE-b | Backend email uniqueness tests |
+| TST-FE-0001 | TST-PR-0001-WEB | Frontend auth utilities |
+| TST-FE-0002 | — (infrastructure, no req mapping) | Frontend utility functions |
+| TST-FE-0003 | TST-MM-0002-WEB | Frontend interaction warning type |
+| TST-AND-0001 | TST-PR-0003-AND | Android patient entity mapping |
+| TST-AND-0002 | TST-MM-0001-AND | Android model serialization |
+
+> **Note:** Legacy IDs are retained in existing backward traceability rows. New tests should use the platform-scoped `TST-{domain}-{NNNN}-{platform}` convention.
+
+---
+
 ## Coverage Summary
 
-| Subsystem | Total Reqs | With Tests | Passing | Failing | No Tests | Coverage |
-|---|---|---|---|---|---|---|
-| Patient Records (PR) | 11 | 6 | 6 | 0 | 5 | 54.5% |
-| Clinical Workflow (CW) | 8 | 1 | 1 | 0 | 7 | 12.5% |
-| Medication Mgmt (MM) | 9 | 2 | 2 | 0 | 7 | 22.2% |
-| Reporting (RA) | 7 | 0 | 0 | 0 | 7 | 0.0% |
-| System (SYS) | 10 | 1 | 1 | 0 | 9 | 10.0% |
-| **TOTAL** | **45** | **10** | **10** | **0** | **35** | **22.2%** |
+| Subsystem | Domain Reqs | Platform Reqs | With Tests | Passing | Failing | No Tests | Domain Coverage |
+|---|---|---|---|---|---|---|---|
+| Patient Records (PR) | 11 | 25 | 6 | 6 | 0 | 5 | 54.5% |
+| Clinical Workflow (CW) | 8 | 14 | 1 | 1 | 0 | 7 | 12.5% |
+| Medication Mgmt (MM) | 9 | 13 | 2 | 2 | 0 | 7 | 22.2% |
+| Reporting (RA) | 7 | 17 | 0 | 0 | 0 | 7 | 0.0% |
+| System (SYS) | 10 | — | 1 | 1 | 0 | 9 | 10.0% |
+| **TOTAL** | **45** | **69** | **10** | **10** | **0** | **35** | **22.2%** |
+
+> **Note on v1.4 updates (three-tier decomposition):** Added Platform Traceability Summary section with 69 platform requirements across 4 platforms (BE=35, WEB=14, AND=17, AI=3). Coverage Summary by Platform added. Domain statuses updated with strict rollup — SUB-PR-0001 (Implemented → Partial), SUB-PR-0002 (Implemented → Partial), SUB-PR-0003 (Verified → Partial). Test ID migration note maps legacy TST-FE-* and TST-AND-* IDs to new platform-scoped convention. Existing backward traceability rows preserved without renaming.
 
 > **Note on v1.3 updates (001-patient-crud — RBAC & audit):** All 5 patient endpoints now enforce authentication via `require_role` → `require_auth` dependency chain (SUB-PR-0001). Role-based access control applied per endpoint: admin/physician/nurse for read and create, admin/physician for update, admin only for deactivate (SUB-PR-0002). Audit logging via `audit_service.log_action` added to all 5 router methods — each operation logs user_id, action, resource_type, resource_id, and IP address (SUB-PR-0005). These 3 requirements are marked IMPL (implementation verified by code inspection; explicit assertion tests deferred). Forward traceability updated: SYS-REQ-0001, 0003, 0005 upgraded from "Placeholder" to "Partial". New test run RUN-2026-02-16-003 recorded against commit `77fd003`. PR coverage: 36.4% → 54.5%; overall: 17.8% → 22.2%.
 

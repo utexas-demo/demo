@@ -1,7 +1,7 @@
 # Subsystem Requirements: Medication Management (SUB-MM)
 
 **Document ID:** PMS-SUB-MM-001
-**Version:** 1.1
+**Version:** 1.2
 **Date:** 2026-02-16
 **Parent:** [System Requirements](SYS-REQ.md)
 
@@ -25,16 +25,32 @@ The Medication Management subsystem handles the medication catalog, prescription
 | SUB-MM-0008 | — | Support prescription status lifecycle: active → completed/cancelled | Test | Placeholder |
 | SUB-MM-0009 | — | Track remaining refills and prevent prescriptions with zero refills from being filled | Test | Not Started |
 
-## Implementation Mapping
+## Platform Decomposition
 
-| Req ID | Backend Module | Frontend Component | Android Screen | Test Case(s) |
-|---|---|---|---|---|
-| SUB-MM-0001 | `services/interaction_checker.py` | `app/medications/page.tsx` | `ui/medications/MedicationsScreen.kt` | TST-MM-0001 |
-| SUB-MM-0002 | `services/interaction_checker.py` | — | — | TST-MM-0002 |
-| SUB-MM-0003 | `services/encryption_service.py` | — | — | TST-MM-0003 |
-| SUB-MM-0004 | `services/audit_service.py` | — | — | TST-MM-0004 |
-| SUB-MM-0005 | — | — | — | TST-MM-0005 |
-| SUB-MM-0006 | `middleware/auth.py` | `lib/auth.ts` | `data/api/AuthInterceptor.kt` | TST-MM-0006 |
-| SUB-MM-0007 | `middleware/auth.py:require_role` | — | — | TST-MM-0007 |
-| SUB-MM-0008 | `models/medication.py` | — | — | TST-MM-0008 |
-| SUB-MM-0009 | — | — | — | TST-MM-0009 |
+### Backend (BE) — 9 requirements
+
+| Platform Req ID | Parent | Description | Module(s) | Test Case(s) | Status |
+|---|---|---|---|---|---|
+| SUB-MM-0001-BE | SUB-MM-0001 | Drug interaction check API endpoint (< 5 sec response) | `services/interaction_checker.py` | TST-MM-0001-BE | Placeholder |
+| SUB-MM-0002-BE | SUB-MM-0002 | Interaction severity classification logic | `services/interaction_checker.py` | TST-MM-0002-BE | Placeholder |
+| SUB-MM-0003-BE | SUB-MM-0003 | Encrypt prescription PHI at rest using AES-256 | `services/encryption_service.py` | TST-MM-0003-BE | Placeholder |
+| SUB-MM-0004-BE | SUB-MM-0004 | Audit log all prescription events | `services/audit_service.py` | TST-MM-0004-BE | Placeholder |
+| SUB-MM-0005-BE | SUB-MM-0005 | FHIR R4 MedicationRequest/MedicationDispense endpoints | — | TST-MM-0005-BE | Not Started |
+| SUB-MM-0006-BE | SUB-MM-0006 | Enforce JWT auth on all medication API endpoints | `middleware/auth.py` | TST-MM-0006-BE | Placeholder |
+| SUB-MM-0007-BE | SUB-MM-0007 | Enforce RBAC on medication endpoints (physician prescribe, nurse view, pharmacist dispense) | `middleware/auth.py:require_role` | TST-MM-0007-BE | Placeholder |
+| SUB-MM-0008-BE | SUB-MM-0008 | Prescription status lifecycle API (active → completed/cancelled) | `models/medication.py` | TST-MM-0008-BE | Placeholder |
+| SUB-MM-0009-BE | SUB-MM-0009 | Refill tracking and zero-refill prevention logic | — | TST-MM-0009-BE | Not Started |
+
+### Web Frontend (WEB) — 2 requirements
+
+| Platform Req ID | Parent | Description | Module(s) | Test Case(s) | Status |
+|---|---|---|---|---|---|
+| SUB-MM-0001-WEB | SUB-MM-0001 | Drug interaction warning display on medication page | `app/medications/page.tsx` | TST-MM-0001-WEB | Not Started |
+| SUB-MM-0006-WEB | SUB-MM-0006 | Auth guard for medication pages | `lib/auth.ts` | TST-MM-0006-WEB | Scaffolded |
+
+### Android (AND) — 2 requirements
+
+| Platform Req ID | Parent | Description | Module(s) | Test Case(s) | Status |
+|---|---|---|---|---|---|
+| SUB-MM-0001-AND | SUB-MM-0001 | Drug interaction warning display on medications screen | `ui/medications/MedicationsScreen.kt` | TST-MM-0001-AND | Not Started |
+| SUB-MM-0006-AND | SUB-MM-0006 | Auth interceptor for medication API calls | `data/api/AuthInterceptor.kt` | TST-MM-0006-AND | Scaffolded |

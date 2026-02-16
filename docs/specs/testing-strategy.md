@@ -1,7 +1,7 @@
 # Testing Strategy
 
 **Document ID:** PMS-TST-STRATEGY-001
-**Version:** 1.1
+**Version:** 1.2
 **Date:** 2026-02-16
 
 ---
@@ -36,12 +36,16 @@ The PMS uses a three-level testing pyramid, each level mapped to requirements:
 Test IDs follow this format:
 
 ```
-TST-{subsystem}-{NNNN}     # Subsystem tests (unit + integration)
-TST-SYS-{NNNN}             # System-level tests
-TST-FE-{NNNN}              # Frontend-specific tests
-TST-AND-{NNNN}             # Android-specific tests
-TST-AUTH-{NNNN}            # Cross-cutting auth tests
+TST-{domain}-{NNNN}-{platform}       # Platform-scoped test (preferred)
+TST-{domain}-{NNNN}-{platform}-{a}   # Platform-scoped sub-case (e.g., TST-PR-0003-BE-a)
+TST-{domain}-{NNNN}                  # Domain-level test (legacy, still valid)
+TST-SYS-{NNNN}                       # System-level tests
+TST-AUTH-{NNNN}                       # Cross-cutting auth tests
 ```
+
+Platform codes: `BE` (Backend), `WEB` (Web Frontend), `AND` (Android), `AI` (AI Infrastructure).
+
+> **Deprecation notice (v1.2):** The flat `TST-FE-{NNNN}` and `TST-AND-{NNNN}` prefixes are deprecated. New tests should use platform-scoped IDs (e.g., `TST-PR-0001-WEB` instead of `TST-FE-0001`). Existing test IDs are preserved with alias mappings in the [Traceability Matrix](requirements/traceability-matrix.md#test-id-migration-note).
 
 Every test file must include requirement annotations:
 
@@ -89,8 +93,8 @@ fun `TST-AND-0001 PatientEntity roundtrip mapping`() { ... }
 
 1. **Read** the requirement in `docs/specs/requirements/SUB-*.md`.
 2. **Implement** the feature using speckit: `/specify` → `/plan` → `/speckit.tasks`.
-3. **Write test(s)** with `@requirement` annotation linking to the requirement ID.
-4. **Update** the Implementation Mapping table in the subsystem requirements doc.
+3. **Write test(s)** with `@requirement` annotation linking to the **platform requirement ID** (e.g., `SUB-PR-0003-BE`). Use the `TST-{domain}-{NNNN}-{platform}` naming convention for new test IDs.
+4. **Update** the Platform Decomposition table in the subsystem requirements doc.
 5. **Update** the Backward Traceability section in `docs/specs/requirements/traceability-matrix.md`.
 
 ### When Running Tests

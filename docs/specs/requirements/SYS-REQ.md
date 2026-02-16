@@ -1,7 +1,7 @@
 # System-Level Requirements (SYS-REQ)
 
 **Document ID:** PMS-SYS-REQ-001
-**Version:** 1.2
+**Version:** 1.3
 **Date:** 2026-02-16
 **Parent:** [System Specification](../system-spec.md)
 
@@ -37,7 +37,7 @@
 
 **Current Implementation:** JWT bearer authentication enforced on all patient endpoints via `require_role` → `require_auth` dependency chain. TOTP (MFA) not yet implemented — current login issues JWT from username + password only.
 
-**Decomposes To:** SUB-PR-0001, SUB-CW-0001, SUB-MM-0006, SUB-RA-0004
+**Decomposes To:** SUB-PR-0001 (→ BE, WEB, AND), SUB-CW-0001 (→ BE, WEB, AND), SUB-MM-0006 (→ BE, WEB, AND), SUB-RA-0004 (→ BE, WEB, AND)
 
 ---
 
@@ -52,7 +52,7 @@
 
 **Current Implementation:** Patient SSN is encrypted at rest via Fernet (AES-128-CBC) using `cryptography.fernet`. Production migration to AES-256-GCM (via `cryptography.hazmat.primitives.ciphers.aead.AESGCM` with a 32-byte KMS-derived key) is required before deployment to satisfy the AES-256 criterion above.
 
-**Decomposes To:** SUB-PR-0004, SUB-MM-0003
+**Decomposes To:** SUB-PR-0004 (→ BE), SUB-MM-0003 (→ BE)
 
 ---
 
@@ -67,7 +67,7 @@
 
 **Current Implementation:** All 5 patient router methods call `audit_service.log_action` with user_id, action, resource_type, resource_id, and IP address. Encounter, medication, and report endpoint audit logging not yet implemented.
 
-**Decomposes To:** SUB-PR-0005, SUB-CW-0004, SUB-MM-0004, SUB-RA-0003
+**Decomposes To:** SUB-PR-0005 (→ BE), SUB-CW-0004 (→ BE), SUB-MM-0004 (→ BE), SUB-RA-0003 (→ BE, WEB, AND)
 
 ---
 
@@ -83,7 +83,7 @@
 
 **Current Implementation:** `require_role` dependency enforced on all 5 patient endpoints with per-endpoint role lists (admin/physician/nurse for read & create, admin/physician for update, admin only for deactivate). Encounter, medication, and report endpoint RBAC not yet implemented.
 
-**Decomposes To:** SUB-PR-0002, SUB-CW-0002, SUB-MM-0007, SUB-RA-0005
+**Decomposes To:** SUB-PR-0002 (→ BE), SUB-CW-0002 (→ BE), SUB-MM-0007 (→ BE), SUB-RA-0005 (→ BE)
 
 ---
 
@@ -96,4 +96,4 @@
 2. Alert severity classified as: contraindicated, major, moderate, minor.
 3. Prescriber can override with documented clinical justification.
 
-**Decomposes To:** SUB-MM-0001, SUB-MM-0002, SUB-CW-0005
+**Decomposes To:** SUB-MM-0001 (→ BE, WEB, AND), SUB-MM-0002 (→ BE), SUB-CW-0005 (→ BE)

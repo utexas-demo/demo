@@ -20,7 +20,42 @@
 | Medication Management (SUB-MM) | SUB-MM-v0.0 | 0 | 9 | 2026-02-16 |
 | Reporting & Analytics (SUB-RA) | SUB-RA-v0.0 | 0 | 7 | 2026-02-16 |
 
-**Note:** SUB-PR has 6 of 11 requirements implemented/verified (001-patient-crud feature). SUB-CW, SUB-MM, and SUB-RA remain at v0.0 with scaffold-only implementations.
+**Note:** SUB-PR has 6 of 11 domain requirements with BE platform work (001-patient-crud feature), but strict rollup reduces domain-level "Verified" count since WEB/AND platform reqs are not started. SUB-CW, SUB-MM, and SUB-RA remain at v0.0 with scaffold-only implementations.
+
+## Platform Progress
+
+### SUB-PR — Patient Records (25 platform reqs)
+
+| Platform | Total Reqs | Verified | Implemented | Scaffolded | Not Started | Completion |
+|---|---|---|---|---|---|---|
+| BE | 11 | 3 | 2 | 0 | 6 | 45.5% |
+| WEB | 4 | 0 | 0 | 1 | 3 | 0.0% |
+| AND | 7 | 0 | 0 | 1 | 6 | 0.0% |
+| AI | 3 | 0 | 0 | 0 | 3 | 0.0% |
+
+### SUB-CW — Clinical Workflow (14 platform reqs)
+
+| Platform | Total Reqs | Verified | Implemented | Scaffolded | Not Started | Completion |
+|---|---|---|---|---|---|---|
+| BE | 8 | 0 | 0 | 0 | 8 | 0.0% |
+| WEB | 3 | 0 | 0 | 1 | 2 | 0.0% |
+| AND | 3 | 0 | 0 | 1 | 2 | 0.0% |
+
+### SUB-MM — Medication Management (13 platform reqs)
+
+| Platform | Total Reqs | Verified | Implemented | Scaffolded | Not Started | Completion |
+|---|---|---|---|---|---|---|
+| BE | 9 | 0 | 0 | 0 | 9 | 0.0% |
+| WEB | 2 | 0 | 0 | 1 | 1 | 0.0% |
+| AND | 2 | 0 | 0 | 1 | 1 | 0.0% |
+
+### SUB-RA — Reporting & Analytics (17 platform reqs)
+
+| Platform | Total Reqs | Verified | Implemented | Scaffolded | Not Started | Completion |
+|---|---|---|---|---|---|---|
+| BE | 7 | 0 | 0 | 0 | 7 | 0.0% |
+| WEB | 5 | 0 | 0 | 1 | 4 | 0.0% |
+| AND | 5 | 0 | 0 | 1 | 4 | 0.0% |
 
 ## Version History
 

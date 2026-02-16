@@ -1,7 +1,7 @@
 # System Specification: Patient Management System (PMS)
 
 **Document ID:** PMS-SYS-SPEC-001
-**Version:** 1.1
+**Version:** 1.2
 **Date:** 2026-02-16
 **Status:** Approved
 
@@ -91,11 +91,28 @@ All requirements follow IEEE 830 / DOD-STD-498 conventions:
 | Level | Format | Example |
 |---|---|---|
 | System | `SYS-REQ-XXXX` | SYS-REQ-0001 |
-| Subsystem | `SUB-{code}-XXXX` | SUB-PR-0001 |
-| Test Case | `TST-{code}-XXXX` | TST-PR-0001 |
+| Subsystem (Domain) | `SUB-{code}-XXXX` | SUB-PR-0001 |
+| Platform | `SUB-{code}-XXXX-{platform}` | SUB-PR-0003-BE |
+| Test Case (Domain) | `TST-{code}-XXXX` | TST-PR-0001 |
+| Test Case (Platform) | `TST-{code}-XXXX-{platform}` | TST-PR-0003-BE |
 | Test Run | `RUN-{YYYY-MM-DD}-{NNN}` | RUN-2026-02-15-001 |
 
+### 8.1 Platform Codes
+
+Requirements decompose into platform-specific requirements using the following platform codes:
+
+| Platform Code | Platform | Repository | Technology |
+|---|---|---|---|
+| `BE` | Backend API | `ammar-utexas/pms-backend` | Python, FastAPI, PostgreSQL |
+| `WEB` | Web Frontend | `ammar-utexas/pms-frontend` | Next.js, React, TypeScript |
+| `AND` | Android App | `ammar-utexas/pms-android` | Kotlin, Jetpack Compose |
+| `AI` | AI Infrastructure | Edge deployment (Jetson Thor) | Python, ONNX Runtime, TensorRT |
+
+A domain requirement (e.g., `SUB-PR-0003`) decomposes into one or more platform requirements (e.g., `SUB-PR-0003-BE`, `SUB-PR-0003-WEB`, `SUB-PR-0003-AND`). Not every domain requirement requires all platforms — backend-only concerns like encryption and audit logging may have only a `BE` platform requirement.
+
 ## 9. Traceability Policy
+
+The PMS uses a **three-tier requirements decomposition**: System (SYS-REQ) → Domain (SUB-*) → Platform (SUB-*-BE/WEB/AND/AI). A domain requirement is considered "Verified" only when **all** of its platform requirements are verified (strict rollup). See each subsystem requirements document for the full platform decomposition.
 
 Every requirement must trace forward to:
 1. **Design** — Architecture decision or technical plan
