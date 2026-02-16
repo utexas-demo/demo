@@ -44,6 +44,35 @@ _No bug fixes documented yet._
 - [Vision Capabilities](features/vision-capabilities.md) — Wound assessment, patient ID verification, and document OCR
 - [Jetson Deployment Guide](config/jetson-deployment.md) — Setup, docker-compose, Wi-Fi 7 network config
 
+## Experiments & Tool Evaluations
+
+### Tambo AI (Conversational Analytics)
+- [PRD: Tambo PMS Integration](Experiments/00-PRD-Tambo-PMS-Integration.md) — Conversational analytics sidebar with generative UI components
+- [Tambo Setup Guide](Experiments/00-Tambo-PMS-Developer-Setup-Guide.md) — Self-hosted backend, component registration, tool definitions
+- [Tambo Developer Tutorial](Experiments/00-Tambo-Developer-Onboarding-Tutorial.md) — Hands-on onboarding: build your first component and tool
+
+### Storybook (Component Documentation)
+- [Storybook Getting Started](Experiments/01-Storybook-Getting-Started.md) — Installation and basic setup
+- [Storybook Developer Tutorial](Experiments/01-Storybook-Developer-Tutorial.md) — Writing stories, addons, and CI integration
+
+### v0 (AI Code Generation)
+- [v0 Getting Started](Experiments/02-v0-Getting-Started.md) — Setup and basic usage
+- [v0 Developer Tutorial](Experiments/02-v0-Developer-Tutorial.md) — Prompt engineering for component generation
+
+### Banani (AI Design-to-Code)
+- [Banani Getting Started](Experiments/03-Banani-Getting-Started.md) — Setup and basic usage
+- [Banani Developer Tutorial](Experiments/03-Banani-Developer-Tutorial.md) — Design-to-code workflow with Figma integration
+
+### POC Analysis
+- [POC Gap Analysis](Experiments/04-POC-Gap-Analysis.md) — Gap analysis of kind-clinical-data POC against system requirements
+
+### OpenClaw (Agentic AI Workflow Automation)
+- [PRD: OpenClaw PMS Integration](Experiments/05-PRD-OpenClaw-PMS-Integration.md) — Autonomous workflow automation: prior auth, care coordination, clinical documentation
+- [OpenClaw Setup Guide](Experiments/05-OpenClaw-PMS-Developer-Setup-Guide.md) — HIPAA-hardened Docker deployment, custom PMS skills, frontend integration
+- [OpenClaw Developer Tutorial](Experiments/05-OpenClaw-Developer-Tutorial.md) — Hands-on onboarding: build your first skill with approval tiers
+
+---
+
 ## Specifications & Requirements
 
 The PMS uses a **three-tier requirements decomposition**: System (SYS-REQ) → Domain (SUB-*) → Platform (SUB-*-BE/WEB/AND/AI). There are 10 system requirements, 35 domain requirements, and 69 platform requirements across 4 platforms.
