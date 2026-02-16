@@ -198,7 +198,7 @@ NEXT_PUBLIC_TAMBO_API_KEY=ask_team_lead_for_shared_dev_key
 NEXT_PUBLIC_TAMBO_API_URL=http://localhost:3001
 
 # MPS backend
-NEXT_PUBLIC_MEDIFY_API_URL=http://localhost:8080
+NEXT_PUBLIC_PMS_API_URL=http://localhost:8080
 ```
 
 If you need to generate your own Tambo API key:

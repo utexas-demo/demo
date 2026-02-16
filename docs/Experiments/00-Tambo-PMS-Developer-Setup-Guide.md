@@ -596,7 +596,7 @@ import { TamboTool } from "@tambo-ai/react";
 import { z } from "zod";
 
 // Base URL for your local MPS Spring Boot API
-const MEDIFY_API = process.env.NEXT_PUBLIC_MEDIFY_API_URL || "http://localhost:8080";
+const PMS_API = process.env.NEXT_PUBLIC_PMS_API_URL || "http://localhost:8080";
 
 // Helper: authenticated fetch using the user's JWT
 async function pmsFetch(path: string, token?: string) {
@@ -606,7 +606,7 @@ async function pmsFetch(path: string, token?: string) {
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
-  const response = await fetch(`${MEDIFY_API}${path}`, { headers });
+  const response = await fetch(`${PMS_API}${path}`, { headers });
   if (!response.ok) {
     throw new Error(`MPS API error: ${response.status} ${response.statusText}`);
   }
