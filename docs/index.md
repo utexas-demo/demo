@@ -13,6 +13,7 @@ This directory is the single source of truth for all project context, decisions,
 ## Features
 
 - [Initial Project Scaffolds](features/initial-project-scaffolds.md) — Backend, frontend, and Android app scaffolding
+- [Authentication & User Management](features/authentication.md) — OAuth (Google, Microsoft, GitHub), email/password, multi-role RBAC, admin-only user management
 
 ## Bug Fixes
 
