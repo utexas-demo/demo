@@ -13,6 +13,7 @@ This directory is the single source of truth for all project context, decisions,
 ## Features
 
 - [Initial Project Scaffolds](features/initial-project-scaffolds.md) — Backend, frontend, and Android app scaffolding
+- [Prompt Management PRD](features/prompt-management.md) — Centralized prompt CRUD, auto-versioning, and LLM-powered comparison
 
 ## Bug Fixes
 
