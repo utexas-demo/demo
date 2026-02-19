@@ -40,22 +40,28 @@ OpenClaw lets us build an **AI agent** that automates these multi-step workflows
 
 Think of OpenClaw as a smart assistant that knows how to use your tools.
 
-```
-USER REQUEST                    OPENCLAW AGENT                   YOUR CODE
-────────────                    ──────────────                   ─────────
-"Find patients who              Thinks: "I need to               Calls pms-encounter-query
- missed appointments             query encounters with            → hits FastAPI backend
- this week and draft             status = no_show, then           → returns encounter data
- follow-up messages"             look up each patient,
-                                 then draft messages."            Calls pms-patient-lookup
-                                                                  → gets contact info
-                                 Plans the multi-step
-                                 workflow and executes             Calls pms-document-draft
-                                 skills in sequence.               → drafts messages
+```mermaid
+flowchart LR
+    subgraph USER["User Request"]
+        Q["'Find patients who missed<br/>appointments this week<br/>and draft follow-up messages'"]
+    end
 
-                                 Presents results to user          User sees results and
-                                 for approval before               approves/rejects
-                                 sending anything.
+    subgraph AGENT["OpenClaw Agent"]
+        T1["Thinks: 'I need to query<br/>encounters with status = no_show,<br/>then look up each patient,<br/>then draft messages.'"]
+        T2["Plans multi-step workflow<br/>and executes skills in sequence"]
+        T3["Presents results to user<br/>for approval before sending"]
+        T1 --> T2 --> T3
+    end
+
+    subgraph CODE["Your Code"]
+        C1["pms-encounter-query<br/>→ hits FastAPI → returns data"]
+        C2["pms-patient-lookup<br/>→ gets contact info"]
+        C3["pms-document-draft<br/>→ drafts messages"]
+        C4["User sees results<br/>and approves/rejects"]
+        C1 --> C2 --> C3 --> C4
+    end
+
+    USER --> AGENT --> CODE
 ```
 
 **The three things you define:**
@@ -94,40 +100,31 @@ They're complementary: use **Tambo** when you want to **see** data, use **OpenCl
 
 ### 1.5 Our Architecture
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                     Your Browser                               │
-│                                                                │
-│  PMS Dashboard            Agent Sidebar                        │
-│  (existing views)         (OpenClaw-powered)                   │
-│                           ┌──────────────────────┐             │
-│                           │ User types request    │             │
-│                           │ ────────────────────  │             │
-│                           │ Agent plans workflow  │             │
-│                           │ Agent calls skills    │             │
-│                           │ User approves actions │             │
-│                           └──────────┬───────────┘             │
-└──────────────────────────────────────┼─────────────────────────┘
-                                       │
-                         ┌─────────────▼──────────────┐
-                         │   OpenClaw Agent (Docker)    │
-                         │                              │
-                         │   Skills:                    │
-                         │   - pms-patient-lookup       │
-                         │   - pms-encounter-query      │
-                         │   - pms-medication-check     │
-                         │                              │
-                         │   Memory: /data/memory/      │
-                         │   Audit: /data/audit/        │
-                         └─────────────┬───────────────┘
-                                       │
-                         ┌─────────────▼──────────────┐
-                         │   PMS Backend (FastAPI)      │
-                         │   /api/patients              │
-                         │   /api/encounters            │
-                         │   /api/prescriptions         │
-                         │   PostgreSQL                 │
-                         └─────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Browser["Your Browser"]
+        PMS["PMS Dashboard<br/>(existing views)"]
+        subgraph Sidebar["Agent Sidebar (OpenClaw-powered)"]
+            U["User types request"]
+            P["Agent plans workflow<br/>Agent calls skills"]
+            A["User approves actions"]
+        end
+    end
+
+    subgraph Agent["OpenClaw Agent (Docker)"]
+        SK["Skills:<br/>- pms-patient-lookup<br/>- pms-encounter-query<br/>- pms-medication-check"]
+        MEM["Memory: /data/memory/"]
+        AUD["Audit: /data/audit/"]
+    end
+
+    subgraph Backend["PMS Backend (FastAPI)"]
+        P1["/api/patients"]
+        P2["/api/encounters"]
+        P3["/api/prescriptions"]
+        PG[("PostgreSQL")]
+    end
+
+    Sidebar --> Agent --> Backend
 ```
 
 ---

@@ -50,45 +50,34 @@ These errors aren't just annoying — in healthcare, a misrecognized medication 
 
 MedASR uses the **Conformer architecture**, which combines two powerful techniques:
 
-```
-Audio Input (16kHz mono WAV)
-        │
-        ▼
-┌─────────────────────────┐
-│  Feature Extraction      │   Converts raw audio waveform into
-│  (Mel Spectrogram)       │   80-dimensional frequency features
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│  Conformer Encoder       │   12 blocks, each containing:
-│                          │
-│  ┌────────────────────┐  │   1. Self-Attention Layer
-│  │  Self-Attention     │  │      "What other parts of the audio
-│  │                     │  │       relate to this moment?"
-│  │  (Global context)   │  │      Captures long-range dependencies
-│  └────────┬───────────┘  │      (e.g., "left" modifying "lung"
-│           │               │       spoken 2 seconds later)
-│  ┌────────▼───────────┐  │
-│  │  Convolution Block  │  │   2. Convolution Block
-│  │                     │  │      "What are the local acoustic
-│  │  (Local patterns)   │  │       patterns right here?"
-│  │                     │  │      Captures phoneme-level details
-│  └────────┬───────────┘  │      (e.g., distinguishing "ileum"
-│           │               │       from "ilium")
-│  └────────┘               │
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│  CTC Decoder             │   Connectionist Temporal Classification
-│                          │   Maps encoder output to text characters
-│  (Greedy or Beam Search) │   without requiring explicit alignment
-└────────────┬────────────┘
-             │
-             ▼
-     Transcribed Text
-  "No acute cardiopulmonary disease"
+```mermaid
+flowchart TB
+    INPUT["Audio Input<br/>(16kHz mono WAV)"]
+
+    subgraph FE["Feature Extraction"]
+        MEL["Mel Spectrogram<br/>Converts raw audio waveform into<br/>80-dimensional frequency features"]
+    end
+
+    subgraph ENCODER["Conformer Encoder (12 blocks)"]
+        subgraph SA["1. Self-Attention Layer (Global context)"]
+            SAT["'What other parts of the audio<br/>relate to this moment?'<br/>Captures long-range dependencies<br/>(e.g., 'left' modifying 'lung'<br/>spoken 2 seconds later)"]
+        end
+        subgraph CONV["2. Convolution Block (Local patterns)"]
+            CB["'What are the local acoustic<br/>patterns right here?'<br/>Captures phoneme-level details<br/>(e.g., distinguishing 'ileum'<br/>from 'ilium')"]
+        end
+        SA --> CONV
+    end
+
+    subgraph DEC["CTC Decoder"]
+        CTC["Connectionist Temporal Classification<br/>Maps encoder output to text characters<br/>without requiring explicit alignment<br/>(Greedy or Beam Search)"]
+    end
+
+    OUTPUT["Transcribed Text<br/>'No acute cardiopulmonary disease'"]
+
+    INPUT --> FE --> ENCODER --> DEC --> OUTPUT
+
+    style INPUT fill:#cce5ff,stroke:#0d6efd
+    style OUTPUT fill:#d4edda,stroke:#28a745
 ```
 
 **Key insight:** The Conformer's combination of self-attention (global) and convolution (local) is what makes it superior to pure attention models (Whisper) or pure convolution models for speech. It can simultaneously:
@@ -106,10 +95,12 @@ Audio Input (16kHz mono WAV)
 
 **Data flow example:**
 
-```
-Clinician speaks → MedASR transcribes → OpenClaw structures into SOAP note
-                                       → MedGemma extracts ICD codes
-                                       → Tambo tracks usage analytics
+```mermaid
+flowchart LR
+    A["Clinician speaks"] --> B["MedASR transcribes"]
+    B --> C["OpenClaw structures<br/>into SOAP note"]
+    B --> D["MedGemma extracts<br/>ICD codes"]
+    B --> E["Tambo tracks<br/>usage analytics"]
 ```
 
 ### 1.4 Key Vocabulary
@@ -131,35 +122,32 @@ Clinician speaks → MedASR transcribes → OpenClaw structures into SOAP note
 
 ### 1.5 Our Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    MPS Network Boundary                      │
-│                                                              │
-│  ┌──────────────┐  ┌───────────────┐  ┌──────────────────┐  │
-│  │ Web Frontend  │  │ Android App   │  │ PMS Backend      │  │
-│  │ (Next.js)     │  │ (Kotlin)      │  │ (FastAPI)        │  │
-│  │ :3000         │  │               │  │ :8000            │  │
-│  │               │  │               │  │                  │  │
-│  │ [Mic capture] │  │ [Mic capture] │  │ /api/patients    │  │
-│  │ [Dictation UI]│  │ [Voice input] │  │ /api/encounters  │  │
-│  └──────┬───────┘  └───────┬───────┘  │ /api/transcripts │  │
-│         │ WS               │ WS       └────────┬─────────┘  │
-│         └─────────┬────────┘                    │            │
-│                   ▼                             │            │
-│         ┌─────────────────┐                     │            │
-│         │ MedASR Service  │◄────────────────────┘            │
-│         │ (Docker + GPU)  │                                  │
-│         │ :8001           │                                  │
-│         │                 │                                  │
-│         │ 105M Conformer  │                                  │
-│         │ + 6-gram LM     │                                  │
-│         └─────────────────┘                                  │
-│                                                              │
-│         ┌─────────────────┐                                  │
-│         │ PostgreSQL       │  transcription_logs             │
-│         │ :5432            │  encounter_notes                │
-│         └─────────────────┘                                  │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph MPS["MPS Network Boundary"]
+        direction TB
+        WEB["Web Frontend (Next.js) :3000<br/>Mic capture · Dictation UI"]
+        AND["Android App (Kotlin)<br/>Mic capture · Voice input"]
+
+        subgraph Backend["PMS Backend (FastAPI) :8000"]
+            P1["/api/patients"]
+            P2["/api/encounters"]
+            P3["/api/transcripts"]
+        end
+
+        subgraph ASR["MedASR Service (Docker + GPU) :8001"]
+            MODEL["105M Conformer + 6-gram LM"]
+        end
+
+        PG[("PostgreSQL :5432<br/>transcription_logs<br/>encounter_notes")]
+    end
+
+    WEB -->|WS| ASR
+    AND -->|WS| ASR
+    Backend --> ASR
+    Backend --> PG
+
+    style ASR fill:#e2d5f1,stroke:#6f42c1
 ```
 
 ---

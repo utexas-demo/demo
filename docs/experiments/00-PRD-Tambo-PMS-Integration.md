@@ -33,47 +33,32 @@ Integrate Tambo AI as a **conversational analytics sidebar** within the PMS dash
 
 ### 3.1 Architecture Overview
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                     MPS Frontend (React)                   │
-│                                                               │
-│  ┌─────────────────────┐    ┌──────────────────────────────┐ │
-│  │   Existing PMS      │    │   Tambo Conversational       │ │
-│  │   Dashboard Views    │    │   Analytics Sidebar          │ │
-│  │                     │    │                              │ │
-│  │  - Weekly Reports   │    │  [User types query]          │ │
-│  │  - Patient Lists    │◄──►│  [Tambo renders component]   │ │
-│  │  - Encounter Logs   │    │  [Interactive drill-down]    │ │
-│  │                     │    │                              │ │
-│  └─────────────────────┘    └──────────────┬───────────────┘ │
-│                                             │                 │
-│         <TamboProvider>                     │                 │
-│           components={pmsComponents}        │                 │
-│           tools={pmsApiTools}               │                 │
-│           apiKey={SELF_HOSTED_KEY}           │                 │
-│                                             │                 │
-└─────────────────────────────────┬───────────┘                 │
-                                  │                             │
-                    ┌─────────────▼──────────────┐              │
-                    │  Tambo Self-Hosted Backend  │              │
-                    │  (Docker on MPS Infra)   │              │
-                    │                             │              │
-                    │  - NestJS API (port 3001)   │              │
-                    │  - Next.js Dashboard (3000) │              │
-                    │  - PostgreSQL (5432)         │              │
-                    │  - Drizzle ORM              │              │
-                    └─────────────┬──────────────┘              │
-                                  │                             │
-                    ┌─────────────▼──────────────┐              │
-                    │  MPS Backend             │              │
-                    │  (Spring Boot APIs)         │              │
-                    │                             │              │
-                    │  - /api/dw/patient-status   │              │
-                    │  - /api/dw/events           │              │
-                    │  - /api/dw/engagement       │              │
-                    │  - /api/dw/devices          │              │
-                    │  - MongoDB                  │              │
-                    └─────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Frontend["MPS Frontend (React)"]
+        direction LR
+        PMS["Existing PMS<br/>Dashboard Views<br/>- Weekly Reports<br/>- Patient Lists<br/>- Encounter Logs"]
+        TAMBO["Tambo Conversational<br/>Analytics Sidebar<br/>- User types query<br/>- Tambo renders component<br/>- Interactive drill-down"]
+        PMS <--> TAMBO
+    end
+
+    PROVIDER["TamboProvider<br/>components={pmsComponents}<br/>tools={pmsApiTools}<br/>apiKey={SELF_HOSTED_KEY}"]
+
+    subgraph DockerBE["Tambo Self-Hosted Backend (Docker on MPS Infra)"]
+        NEST["NestJS API (port 3001)"]
+        NEXTDASH["Next.js Dashboard (3000)"]
+        TPG[("PostgreSQL (5432)<br/>Drizzle ORM")]
+    end
+
+    subgraph MPSBE["MPS Backend (Spring Boot APIs)"]
+        A1["/api/dw/patient-status"]
+        A2["/api/dw/events"]
+        A3["/api/dw/engagement"]
+        A4["/api/dw/devices"]
+        MONGO[("MongoDB")]
+    end
+
+    TAMBO --> PROVIDER --> DockerBE --> MPSBE
 ```
 
 ### 3.2 Deployment Model

@@ -33,21 +33,22 @@ This guide walks you through deploying a **self-hosted MedASR medical speech rec
 
 ### Architecture at a Glance
 
-```
-Your Development Machine
-├── Docker (GPU-enabled)
-│   └── MedASR Inference Container
-│       ├── MedASR Model (105M params, ~500MB)
-│       ├── 6-gram Language Model (optional, ~200MB)
-│       ├── FastAPI Inference Server → localhost:8001
-│       └── Health check endpoint  → localhost:8001/health
-│
-├── PMS Backend (FastAPI)          → localhost:8000
-│   └── /api/transcriptions (new routes)
-├── PMS Frontend (Next.js 15)     → localhost:3000
-│   └── VoiceDictation component (new)
-└── PostgreSQL (PMS database)      → localhost:5432
-    └── transcription_logs table (new)
+```mermaid
+flowchart LR
+    subgraph Dev["Your Development Machine"]
+        direction TB
+        subgraph Docker["Docker (GPU-enabled)"]
+            subgraph MC["MedASR Inference Container"]
+                M["MedASR Model (105M params, ~500MB)"]
+                LM["6-gram Language Model (optional, ~200MB)"]
+                FA["FastAPI Inference Server → localhost:8001"]
+                HC["Health check → localhost:8001/health"]
+            end
+        end
+        BE["PMS Backend (FastAPI) → localhost:8000<br/>/api/transcriptions (new routes)"]
+        FE["PMS Frontend (Next.js 15) → localhost:3000<br/>VoiceDictation component (new)"]
+        PG[("PostgreSQL → localhost:5432<br/>transcription_logs table (new)")]
+    end
 ```
 
 ---

@@ -35,17 +35,24 @@ Tambo lets us build a **chat sidebar** where users type questions in plain Engli
 
 Think of Tambo as a translator sitting between a user's question and your React components.
 
-```
-USER QUESTION                    TAMBO AGENT                     YOUR CODE
-─────────────                    ───────────                     ─────────
-"Show me enrollment              Thinks: "This is about          Calls queryPatientStatus()
- for Dr. Smith's                 enrollment metrics.             → hits Spring Boot API
- practice"                       I should use the                → returns data
-                                 EnrollmentDashboard             
-                                 component and call              Renders <EnrollmentDashboard>
-                                 queryPatientStatus              with the API data as props
-                                 to get data."                   
-                                                                 User sees a live chart
+```mermaid
+flowchart LR
+    subgraph USER["User Question"]
+        Q["'Show me enrollment<br/>for Dr. Smith's practice'"]
+    end
+
+    subgraph AGENT["Tambo Agent"]
+        T["Thinks: 'This is about<br/>enrollment metrics.<br/>I should use the<br/>EnrollmentDashboard component<br/>and call queryPatientStatus<br/>to get data.'"]
+    end
+
+    subgraph CODE["Your Code"]
+        C1["queryPatientStatus()<br/>→ hits Spring Boot API<br/>→ returns data"]
+        C2["Renders EnrollmentDashboard<br/>with API data as props"]
+        C3["User sees a live chart"]
+        C1 --> C2 --> C3
+    end
+
+    USER --> AGENT --> CODE
 ```
 
 **The three things you define:**
@@ -72,33 +79,25 @@ The AI reads your descriptions and schemas, decides what to call, and Tambo stre
 
 ### 1.4 Our Architecture
 
-```
-┌─────────────────────────────────────────────────┐
-│              Your Browser                        │
-│                                                  │
-│  PMS Dashboard          Analytics Sidebar        │
-│  (existing views)       (Tambo-powered)          │
-│                         ┌──────────────────┐     │
-│                         │ User types query │     │
-│                         │ ────────────────│     │
-│                         │ Tambo renders    │     │
-│                         │ component with   │     │
-│                         │ live data        │     │
-│                         └────────┬─────────┘     │
-└──────────────────────────────────┼───────────────┘
-                                   │
-                    ┌──────────────▼──────────────┐
-                    │   Tambo Backend (Docker)     │
-                    │   Manages conversations,     │
-                    │   calls the LLM, streams     │
-                    │   props to your components   │
-                    └──────────────┬──────────────┘
-                                   │
-                    ┌──────────────▼──────────────┐
-                    │   MPS Spring Boot API     │
-                    │   Your tools call these      │
-                    │   endpoints to get data      │
-                    └─────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Browser["Your Browser"]
+        PMS["PMS Dashboard<br/>(existing views)"]
+        subgraph Sidebar["Analytics Sidebar (Tambo-powered)"]
+            Q["User types query"]
+            R["Tambo renders component<br/>with live data"]
+        end
+    end
+
+    subgraph Docker["Tambo Backend (Docker)"]
+        TB["Manages conversations,<br/>calls the LLM, streams<br/>props to your components"]
+    end
+
+    subgraph API["MPS Spring Boot API"]
+        EP["Your tools call these<br/>endpoints to get data"]
+    end
+
+    Sidebar --> Docker --> API
 ```
 
 ---

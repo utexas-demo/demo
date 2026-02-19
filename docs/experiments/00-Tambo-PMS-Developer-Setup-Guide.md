@@ -33,16 +33,18 @@ This guide walks you through setting up a **self-hosted Tambo AI backend** on yo
 
 ### Architecture at a Glance
 
-```
-Your Development Machine
-├── Docker
-│   ├── Tambo API        (NestJS)        → localhost:3001
-│   ├── Tambo Dashboard  (Next.js)       → localhost:3000
-│   └── PostgreSQL       (Tambo state)   → localhost:5432
-│
-├── MPS API           (Spring Boot)   → localhost:8080 (your existing backend)
-│
-└── PMS Frontend         (React + Tambo SDK)  → localhost:3030
+```mermaid
+flowchart LR
+    subgraph Dev["Your Development Machine"]
+        direction TB
+        subgraph Docker["Docker"]
+            TAPI["Tambo API (NestJS) → localhost:3001"]
+            TDASH["Tambo Dashboard (Next.js) → localhost:3000"]
+            TPG[("PostgreSQL (Tambo state) → localhost:5432")]
+        end
+        MPS["MPS API (Spring Boot) → localhost:8080"]
+        FE["PMS Frontend (React + Tambo SDK) → localhost:3030"]
+    end
 ```
 
 ---

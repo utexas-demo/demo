@@ -36,49 +36,45 @@ Deploy MedASR as a **self-hosted medical speech recognition service** accessible
 
 ### 3.1 Architecture Overview
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                       MPS Network Boundary                       │
-│                                                                  │
-│  ┌─────────────────────┐    ┌──────────────────────────────────┐ │
-│  │   PMS Web Frontend   │    │   PMS Android App                │ │
-│  │   (Next.js 15)       │    │   (Kotlin / Jetpack Compose)     │ │
-│  │   :3000              │    │                                   │ │
-│  │                       │    │   [Microphone capture]            │ │
-│  │   [Microphone capture]│    │   [Audio streaming via WebSocket] │ │
-│  │   [Voice dictation UI]│    │   [Real-time transcript display]  │ │
-│  └──────────┬────────────┘    └──────────────┬───────────────────┘ │
-│             │ WebSocket (wss://)              │ WebSocket (wss://) │
-│             └──────────────┬─────────────────┘                    │
-│                            ▼                                      │
-│  ┌──────────────────────────────────────────────────────────────┐ │
-│  │              MedASR Service (Docker Container)                │ │
-│  │                                                               │ │
-│  │  ┌──────────────────┐  ┌──────────────────┐                  │ │
-│  │  │  MedASR Model     │  │  6-gram Language  │                  │ │
-│  │  │  (105M Conformer) │  │  Model (optional) │                  │ │
-│  │  └────────┬─────────┘  └────────┬─────────┘                  │ │
-│  │           │                      │                             │ │
-│  │  ┌────────▼──────────────────────▼─────────┐                  │ │
-│  │  │  FastAPI Inference Server (:8001)         │                  │ │
-│  │  │  - POST /transcribe (batch)              │                  │ │
-│  │  │  - WS   /ws/transcribe (streaming)       │                  │ │
-│  │  │  - GET  /health                          │                  │ │
-│  │  └────────┬────────────────────────────────┘                  │ │
-│  └───────────┼───────────────────────────────────────────────────┘ │
-│              │                                                     │
-│  ┌───────────▼───────────────┐  ┌──────────────────────────────┐  │
-│  │  PMS Backend (FastAPI)     │  │  PostgreSQL                   │  │
-│  │  :8000                     │  │  :5432                        │  │
-│  │                            │  │                               │  │
-│  │  - /api/patients           │  │  - transcription_logs table   │  │
-│  │  - /api/encounters         │  │  - encounter_notes table      │  │
-│  │  - /api/prescriptions      │  │  - audit_trail table          │  │
-│  │  - /api/reports            │  │                               │  │
-│  │  - /api/transcriptions     │  │                               │  │
-│  └────────────────────────────┘  └──────────────────────────────┘  │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph MPS["MPS Network Boundary"]
+        direction TB
+        WEB["PMS Web Frontend (Next.js 15) :3000<br/>Microphone capture · Voice dictation UI"]
+        AND["PMS Android App (Kotlin / Jetpack Compose)<br/>Microphone capture · Audio streaming<br/>Real-time transcript display"]
+
+        subgraph ASR["MedASR Service (Docker Container)"]
+            direction TB
+            subgraph Models["Models"]
+                direction LR
+                M1["MedASR Model<br/>(105M Conformer)"]
+                M2["6-gram Language<br/>Model (optional)"]
+            end
+            subgraph Server["FastAPI Inference Server (:8001)"]
+                EP1["POST /transcribe (batch)"]
+                EP2["WS /ws/transcribe (streaming)"]
+                EP3["GET /health"]
+            end
+            Models --> Server
+        end
+
+        subgraph Backend["PMS Backend (FastAPI) :8000"]
+            P1["/api/patients"]
+            P2["/api/encounters"]
+            P3["/api/prescriptions"]
+            P4["/api/reports"]
+            P5["/api/transcriptions"]
+        end
+
+        PG[("PostgreSQL :5432<br/>transcription_logs · encounter_notes<br/>audit_trail")]
+    end
+
+    WEB -->|"WebSocket (wss://)"| ASR
+    AND -->|"WebSocket (wss://)"| ASR
+    ASR --> Backend
+    Backend --> PG
+
+    style ASR fill:#e2d5f1,stroke:#6f42c1
 ```
 
 ### 3.2 Deployment Model

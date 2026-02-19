@@ -35,18 +35,22 @@ This guide walks you through deploying a **HIPAA-hardened, self-hosted OpenClaw 
 
 ### Architecture at a Glance
 
-```
-Your Development Machine
-├── Docker
-│   └── OpenClaw Agent Container
-│       ├── OpenClaw Runtime (Node.js)
-│       ├── PMS Skills (custom)
-│       ├── Persistent Memory (mounted volume)
-│       └── Web UI → localhost:3333
-│
-├── PMS Backend (FastAPI)          → localhost:8000
-├── PMS Frontend (Next.js 15)     → localhost:3000
-└── PostgreSQL (PMS database)      → localhost:5432
+```mermaid
+flowchart LR
+    subgraph Dev["Your Development Machine"]
+        direction TB
+        subgraph Docker["Docker"]
+            subgraph OC["OpenClaw Agent Container"]
+                RT["OpenClaw Runtime (Node.js)"]
+                SK["PMS Skills (custom)"]
+                MEM["Persistent Memory (mounted volume)"]
+                UI["Web UI → localhost:3333"]
+            end
+        end
+        BE["PMS Backend (FastAPI) → localhost:8000"]
+        FE["PMS Frontend (Next.js 15) → localhost:3000"]
+        PG[("PostgreSQL (PMS database) → localhost:5432")]
+    end
 ```
 
 ---

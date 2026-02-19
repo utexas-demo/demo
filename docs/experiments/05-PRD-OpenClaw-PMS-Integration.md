@@ -33,54 +33,56 @@ Deploy OpenClaw as a **task automation agent** accessible to PMS users via a web
 
 ### 3.1 Architecture Overview
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                     MPS Network Boundary                    │
-│                                                                │
-│  ┌─────────────────────┐    ┌──────────────────────────────┐  │
-│  │   PMS Web Frontend   │    │   OpenClaw Agent Interface    │  │
-│  │   (Next.js 15)       │    │   (Web UI / Sidebar)         │  │
-│  │                      │    │                               │  │
-│  │  - Patient Records   │    │  [User types task]            │  │
-│  │  - Encounters        │◄──►│  [Agent plans & executes]     │  │
-│  │  - Medications       │    │  [Results displayed]          │  │
-│  │  - Reports           │    │  [Human approves actions]     │  │
-│  └─────────────────────┘    └──────────────┬────────────────┘  │
-│                                             │                   │
-│  ┌──────────────────────────────────────────▼────────────────┐  │
-│  │                    OpenClaw Agent (Docker)                  │  │
-│  │                                                             │  │
-│  │  ┌─────────────┐  ┌──────────────┐  ┌──────────────────┐  │  │
-│  │  │  Skills      │  │  Memory      │  │  Task Scheduler  │  │  │
-│  │  │  Engine      │  │  (Markdown)  │  │  (Cron-based)    │  │  │
-│  │  └──────┬──────┘  └──────────────┘  └──────────────────┘  │  │
-│  │         │                                                   │  │
-│  │  ┌──────▼──────────────────────────────────────────────┐   │  │
-│  │  │  PMS Skills (Custom)                                 │   │  │
-│  │  │  - pms-patient-lookup    - pms-prior-auth            │   │  │
-│  │  │  - pms-encounter-query   - pms-care-coordination     │   │  │
-│  │  │  - pms-document-draft    - pms-device-reconcile      │   │  │
-│  │  │  - pms-medication-check  - pms-report-generate       │   │  │
-│  │  └──────┬──────────────────────────────────────────────┘   │  │
-│  └─────────┼──────────────────────────────────────────────────┘  │
-│            │                                                      │
-│  ┌─────────▼──────────────┐  ┌────────────────────────────────┐  │
-│  │  PMS Backend            │  │  External Integrations          │  │
-│  │  (FastAPI)              │  │  (via Skills)                   │  │
-│  │                         │  │                                  │  │
-│  │  - /api/patients        │  │  - Payer portals (web scrape)   │  │
-│  │  - /api/encounters      │  │  - Fax service (eFax API)       │  │
-│  │  - /api/prescriptions   │  │  - Scheduling (Calendly API)    │  │
-│  │  - /api/reports         │  │  - Messaging (Twilio)           │  │
-│  │  - PostgreSQL           │  │                                  │  │
-│  └─────────────────────────┘  └────────────────────────────────┘  │
-│                                                                    │
-│            ┌───────────────────────────────┐                       │
-│            │  LLM Provider (Anthropic API) │                       │
-│            │  API key in env vars          │                       │
-│            │  No PHI sent to LLM           │                       │
-│            └───────────────────────────────┘                       │
-└────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph MPS["MPS Network Boundary"]
+        direction TB
+        WEB["PMS Web Frontend (Next.js 15)<br/>- Patient Records<br/>- Encounters<br/>- Medications<br/>- Reports"]
+        OCI["OpenClaw Agent Interface<br/>(Web UI / Sidebar)<br/>- User types task<br/>- Agent plans & executes<br/>- Results displayed<br/>- Human approves actions"]
+        WEB <--> OCI
+
+        subgraph Agent["OpenClaw Agent (Docker)"]
+            direction TB
+            SK["Skills Engine"]
+            MEM["Memory (Markdown)"]
+            SCHED["Task Scheduler (Cron-based)"]
+            subgraph Skills["PMS Skills (Custom)"]
+                S1["pms-patient-lookup"]
+                S2["pms-encounter-query"]
+                S3["pms-document-draft"]
+                S4["pms-medication-check"]
+                S5["pms-prior-auth"]
+                S6["pms-care-coordination"]
+                S7["pms-device-reconcile"]
+                S8["pms-report-generate"]
+            end
+            SK --> Skills
+        end
+
+        subgraph Backend["PMS Backend (FastAPI)"]
+            P1["/api/patients"]
+            P2["/api/encounters"]
+            P3["/api/prescriptions"]
+            P4["/api/reports"]
+            PG[("PostgreSQL")]
+        end
+
+        subgraph External["External Integrations (via Skills)"]
+            E1["Payer portals (web scrape)"]
+            E2["Fax service (eFax API)"]
+            E3["Scheduling (Calendly API)"]
+            E4["Messaging (Twilio)"]
+        end
+
+        LLM["LLM Provider (Anthropic API)<br/>API key in env vars · No PHI sent to LLM"]
+    end
+
+    OCI --> Agent
+    Skills --> Backend
+    Skills --> External
+    Agent --> LLM
+
+    style LLM fill:#fff3cd,stroke:#ffc107
 ```
 
 ### 3.2 Deployment Model
