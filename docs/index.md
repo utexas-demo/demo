@@ -81,6 +81,11 @@ _No bug fixes documented yet._
 - [Adaptive Thinking Setup Guide](experiments/08-AdaptiveThinking-PMS-Developer-Setup-Guide.md) — SDK migration from deprecated extended thinking, effort routing, telemetry, and streaming integration
 - [Adaptive Thinking Developer Tutorial](experiments/08-AdaptiveThinking-Developer-Tutorial.md) — Hands-on onboarding: build effort-routed clinical AI features end-to-end
 
+### MCP (Universal AI Integration Protocol)
+- [PRD: MCP PMS Integration](experiments/09-PRD-MCP-PMS-Integration.md) — Standardized Model Context Protocol server exposing PMS APIs as discoverable tools, resources, and prompts for all AI clients
+- [MCP Setup Guide](experiments/09-MCP-PMS-Developer-Setup-Guide.md) — FastMCP server deployment, OAuth 2.1 auth, audit logging, Claude Desktop and Next.js client integration
+- [MCP Developer Tutorial](experiments/09-MCP-Developer-Tutorial.md) — Hands-on onboarding: build custom MCP tools, resources, and prompts for PMS clinical workflows
+
 ---
 
 ## Documentation Views
