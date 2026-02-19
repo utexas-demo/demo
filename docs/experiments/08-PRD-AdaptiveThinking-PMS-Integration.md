@@ -280,7 +280,28 @@ Adaptive Thinking is a **cross-cutting enhancement** that improves every existin
 
 ---
 
-## 12. Appendix: Related Documents
+## 12. Research Sources
+
+### Official Documentation
+
+- [Anthropic Adaptive Thinking Docs](https://platform.claude.com/docs/en/build-with-claude/adaptive-thinking) — Core adaptive thinking API reference and usage patterns
+- [Anthropic Effort Parameter Docs](https://platform.claude.com/docs/en/build-with-claude/effort) — Effort levels (low/medium/high/max) and routing guidance
+- [Anthropic Extended Thinking Docs](https://platform.claude.com/docs/en/build-with-claude/extended-thinking) — Legacy budget_tokens API and migration path
+
+### Model & Performance
+
+- [Claude 4.6 What's New](https://platform.claude.com/docs/en/about-claude/models/whats-new-claude-4-6) — 76% fewer tokens at medium effort, interleaved thinking
+- [Anthropic Pricing](https://platform.claude.com/docs/en/about-claude/pricing) — Token cost implications for effort routing
+- [Claude's Extended Thinking (Anthropic Blog)](https://www.anthropic.com/news/visible-extended-thinking) — Original announcement and reasoning capabilities overview
+
+### Integration & Ecosystem
+
+- [Extended Thinking on Amazon Bedrock](https://docs.aws.amazon.com/bedrock/latest/userguide/claude-messages-extended-thinking.html) — AWS Bedrock integration for adaptive thinking
+- [Anthropic Effort Parameter (liteLLM)](https://docs.litellm.ai/docs/providers/anthropic_effort) — Third-party proxy support for effort routing
+
+---
+
+## 13. Appendix: Related Documents
 
 - [Adaptive Thinking Setup Guide](08-AdaptiveThinking-PMS-Developer-Setup-Guide.md) — SDK migration, effort routing, streaming integration
 - [Adaptive Thinking Developer Tutorial](08-AdaptiveThinking-Developer-Tutorial.md) — Hands-on onboarding: build effort-routed AI features

@@ -307,7 +307,35 @@ MCP is a **foundational infrastructure layer** that makes all other AI experimen
 
 ---
 
-## 12. Appendix: Related Documents
+## 12. Research Sources
+
+### Official Documentation
+
+- [MCP Specification (2025-11-25)](https://modelcontextprotocol.io/specification/2025-11-25) — Authoritative protocol spec: JSON-RPC, tools, resources, prompts, transports
+- [MCP Security Best Practices](https://modelcontextprotocol.io/specification/draft/basic/security_best_practices) — Official security guidance for server implementations
+- [MCP GitHub Organization](https://github.com/modelcontextprotocol) — Spec repo, SDKs, and reference server implementations
+
+### Architecture & Integration
+
+- [FastMCP Framework](https://gofastmcp.com/) — High-level Python framework for building MCP servers with decorators
+- [FastAPI-MCP Integration](https://github.com/tadata-org/fastapi_mcp) — Native FastAPI extension exposing endpoints as MCP tools
+- [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk) — Official TypeScript SDK for Next.js client integration
+- [Next.js MCP Server Guide](https://nextjs.org/docs/app/guides/mcp) — Vercel's official guide for MCP in Next.js apps
+
+### Security & Healthcare
+
+- [MCP for Medical Devices (Arcade)](https://www.arcade.dev/blog/enterprise-mcp-guide-for-medical-devices) — FDA and HIPAA controls for MCP in healthcare
+- [Securing MCP: Risks, Controls, Governance (arXiv)](https://arxiv.org/html/2511.20920v1) — Academic security analysis of the MCP protocol
+- [Healthcare MCP Security (Levo.ai)](https://www.levo.ai/resources/blogs/mcp-security-in-healthcare---securing-ai-agents-and-medical-workflows) — AI agent security patterns for clinical workflows
+
+### Ecosystem & Adoption
+
+- [One Year of MCP (Official Blog)](http://blog.modelcontextprotocol.io/posts/2025-11-25-first-mcp-anniversary/) — Nov 2025 spec release, AAIF governance, adoption milestones
+- [The State of MCP (Zuplo)](https://zuplo.com/mcp-report) — 97M+ monthly SDK downloads, 5,800+ servers, enterprise readiness
+
+---
+
+## 13. Appendix: Related Documents
 
 - [MCP Setup Guide](09-MCP-PMS-Developer-Setup-Guide.md) — Step-by-step installation and configuration
 - [MCP Developer Tutorial](09-MCP-Developer-Tutorial.md) — Hands-on onboarding: build your first MCP integration

@@ -349,7 +349,26 @@ Access control is enforced at the Spring Boot API layer (existing RBAC), not wit
 
 ---
 
-## 13. Appendix: Related Documents
+## 13. Research Sources
+
+### Official Documentation
+
+- [Tambo AI Docs](https://docs.tambo.co/) — SDK reference, component registration, agent configuration
+- [Tambo GitHub Repository](https://github.com/tambo-ai/tambo) — Source code, architecture, and React SDK
+
+### Architecture & Ecosystem
+
+- [Introducing Tambo 1.0](https://tambo.co/blog/posts/introducing-tambo-generative-ui) — Launch announcement, SOC 2 and HIPAA compliance details
+- [What is Generative UI?](https://tambo.co/blog/posts/what-is-generative-ui) — Core concepts behind Tambo's generative UI approach
+- [Tambo: A Comprehensive Overview (Skywork AI)](https://skywork.ai/blog/tambo-a-comprehensive-overview/) — Third-party architectural analysis and comparison
+
+### Community & Tutorials
+
+- [Tambo AI: React SDK for Generative UI (YUV.AI)](https://yuv.ai/blog/tambo-ai) — Developer walkthrough and integration patterns
+
+---
+
+## 14. Appendix: Related Documents
 
 - PMS Data Warehouse Requirements (DW Collections Schema)
 - MPS API Swagger Documentation

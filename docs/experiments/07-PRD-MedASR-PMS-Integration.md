@@ -283,7 +283,27 @@ MedASR is **complementary** to both OpenClaw and Tambo. The transcription output
 
 ---
 
-## 12. Appendix: Related Documents
+## 12. Research Sources
+
+### Official Documentation
+
+- [MedASR Official Documentation](https://developers.google.com/health-ai-developer-foundations/medasr) — API reference, quickstart, and integration guides
+- [MedASR Model Card](https://developers.google.com/health-ai-developer-foundations/medasr/model-card) — Model architecture, training data, performance benchmarks
+- [MedASR GitHub Repository](https://github.com/Google-Health/medasr) — Source code, inference examples, and deployment scripts
+
+### Model & Performance
+
+- [MedASR on Hugging Face](https://huggingface.co/google/medasr) — Model weights, usage examples, and community discussion
+- [Google Research Blog: MedGemma 1.5 and MedASR](https://research.google/blog/next-generation-medical-image-interpretation-with-medgemma-15-and-medical-speech-to-text-with-medasr/) — 4.6% WER on radiology, 58% fewer errors vs Whisper
+
+### Ecosystem & Adoption
+
+- [MedASR.org](https://medasr.org/) — Community hub and open-source medical speech recognition overview
+- [Google's MedGemma 1.5 and MedASR Launch (ETavrian)](https://www.etavrian.com/news/google-medgemma-15-medasr-launch) — Launch context and $100K challenge announcement
+
+---
+
+## 13. Appendix: Related Documents
 
 - [MedASR Setup Guide](07-MedASR-PMS-Developer-Setup-Guide.md) — Self-hosted deployment, Docker configuration, PMS integration
 - [MedASR Developer Tutorial](07-MedASR-Developer-Tutorial.md) — Hands-on onboarding: build your first dictation integration

@@ -385,7 +385,29 @@ Access control is enforced at the FastAPI layer via JWT-based RBAC. OpenClaw pas
 
 ---
 
-## 14. Appendix: Related Documents
+## 14. Research Sources
+
+### Official Documentation
+
+- [OpenClaw GitHub Repository](https://github.com/openclaw/openclaw) — Source code, skills architecture, and deployment guides
+- [OpenClaw Official Site](https://openclaw.ai/) — Product overview and feature summary
+- [OpenClaw Security Docs](https://docs.openclaw.ai/gateway/security) — Gateway security model and sandboxing
+
+### Architecture & Deployment
+
+- [What Is OpenClaw? (DigitalOcean)](https://www.digitalocean.com/resources/articles/what-is-openclaw) — Self-hosted AI agent architecture overview
+- [How to Deploy OpenClaw (Vultr)](https://docs.vultr.com/how-to-deploy-openclaw-autonomous-ai-agent-platform) — Docker deployment walkthrough and configuration
+- [OpenClaw Complete Guide (Milvus Blog)](https://milvus.io/blog/openclaw-formerly-clawdbot-moltbot-explained-a-complete-guide-to-the-autonomous-ai-agent.md) — History, architecture, and skill system deep-dive
+
+### Security & Healthcare
+
+- [What Security Teams Need to Know (CrowdStrike)](https://www.crowdstrike.com/en-us/blog/what-security-teams-need-to-know-about-openclaw-ai-super-agent/) — Security risk analysis and mitigation strategies
+- [OpenClaw in the Clinic (OnHealthcare)](https://www.onhealthcare.tech/p/openclaw-in-the-clinic-a-business) — HIPAA-compliant deployment plan for healthcare
+- [Autonomous AI Agents and Identity Security (CyberArk)](https://www.cyberark.com/resources/agentic-ai-security/how-autonomous-ai-agents-like-openclaw-are-reshaping-enterprise-identity-security) — Enterprise identity and access control considerations
+
+---
+
+## 15. Appendix: Related Documents
 
 - [Tambo AI PRD](05-PRD-Tambo-PMS-Integration.md) — Complementary conversational analytics integration
 - [OpenClaw Setup Guide](05-OpenClaw-PMS-Developer-Setup-Guide.md) — Step-by-step installation and configuration
