@@ -71,6 +71,11 @@ _No bug fixes documented yet._
 - [OpenClaw Setup Guide](experiments/05-OpenClaw-PMS-Developer-Setup-Guide.md) — HIPAA-hardened Docker deployment, custom PMS skills, frontend integration
 - [OpenClaw Developer Tutorial](experiments/05-OpenClaw-Developer-Tutorial.md) — Hands-on onboarding: build your first skill with approval tiers
 
+### MedASR (Medical Speech Recognition)
+- [PRD: MedASR PMS Integration](experiments/07-PRD-MedASR-PMS-Integration.md) — On-premise medical speech-to-text for clinical dictation, encounter documentation, and structured note extraction
+- [MedASR Setup Guide](experiments/07-MedASR-PMS-Developer-Setup-Guide.md) — Self-hosted GPU Docker deployment, FastAPI inference service, PMS backend and frontend integration
+- [MedASR Developer Tutorial](experiments/07-MedASR-Developer-Tutorial.md) — Hands-on onboarding: build your first clinical dictation integration end-to-end
+
 ---
 
 ## Documentation Views
