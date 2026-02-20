@@ -107,6 +107,10 @@ _No bug fixes documented yet._
 - [Gemma 3 Setup Guide](experiments/13-Gemma3-PMS-Developer-Setup-Guide.md) — Ollama deployment, AI Gateway service, OpenAI-compatible API, PMS backend and frontend integration
 - [Gemma 3 Developer Tutorial](experiments/13-Gemma3-Developer-Tutorial.md) — Hands-on onboarding: build a medication reconciliation pipeline with drug interaction checking end-to-end
 
+### Claude Code Multi-Agent Modes (AI-Assisted Development Workflows)
+- [Agent Teams Reference](experiments/14-agent-teams-claude-whitepaper.md) — Official Claude Code agent teams documentation: architecture, shared task lists, mailbox messaging, display modes
+- [Multi-Agent Modes Developer Tutorial](experiments/14-AgentTeams-Developer-Tutorial.md) — Hands-on comparison of single session, subagents, agent teams, and git worktrees with PMS-specific exercises and decision framework
+
 ---
 
 ## Documentation Views
