@@ -1,7 +1,7 @@
 # System-Level Requirements (SYS-REQ)
 
 **Document ID:** PMS-SYS-REQ-001
-**Version:** 1.6
+**Version:** 1.7
 **Date:** 2026-02-21
 **Parent:** [System Specification](../system-spec.md)
 
@@ -22,7 +22,7 @@
 | SYS-REQ-0009 | Provide a native Android application for mobile clinical workflows | High | Demo | Scaffolded |
 | SYS-REQ-0010 | All system components must be deployable via Docker containers | Medium | Inspection | Scaffolded |
 | SYS-REQ-0011 | Provide centralized prompt management with versioning, CRUD operations, and LLM-powered comparison for all AI prompts used across the system | High | Test / Demo | Not Started |
-| SYS-REQ-0012 | Provide AI-assisted skin lesion classification and dermatology clinical decision support using ISIC Archive-trained models with on-premises inference, similarity search, and structured risk scoring | High | Test / Demo | Not Started |
+| SYS-REQ-0012 | Provide AI-assisted skin lesion classification and dermatology clinical decision support using ISIC Archive-trained models with on-premises inference, similarity search, and structured risk scoring | High | Test / Demo | Architecture Defined |
 
 ---
 
@@ -135,6 +135,22 @@
 6. Lesion assessments are linked to patient records and encounters for longitudinal tracking.
 7. The Android app supports on-device inference via TFLite for offline skin lesion triage.
 
-**Current Implementation:** Not started.
+**Current Implementation:** Architecture fully defined via 14 ADRs (ADR-0008 through ADR-0021). No code implementation started. PRD, developer setup guide, and developer tutorial completed (experiment 18).
+
+**Architecture Decisions:**
+- [ADR-0008](../../architecture/0008-derm-cds-microservice-architecture.md): Separate Docker service (`pms-derm-cds` :8090)
+- [ADR-0009](../../architecture/0009-ai-inference-runtime.md): ONNX Runtime (server) + TensorRT (Jetson) + TFLite (Android)
+- [ADR-0010](../../architecture/0010-dermoscopic-image-storage.md): AES-256-GCM encrypted BYTEA in PostgreSQL
+- [ADR-0011](../../architecture/0011-vector-database-pgvector.md): pgvector extension for similarity search
+- [ADR-0012](../../architecture/0012-android-on-device-inference.md): TFLite with MobileNetV3 for offline triage
+- [ADR-0013](../../architecture/0013-ai-model-lifecycle.md): Versioned model artifacts with provenance tracking
+- [ADR-0014](../../architecture/0014-image-preprocessing-pipeline.md): Resize/normalize pipeline with quality gates
+- [ADR-0015](../../architecture/0015-risk-scoring-engine.md): Configurable threshold-based risk scoring
+- [ADR-0016](../../architecture/0016-image-encryption-key-management.md): Unified versioned-envelope key management
+- [ADR-0017](../../architecture/0017-isic-reference-cache.md): S3 bulk population with model-version coupling
+- [ADR-0018](../../architecture/0018-inter-service-communication.md): HTTP client pooling with circuit breaking
+- [ADR-0019](../../architecture/0019-lesion-longitudinal-tracking.md): Persistent lesion identity with embedding cosine distance
+- [ADR-0020](../../architecture/0020-derm-cds-feature-flags.md): Granular per-requirement feature flags
+- [ADR-0021](../../architecture/0021-derm-database-migration.md): Alembic-managed migrations for pgvector tables
 
 **Decomposes To:** SUB-PR-0013 (→ BE, WEB, AND, AI), SUB-PR-0014 (→ BE, WEB, AI), SUB-PR-0015 (→ BE, WEB), SUB-PR-0016 (→ BE, WEB), SUB-RA-0008 (→ BE, WEB)

@@ -1,7 +1,7 @@
 # System Specification: Patient Management System (PMS)
 
 **Document ID:** PMS-SYS-SPEC-001
-**Version:** 1.3
+**Version:** 1.4
 **Date:** 2026-02-21
 **Status:** Approved
 
@@ -30,7 +30,7 @@ All components share a documentation submodule (`ammar-utexas/demo`) containing 
 flowchart TB
     subgraph PMS["PMS System"]
         WebUI["Web UI<br/>(Next.js :3000)"]
-        Android["Android App<br/>(Kotlin)"]
+        Android["Android App<br/>(Kotlin)<br/>+ TFLite on-device"]
         Backend["Backend API<br/>(FastAPI :8000)"]
         DermCDS["Dermatology CDS<br/>(ONNX Runtime :8090)"]
         DB[("PostgreSQL<br/>+ pgvector")]
@@ -44,9 +44,11 @@ flowchart TB
 
     EHR["External EHR<br/>(FHIR R4)"]
     Audit["Audit Log<br/>Archive"]
+    ISIC["ISIC Archive<br/>(Reference Images<br/>+ S3 Open Data)"]
 
     Backend <--> EHR
     Backend --> Audit
+    DermCDS -.->|"One-time cache<br/>population"| ISIC
 
     style PMS fill:#f0f4ff,stroke:#3366cc
     style WebUI fill:#d4edda,stroke:#28a745
@@ -56,16 +58,17 @@ flowchart TB
     style DB fill:#e2d9f3,stroke:#6f42c1
     style EHR fill:#f8f9fa,stroke:#6c757d
     style Audit fill:#f8f9fa,stroke:#6c757d
+    style ISIC fill:#f8f9fa,stroke:#6c757d
 ```
 
 ## 4. Subsystem Decomposition
 
 | Code | Subsystem | Scope | Primary Actor |
 |---|---|---|---|
-| SUB-PR | Patient Records | Demographics, medical history, documents, consent, encrypted PHI, AI vision (wound assessment, patient ID verification, document OCR), dermatology CDS (skin lesion classification, similarity search, risk scoring, longitudinal tracking) | All roles |
-| SUB-CW | Clinical Workflow | Scheduling, encounters, status tracking, clinical notes, referrals | Physicians, Nurses |
+| SUB-PR | Patient Records | Demographics, medical history, documents, consent, encrypted PHI, AI vision (wound assessment, patient ID verification, document OCR), dermatology CDS (EfficientNet-B4/MobileNetV3 skin lesion classification across 9 ISIC categories, pgvector similarity search against 50K reference embeddings, configurable threshold-based risk scoring, persistent lesion identity with longitudinal change detection via cosine distance) | All roles |
+| SUB-CW | Clinical Workflow | Scheduling, encounters, status tracking, clinical notes, referrals, dermatology encounter integration (lesion assessments linked to encounters) | Physicians, Nurses |
 | SUB-MM | Medication Management | Prescriptions, drug interactions, formulary, dispensing | Physicians, Pharmacists |
-| SUB-RA | Reporting & Analytics | Clinical dashboards, compliance reports, audit log queries, dermatology classification analytics | Administrators, Compliance |
+| SUB-RA | Reporting & Analytics | Clinical dashboards, compliance reports, audit log queries, dermatology classification analytics (classification volumes, risk distributions, referral trends, model confidence metrics) | Administrators, Compliance |
 | SUB-PM | Prompt Management | Centralized prompt CRUD, versioning, audit trail, LLM-powered version comparison | Administrators |
 
 ## 5. User Roles

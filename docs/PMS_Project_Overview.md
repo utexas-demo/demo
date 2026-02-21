@@ -1,6 +1,7 @@
 # PMS Project Overview — Bird's Eye View
 
 **Date:** 2026-02-21
+**Version:** 1.1
 **Organization:** utexas-demo (GitHub)
 
 ---
@@ -28,7 +29,7 @@ The Patient Management System (PMS) is a HIPAA-compliant software suite for mana
 flowchart TB
     subgraph PMS["PMS System"]
         WebUI["Web UI<br/>(Next.js :3000)"]
-        Android["Android App<br/>(Kotlin)"]
+        Android["Android App<br/>(Kotlin)<br/>+ TFLite on-device"]
         Backend["Backend API<br/>(FastAPI :8000)"]
         DermCDS["Dermatology CDS<br/>(ONNX Runtime :8090)"]
         DB[("PostgreSQL<br/>+ pgvector")]
@@ -42,9 +43,11 @@ flowchart TB
 
     EHR["External EHR<br/>(FHIR R4)"]
     Audit["Audit Log<br/>Archive"]
+    ISIC["ISIC Archive<br/>(Reference Images<br/>+ S3 Open Data)"]
 
     Backend <--> EHR
     Backend --> Audit
+    DermCDS -.->|"One-time cache<br/>population"| ISIC
 
     style PMS fill:#f0f4ff,stroke:#3366cc
     style WebUI fill:#d4edda,stroke:#28a745
@@ -54,6 +57,7 @@ flowchart TB
     style DB fill:#e2d9f3,stroke:#6f42c1
     style EHR fill:#f8f9fa,stroke:#6c757d
     style Audit fill:#f8f9fa,stroke:#6c757d
+    style ISIC fill:#f8f9fa,stroke:#6c757d
 ```
 
 ### Subsystems
@@ -78,7 +82,7 @@ Central knowledge base shared as a git submodule across all other repos.
 - Development Pipeline Tutorial (.md / .docx)
 - PMS Developer Working Instructions (.md / .docx)
 - `docs/` directory with:
-  - 7 Architecture Decision Records (ADRs)
+  - 21 Architecture Decision Records (ADRs)
   - 7 configuration & setup guides
   - 2 feature implementation docs
   - System spec, testing strategy, requirements governance
@@ -199,7 +203,7 @@ app/src/main/java/com/utexas/pms/
 | SYS-REQ-0009 | Native Android Application | High | Scaffolded |
 | SYS-REQ-0010 | Docker Container Deployment | Medium | Scaffolded |
 | SYS-REQ-0011 | Centralized Prompt Management | High | Not Started |
-| SYS-REQ-0012 | Dermatology Clinical Decision Support (ISIC Archive) | High | Not Started |
+| SYS-REQ-0012 | Dermatology Clinical Decision Support (ISIC Archive) | High | Architecture Defined |
 
 ---
 
@@ -292,12 +296,20 @@ app/src/main/java/com/utexas/pms/
 - Implement dermatology analytics dashboard (SUB-RA-0008)
 
 ### Priority 5 — Dermatology Clinical Decision Support
-- Deploy Dermatology CDS Docker service with EfficientNet-B4 ONNX classifier (SUB-PR-0013)
-- Implement pgvector similarity search against ISIC reference cache (SUB-PR-0014)
-- Build risk scoring service with referral urgency (SUB-PR-0015)
-- Implement lesion longitudinal tracking with change detection (SUB-PR-0016)
+> **Architecture: COMPLETE** — 14 ADRs (ADR-0008 through ADR-0021) define all architectural decisions. PRD, setup guide, and developer tutorial documented (experiment 18). Implementation phase ready to begin.
+
+- Deploy Dermatology CDS Docker service with EfficientNet-B4 ONNX classifier (SUB-PR-0013) — ADR-0008, ADR-0009
+- Implement Alembic migrations for pgvector tables and lesion schema (ADR-0021)
+- Populate ISIC reference cache from S3 with model-version-coupled embeddings (ADR-0017)
+- Implement AES-256-GCM image encryption with versioned-envelope key management (ADR-0010, ADR-0016)
+- Implement pgvector similarity search against ISIC reference cache (SUB-PR-0014) — ADR-0011
+- Build risk scoring service with configurable thresholds and referral urgency (SUB-PR-0015) — ADR-0015
+- Implement image preprocessing pipeline with quality gates (ADR-0014)
+- Implement backend-to-CDS HTTP communication with circuit breaking (ADR-0018)
+- Implement lesion longitudinal tracking with persistent identity and change detection (SUB-PR-0016) — ADR-0019
 - Build Web UI: lesion upload, classification results, similar gallery, timeline (SUB-PR-0013/0014/0015/0016-WEB)
-- Build Android on-device TFLite triage (SUB-PR-0013-AND)
+- Build Android on-device TFLite triage (SUB-PR-0013-AND) — ADR-0012
+- Configure granular feature flags for phased rollout (ADR-0020)
 
 ### Priority 6 — Cross-Cutting Concerns
 - Implement TOTP/MFA to complete SYS-REQ-0001
