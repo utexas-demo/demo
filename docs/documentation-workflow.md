@@ -190,8 +190,15 @@ flowchart TB
     PlatFiles -->|"implement"| IMPL
     Endpoints -->|"contracts"| IMPL
     Strategy -->|"test conventions"| IMPL
-    IMPL -->|"test evidence"| Evidence
+    IMPL -->|"dev tests"| Evidence
     IMPL -->|"updates status"| RTM
+
+    %% ── VERIFICATION GATE ──
+    VERIFY["✓ STEP 9: Verification<br/>& Evidence<br/>(Full regression + evidence)"]
+
+    IMPL -->|"code complete"| VERIFY
+    VERIFY -->|"full suite evidence"| Evidence
+    VERIFY -->|"final status"| RTM
 
     %% Config supports implementation
     ADR6 --> RelProcess
@@ -232,6 +239,7 @@ flowchart TB
     style PLAT fill:#fff4e6,stroke:#fd7e14
     style VIEWS fill:#fff4e6,stroke:#fd7e14
     style IMPL fill:#ff922b,stroke:#d9480f,color:#fff,stroke-width:3px
+    style VERIFY fill:#51cf66,stroke:#2b8a3e,color:#fff,stroke-width:3px
     style Index fill:#343a40,stroke:#212529,color:#fff
     style Overview fill:#343a40,stroke:#212529,color:#fff
     style SysReq fill:#1971c2,stroke:#1864ab,color:#fff
@@ -518,7 +526,7 @@ from testing-strategy.md.
 
 **When:** Requirements are decomposed (Step 4), governance checks are done (Step 5), and test cases are planned in the traceability matrix (Step 6). This is the milestone where actual code is written.
 
-> **This is the implementation milestone.** All prior steps (1–6) are documentation and planning. Steps 8–9 are configuration and release. Code is written here.
+> **This is the implementation milestone.** All prior steps (1–6) are documentation and planning. Steps 8–10 are configuration, verification, and release. Code is written here.
 
 The implementation follows the **GitHub Speckit full cycle** — five phases executed per platform. The **platform constitution** (the platform requirement file `SUB-{CODE}-{PLATFORM}.md`) is the governing specification for each cycle.
 
@@ -711,18 +719,110 @@ For the new feature {FEATURE} (requirements: {REQ_IDS}), update:
 
 ---
 
-### Step 9: Release
+### Step 9: Verification & Evidence
 
-**When:** All implementation is complete and the feature is ready to ship.
+**When:** Implementation (Step 7) and configuration (Step 8) are complete. This is the pre-release gate where the full test suite is run across all platforms and evidence is recorded.
+
+> **This is the verification gate.** Step 7 runs tests per-platform during development. This step runs the **full cross-platform regression suite** and produces the consolidated evidence that proves all requirements are satisfied.
+
+**Checklist:**
+- [ ] Read `docs/testing/testing-strategy.md` — confirm test levels, naming conventions, and run record format
+- [ ] Read `docs/testing/traceability-matrix.md` — identify all test cases for affected requirements
+- [ ] **Run backend tests:**
+  ```bash
+  cd pms-backend && pytest -v --cov=pms --cov-report=html
+  ```
+- [ ] **Run frontend tests:**
+  ```bash
+  cd pms-frontend && npx vitest run --coverage
+  ```
+- [ ] **Run Android tests:**
+  ```bash
+  cd pms-android && ./gradlew test
+  ```
+- [ ] **Run system tests** (full stack):
+  ```bash
+  docker compose up -d && pytest tests/system/ -v --base-url=http://localhost:8000
+  ```
+- [ ] Create a test run record for each platform: `docs/testing/evidence/RUN-YYYY-MM-DD-NNN.md`
+  - [ ] Include: date, repository, commit SHA, branch, runner, and per-test results table
+  - [ ] Follow the format in `testing-strategy.md` Section 6
+- [ ] Update `docs/testing/traceability-matrix.md`:
+  - [ ] Fill in Test Function paths for any remaining "—" entries
+  - [ ] Set Last Result to PASS/FAIL for every test case
+  - [ ] Set Run ID to the new run record ID
+  - [ ] Recalculate Coverage Summary (domain and platform)
+  - [ ] Recalculate Coverage Summary by Platform (BE/WEB/AND/AI)
+  - [ ] Increment version and update date in header
+- [ ] Update requirement statuses in platform files: `Implemented` → `Verified` for all passing tests
+- [ ] Update domain requirement statuses based on platform rollup rule
+- [ ] Run `/analyze` for final consistency verification:
+  ```bash
+  claude
+  /analyze
+  # "Verify that all requirements in docs/specs/requirements/ are covered
+  # by test cases in the traceability matrix. Flag any requirements with
+  # no tests or with failing tests."
+  ```
+- [ ] Save `/analyze` output: `git add docs/analyze/ && git commit -m "evidence: pre-release consistency verification"`
+- [ ] Commit and push all evidence
+
+**AI Agent Prompt:**
+```
+Read these files:
+- docs/testing/testing-strategy.md (test levels, naming, run record format)
+- docs/testing/traceability-matrix.md (all test cases and current status)
+- docs/specs/requirements/domain/SUB-{CODE}.md (domain requirements)
+- docs/specs/requirements/platform/SUB-{CODE}-{PLATFORM}.md (platform requirements)
+
+Run the full verification cycle for {FEATURE}:
+
+1. Run the test suite for each affected platform:
+   - pms-backend: pytest -v --cov=pms --cov-report=html
+   - pms-frontend: npx vitest run --coverage
+   - pms-android: ./gradlew test
+   - System tests: pytest tests/system/ -v --base-url=http://localhost:8000
+
+2. For each platform, create a test run record:
+   docs/testing/evidence/RUN-YYYY-MM-DD-NNN.md
+   Include: date, repository, commit SHA, branch, runner (local/CI),
+   and a results table with Test Case | Requirement | Result | Duration.
+
+3. Update docs/testing/traceability-matrix.md:
+   - Fill in Test Function for any "—" entries
+   - Set Last Result to PASS or FAIL for every affected test case
+   - Set Run ID to the corresponding evidence file
+   - Recalculate Coverage Summary and Coverage Summary by Platform
+   - Increment version and update date
+
+4. Update requirement statuses:
+   - Platform files: Implemented → Verified (for all passing tests)
+   - Domain files: apply strict rollup rule (Verified only when ALL
+     platform requirements are Verified)
+
+5. Run /analyze to verify 100% requirement coverage. Save output to
+   docs/analyze/. Commit: "evidence: pre-release consistency verification"
+
+6. Commit all evidence:
+   git add docs/testing/evidence/ docs/testing/traceability-matrix.md
+   git add docs/specs/requirements/ docs/analyze/
+   git commit -m "evidence: full verification for {FEATURE}"
+```
+
+---
+
+### Step 10: Release
+
+**When:** All verification evidence is recorded (Step 9) and the feature is ready to ship.
 
 **Checklist:**
 - [ ] Read `docs/specs/subsystem-versions.md` — bump version for affected subsystem(s)
 - [ ] Read `docs/specs/release-compatibility-matrix.md` — add new version combination row
 - [ ] Read `docs/config/release-process.md` — follow the release checklist:
-  - [ ] All tests passing
+  - [ ] All tests passing (verified in Step 9)
   - [ ] Security scans clean
   - [ ] Feature flags configured for target environment
-  - [ ] Documentation complete (all steps 1-8 done)
+  - [ ] Documentation complete (all steps 1-9 done)
 - [ ] Read `docs/config/feature-flags.md` — update flag states for release environment
 - [ ] Update `docs/PMS_Project_Overview.md` — refresh all counts, coverage, gap analysis
 - [ ] Update `docs/PMS_Requirements_Matrix.xlsx` — sync requirement IDs, statuses, and counts with SYS-REQ.md, domain files, and platform files
@@ -792,7 +892,8 @@ Prepare the release for {FEATURE} (branch: feature/{BRANCH_NAME}):
 | 6. Testing | `traceability-matrix.md` |
 | **7. Speckit Cycle** | **7a `/specify` → 7b `/plan` → 7c `/speckit.tasks` → 7d `/analyze` → 7e implement code + tests, `evidence/RUN-*.md`, `traceability-matrix.md`, platform status** |
 | 8. Config | `dependencies.md`, `feature-flags.md`, `environments.md`, `project-setup.md` |
-| 9. Release | `subsystem-versions.md`, `release-compatibility-matrix.md`, `feature-flags.md`, `PMS_Project_Overview.md`, `PMS_Requirements_Matrix.xlsx`, `index.md` |
+| **9. Verification** | **Run full test suite, `evidence/RUN-*.md`, `traceability-matrix.md`, platform/domain status → Verified, `/analyze` report** |
+| 10. Release | `subsystem-versions.md`, `release-compatibility-matrix.md`, `feature-flags.md`, `PMS_Project_Overview.md`, `PMS_Requirements_Matrix.xlsx`, `index.md` |
 
 ---
 
