@@ -126,6 +126,11 @@ _No bug fixes documented yet._
 - [HL7v2LIS Setup Guide](experiments/17-HL7v2LIS-PMS-Developer-Setup-Guide.md) — MLLP listener/sender deployment, hl7apy parser/builder, stunnel TLS, lab order/result API endpoints, and Next.js lab dashboard
 - [HL7v2LIS Developer Tutorial](experiments/17-HL7v2LIS-Developer-Tutorial.md) — Hands-on onboarding: parse ORU lab results, build ORM orders, detect critical values, and test with synthetic HL7 messages end-to-end
 
+### ISIC Archive (AI-Powered Dermatology Clinical Decision Support)
+- [PRD: ISICArchive PMS Integration](experiments/18-PRD-ISICArchive-PMS-Integration.md) — AI skin lesion classification using ISIC Archive's 400K+ dermoscopic images with EfficientNet-B4, pgvector similarity search, and structured risk scoring for dermatology triage
+- [ISICArchive Setup Guide](experiments/18-ISICArchive-PMS-Developer-Setup-Guide.md) — Dermatology CDS Docker service deployment, ONNX Runtime classification, pgvector reference cache, lesion API endpoints, and Next.js classification UI
+- [ISICArchive Developer Tutorial](experiments/18-ISICArchive-Developer-Tutorial.md) — Hands-on onboarding: classify a skin lesion, build similarity search, implement risk scoring, and track lesion changes over time end-to-end
+
 ---
 
 ## Documentation Views
