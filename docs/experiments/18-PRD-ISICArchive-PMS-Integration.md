@@ -118,7 +118,106 @@ flowchart TB
 
 ---
 
-## 4. PMS Data Sources
+## 4. User Journeys
+
+### 4.1 Journey 1: DermaCheck — Skin Lesion Capture, Classification, and Review
+
+The primary end-to-end workflow on Android, from the physician's perspective:
+
+1. **Patient Selection** — Physician opens the patient list, searches or filters by name/ID, and selects a patient.
+2. **DermaCheck Entry** — From the patient's record, the physician taps the branded **"DermaCheck"** button to enter the dermatology CDS workflow.
+3. **Camera Capture** — The camera opens via `CameraSessionManager` singleton (configured with a dermoscopy `CameraProfile`). The physician photographs the skin lesion.
+4. **Notes / Dictation** — Before or after capture, the physician can type or dictate clinical notes — anatomical site, patient concern, visual observations — that are sent alongside the image.
+5. **Upload & AI Processing** — The image and notes upload to the PMS Backend (`POST /api/lesions`), which forwards them to the DermCDS Service (:8090) for:
+   - **EfficientNet-B4 classification** across the 9 ISIC diagnostic categories (melanoma, melanocytic nevi, BCC, SCC, actinic keratosis, benign keratosis, dermatofibroma, vascular lesions, other)
+   - **Gemma 3 enrichment** via the AI Gateway (:8001) — clinical reasoning about the classification in the patient's context
+   - **pgvector similarity search** — cosine distance against pre-computed embeddings to retrieve visually similar ISIC reference images
+   - **Risk score calculation** — low / medium / high with referral urgency
+6. **Results Display** — The Android app presents:
+   - Top-3 classification with confidence percentages
+   - Gemma 3 clinical narrative (contextual reasoning)
+   - Risk level indicator (low / medium / high)
+   - Similar ISIC reference images gallery
+7. **Clinician Action** — The physician can:
+   - **Save** — persist findings to the patient's encounter record
+   - **Discard** — delete the image and results
+   - **Add Another Photo** — return to the camera for additional lesion capture within the same encounter
+
+> **Note:** On-device results are labeled as **"preliminary triage"** only (per SUB-PR-0013-AND). Full classification results require server-side processing through the DermCDS Service and are not finalized until the backend pipeline completes.
+
+#### Sequence Diagram
+
+![DermaCheck User Journey — Skin Lesion Capture, Classification, and Review](assets/18-isic-user-journey.png)
+
+<details>
+<summary>Mermaid source (click to expand)</summary>
+
+```mermaid
+sequenceDiagram
+    actor Physician
+    participant Android as Android App<br/>(Kotlin)
+    participant Backend as PMS Backend<br/>(FastAPI :8000)
+    participant DermCDS as DermCDS Service<br/>(:8090)
+    participant AIGateway as AI Gateway<br/>(Gemma 3 :8001)
+    participant PG as PostgreSQL<br/>(pgvector)
+
+    Note over Physician,Android: 1. Patient Selection
+    Physician->>Android: Open patient list, search/filter
+    Android->>Backend: GET /api/patients?q=...
+    Backend-->>Android: Patient list
+    Physician->>Android: Select patient
+
+    Note over Physician,Android: 2. DermaCheck Entry
+    Physician->>Android: Tap "DermaCheck" button
+    Android->>Android: Launch CameraSessionManager<br/>(dermoscopy CameraProfile)
+
+    Note over Physician,Android: 3. Camera Capture
+    Physician->>Android: Photograph lesion
+    Android-->>Android: Image captured
+
+    Note over Physician,Android: 4. Notes / Dictation
+    Physician->>Android: Type or dictate clinical notes<br/>(anatomical site, concerns, observations)
+
+    Note over Android,PG: 5. Upload & AI Processing
+    Android->>Backend: POST /api/lesions<br/>{image, notes, patient_id, encounter_id}
+    Backend->>DermCDS: Forward image + metadata
+
+    par EfficientNet-B4 Classification
+        DermCDS->>DermCDS: Classify lesion<br/>(9 ISIC categories)
+    and Gemma 3 Enrichment
+        DermCDS->>AIGateway: Request clinical reasoning<br/>(classification + patient context)
+        AIGateway-->>DermCDS: Clinical narrative
+    and Similarity Search
+        DermCDS->>PG: pgvector cosine search<br/>(image embedding)
+        PG-->>DermCDS: Top-K similar ISIC references
+    end
+
+    DermCDS->>DermCDS: Calculate risk score<br/>(low / medium / high)
+    DermCDS-->>Backend: Classification + narrative +<br/>risk score + similar images
+    Backend-->>Android: Full results payload
+
+    Note over Physician,Android: 6. Results Display
+    Android->>Physician: Show top-3 classification +<br/>confidence, Gemma 3 narrative,<br/>risk level, similar images gallery
+
+    Note over Physician,Android: 7. Clinician Action
+    alt Save
+        Physician->>Android: Save findings
+        Android->>Backend: POST /api/lesions/{id}/save
+        Backend->>PG: Persist to encounter record
+    else Discard
+        Physician->>Android: Discard results
+        Android->>Backend: DELETE /api/lesions/{id}
+    else Add Another Photo
+        Physician->>Android: Return to camera
+        Android->>Android: Re-launch CameraSessionManager
+    end
+```
+
+</details>
+
+---
+
+## 5. PMS Data Sources
 
 | PMS API / Data Source | CDS Module Interaction | Direction | Description |
 |---|---|---|---|
@@ -133,9 +232,9 @@ flowchart TB
 
 ---
 
-## 5. Component/Module Definitions
+## 6. Component/Module Definitions
 
-### 5.1 AI Inference Engine
+### 6.1 AI Inference Engine
 
 **Description:** PyTorch / ONNX Runtime service that classifies dermoscopic images into diagnostic categories using ISIC-trained models (EfficientNet-B4 or MobileNetV3 for edge). Returns probability distribution across 9 ISIC diagnostic classes.
 
@@ -143,7 +242,7 @@ flowchart TB
 - **Output:** Classification probabilities per class, top-3 predictions with confidence scores
 - **PMS APIs used:** `/api/lesions` (receive image, store results)
 
-### 5.2 Image Embedding Generator
+### 6.2 Image Embedding Generator
 
 **Description:** Extracts a 512-dimensional feature vector from the penultimate layer of the classification model. Used for similarity search against ISIC reference images.
 
@@ -151,7 +250,7 @@ flowchart TB
 - **Output:** 512-dim float32 embedding vector
 - **PMS APIs used:** None (internal to CDS service)
 
-### 5.3 Similarity Search Engine
+### 6.3 Similarity Search Engine
 
 **Description:** Uses pgvector (PostgreSQL vector extension) to find the K most visually similar ISIC reference images to a patient's lesion. Enables "show me confirmed examples that look like this" functionality.
 
@@ -159,7 +258,7 @@ flowchart TB
 - **Output:** Top-K similar ISIC reference images with diagnosis, similarity score, and metadata
 - **PMS APIs used:** PostgreSQL `lesion_embeddings` table (pgvector cosine distance)
 
-### 5.4 Risk Score Calculator
+### 6.4 Risk Score Calculator
 
 **Description:** Converts raw classification probabilities into a structured risk score (low/medium/high) with referral recommendations based on configurable clinical thresholds.
 
@@ -167,7 +266,7 @@ flowchart TB
 - **Output:** Risk level (low/medium/high), referral urgency (routine/expedited/urgent), contributing factors
 - **PMS APIs used:** `/api/patients` (age, skin cancer history), `/api/lesions` (prior classifications for trend)
 
-### 5.5 ISIC Reference Cache
+### 6.5 ISIC Reference Cache
 
 **Description:** Locally cached subset of ISIC Archive images and metadata, pre-computed embeddings stored in pgvector. Populated from AWS S3 bucket on initial setup and refreshable via `isic-cli`.
 
@@ -175,7 +274,7 @@ flowchart TB
 - **Output:** Indexed reference database with embeddings for similarity search
 - **PMS APIs used:** None (standalone cache)
 
-### 5.6 Lesion API
+### 6.6 Lesion API
 
 **Description:** New FastAPI endpoint (`/api/lesions`) for uploading dermoscopic images, triggering classification, viewing results, and tracking lesion history over time.
 
@@ -185,9 +284,9 @@ flowchart TB
 
 ---
 
-## 6. Non-Functional Requirements
+## 7. Non-Functional Requirements
 
-### 6.1 Security and HIPAA Compliance
+### 7.1 Security and HIPAA Compliance
 
 | Requirement | Implementation |
 |---|---|
@@ -200,7 +299,7 @@ flowchart TB
 | ISIC data licensing | ISIC images used under CC-0/CC-BY/CC-BY-NC; no PHI in reference dataset |
 | Model provenance | Track which model version produced each classification for reproducibility and liability |
 
-### 6.2 Performance
+### 7.2 Performance
 
 | Metric | Target |
 |---|---|
@@ -211,7 +310,7 @@ flowchart TB
 | Reference cache size | 50,000 ISIC images with embeddings (~10 GB storage) |
 | Concurrent classification requests | 5 simultaneous |
 
-### 6.3 Infrastructure
+### 7.3 Infrastructure
 
 | Component | Specification |
 |---|---|
@@ -225,7 +324,7 @@ flowchart TB
 
 ---
 
-## 7. Implementation Phases
+## 8. Implementation Phases
 
 ### Phase 1: Foundation — Classification + Reference Cache (Sprints 1-3, ~6 weeks)
 
@@ -262,7 +361,7 @@ flowchart TB
 
 ---
 
-## 8. Success Metrics
+## 9. Success Metrics
 
 | Metric | Target | Measurement Method |
 |---|---|---|
@@ -277,7 +376,7 @@ flowchart TB
 
 ---
 
-## 9. Risks and Mitigations
+## 10. Risks and Mitigations
 
 | Risk | Impact | Mitigation |
 |---|---|---|
@@ -291,7 +390,7 @@ flowchart TB
 
 ---
 
-## 10. Dependencies
+## 11. Dependencies
 
 | Dependency | Type | Version | Purpose |
 |---|---|---|---|
@@ -309,7 +408,7 @@ flowchart TB
 
 ---
 
-## 11. Comparison with Existing Experiments
+## 12. Comparison with Existing Experiments
 
 | Aspect | ISIC Archive (This Experiment) | Gemma 3 (Experiment 13) | Vision Capabilities (Edge) |
 |---|---|---|---|
@@ -324,7 +423,7 @@ ISIC integration is complementary to both Gemma 3 and Vision capabilities: ISIC 
 
 ---
 
-## 12. Research Sources
+## 13. Research Sources
 
 ### Official Documentation & Data
 - [ISIC Archive](https://www.isic-archive.com/) — Official ISIC repository for skin lesion images
@@ -347,7 +446,7 @@ ISIC integration is complementary to both Gemma 3 and Vision capabilities: ISIC 
 
 ---
 
-## 13. Appendix: Related Documents
+## 14. Appendix: Related Documents
 
 - [ISICArchive Setup Guide](18-ISICArchive-PMS-Developer-Setup-Guide.md) — Step-by-step CDS service deployment and PMS integration
 - [ISICArchive Developer Tutorial](18-ISICArchive-Developer-Tutorial.md) — Hands-on onboarding: classify a skin lesion and build a similarity search end-to-end
