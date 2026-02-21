@@ -1,8 +1,8 @@
 # Subsystem Requirements: Reporting & Analytics (SUB-RA)
 
 **Document ID:** PMS-SUB-RA-001
-**Version:** 1.3
-**Date:** 2026-02-17
+**Version:** 1.4
+**Date:** 2026-02-21
 **Parent:** [System Requirements](SYS-REQ.md)
 
 ---
@@ -22,10 +22,11 @@ The Reporting & Analytics subsystem provides dashboards, compliance reports, and
 | SUB-RA-0005 | SYS-REQ-0005 | Enforce RBAC: only administrator and billing roles can access reports. Administrator role additionally has audit log query access for compliance duties (DC-RA-01). | Test | Placeholder |
 | SUB-RA-0006 | — | Provide a medication usage report showing most prescribed medications and interaction alert frequency | Test | Placeholder |
 | SUB-RA-0007 | — | Support export of reports to CSV format | Test | Not Started |
+| SUB-RA-0008 | SYS-REQ-0012 | Provide a dermatology classification analytics report showing lesion classification volumes, risk score distributions, referral urgency trends, and model confidence metrics over configurable date ranges | Test | Not Started |
 
 ## Platform Decomposition
 
-### Backend (BE) — 7 requirements
+### Backend (BE) — 8 requirements
 
 | Platform Req ID | Parent | Description | Module(s) | Test Case(s) | Status |
 |---|---|---|---|---|---|
@@ -36,8 +37,9 @@ The Reporting & Analytics subsystem provides dashboards, compliance reports, and
 | SUB-RA-0005-BE | SUB-RA-0005 | Enforce RBAC on report endpoints (administrator/billing only) | `middleware/auth.py:require_role` | TST-RA-0005-BE | Placeholder |
 | SUB-RA-0006-BE | SUB-RA-0006 | Medication usage report API endpoint | `routers/reports.py` | TST-RA-0006-BE | Placeholder |
 | SUB-RA-0007-BE | SUB-RA-0007 | CSV export API for all report types | — | TST-RA-0007-BE | Not Started |
+| SUB-RA-0008-BE | SUB-RA-0008 | Dermatology analytics report API endpoint aggregating lesion classification counts, risk distributions, referral trends, and model confidence from the CDS service | `routers/reports.py`, `services/lesion_service.py` | TST-RA-0008-BE | Not Started |
 
-### Web Frontend (WEB) — 5 requirements
+### Web Frontend (WEB) — 6 requirements
 
 | Platform Req ID | Parent | Description | Module(s) | Test Case(s) | Status |
 |---|---|---|---|---|---|
@@ -46,6 +48,7 @@ The Reporting & Analytics subsystem provides dashboards, compliance reports, and
 | SUB-RA-0003-WEB | SUB-RA-0003 | Audit log query interface with filter controls | — | TST-RA-0003-WEB | Not Started |
 | SUB-RA-0004-WEB | SUB-RA-0004 | Auth guard for report pages | `lib/auth.ts` | TST-RA-0004-WEB | Scaffolded |
 | SUB-RA-0006-WEB | SUB-RA-0006 | Medication usage dashboard with charts | `app/reports/page.tsx` | TST-RA-0006-WEB | Not Started |
+| SUB-RA-0008-WEB | SUB-RA-0008 | Dermatology analytics dashboard with classification volume charts, risk distribution pie chart, referral trend line chart, and model confidence histogram | `app/reports/dermatology/page.tsx` | TST-RA-0008-WEB | Not Started |
 
 ### Android (AND) — 5 requirements
 

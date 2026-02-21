@@ -1,8 +1,8 @@
 # System-Level Requirements (SYS-REQ)
 
 **Document ID:** PMS-SYS-REQ-001
-**Version:** 1.5
-**Date:** 2026-02-18
+**Version:** 1.6
+**Date:** 2026-02-21
 **Parent:** [System Specification](../system-spec.md)
 
 ---
@@ -22,6 +22,7 @@
 | SYS-REQ-0009 | Provide a native Android application for mobile clinical workflows | High | Demo | Scaffolded |
 | SYS-REQ-0010 | All system components must be deployable via Docker containers | Medium | Inspection | Scaffolded |
 | SYS-REQ-0011 | Provide centralized prompt management with versioning, CRUD operations, and LLM-powered comparison for all AI prompts used across the system | High | Test / Demo | Not Started |
+| SYS-REQ-0012 | Provide AI-assisted skin lesion classification and dermatology clinical decision support using ISIC Archive-trained models with on-premises inference, similarity search, and structured risk scoring | High | Test / Demo | Not Started |
 
 ---
 
@@ -118,3 +119,22 @@
 **Current Implementation:** Not started.
 
 **Decomposes To:** SUB-PM-0003 (→ BE, WEB), SUB-PM-0004 (→ BE, WEB), SUB-PM-0006 (→ BE, WEB), SUB-PM-0007 (→ BE, WEB, AI)
+
+---
+
+### SYS-REQ-0012: Dermatology Clinical Decision Support
+
+**Rationale:** Primary care clinicians encounter suspicious skin lesions daily but lack dermoscopy expertise. Visual inspection alone achieves ~60% accuracy for skin lesion classification. The ISIC Archive (International Skin Imaging Collaboration) provides 400,000+ expert-annotated dermoscopic images that have been used to train AI models achieving 85-95% classification accuracy — matching or exceeding general dermatologists. On-premises inference ensures patient images never leave the network, satisfying HIPAA requirements.
+
+**Acceptance Criteria:**
+1. Clinicians can upload a dermoscopic image and receive AI classification across 9 ISIC diagnostic categories within 5 seconds.
+2. Classification results include a structured risk score (low/medium/high) with referral urgency (routine/expedited/urgent).
+3. The system displays visually similar ISIC reference images for clinical comparison (top-10 by cosine similarity).
+4. Patient dermoscopic images are encrypted at rest using AES-256-GCM and never transmitted to external services.
+5. All image uploads, classifications, and result views are recorded in the audit trail.
+6. Lesion assessments are linked to patient records and encounters for longitudinal tracking.
+7. The Android app supports on-device inference via TFLite for offline skin lesion triage.
+
+**Current Implementation:** Not started.
+
+**Decomposes To:** SUB-PR-0013 (→ BE, WEB, AND, AI), SUB-PR-0014 (→ BE, WEB, AI), SUB-PR-0015 (→ BE, WEB), SUB-PR-0016 (→ BE, WEB), SUB-RA-0008 (→ BE, WEB)
