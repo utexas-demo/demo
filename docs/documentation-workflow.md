@@ -725,6 +725,7 @@ For the new feature {FEATURE} (requirements: {REQ_IDS}), update:
   - [ ] Documentation complete (all steps 1-8 done)
 - [ ] Read `docs/config/feature-flags.md` — update flag states for release environment
 - [ ] Update `docs/PMS_Project_Overview.md` — refresh all counts, coverage, gap analysis
+- [ ] Update `docs/PMS_Requirements_Matrix.xlsx` — sync requirement IDs, statuses, and counts with SYS-REQ.md, domain files, and platform files
 - [ ] Update `docs/index.md` — verify all links, update requirement counts
 - [ ] Update `docs/documentation-workflow.md` — update file inventory if new files were added
 - [ ] Commit and push
@@ -738,6 +739,7 @@ Read these files:
 - docs/config/release-process.md
 - docs/config/feature-flags.md
 - docs/PMS_Project_Overview.md
+- docs/PMS_Requirements_Matrix.xlsx
 - docs/index.md
 - docs/documentation-workflow.md
 
@@ -759,13 +761,20 @@ Prepare the release for {FEATURE} (branch: feature/{BRANCH_NAME}):
    - Requirements test coverage table
    - Gap analysis priorities
 
-5. index.md: Verify all links work, update requirement counts in
+5. PMS_Requirements_Matrix.xlsx: Sync the spreadsheet with the
+   current state of all requirement documents:
+   - All SYS-REQ IDs and statuses from SYS-REQ.md
+   - All domain requirement IDs and statuses from domain/SUB-*.md
+   - All platform requirement IDs and statuses from platform/SUB-*-{PLATFORM}.md
+   - Totals must match index.md and PMS_Project_Overview.md counts
+
+6. index.md: Verify all links work, update requirement counts in
    "Specifications & Requirements" section.
 
-6. documentation-workflow.md: Update file inventory if new files
+7. documentation-workflow.md: Update file inventory if new files
    were added during this feature.
 
-7. Create a summary of all documentation changes made across all steps
+8. Create a summary of all documentation changes made across all steps
    for the PR description.
 ```
 
@@ -783,7 +792,7 @@ Prepare the release for {FEATURE} (branch: feature/{BRANCH_NAME}):
 | 6. Testing | `traceability-matrix.md` |
 | **7. Speckit Cycle** | **7a `/specify` → 7b `/plan` → 7c `/speckit.tasks` → 7d `/analyze` → 7e implement code + tests, `evidence/RUN-*.md`, `traceability-matrix.md`, platform status** |
 | 8. Config | `dependencies.md`, `feature-flags.md`, `environments.md`, `project-setup.md` |
-| 9. Release | `subsystem-versions.md`, `release-compatibility-matrix.md`, `feature-flags.md`, `PMS_Project_Overview.md`, `index.md` |
+| 9. Release | `subsystem-versions.md`, `release-compatibility-matrix.md`, `feature-flags.md`, `PMS_Project_Overview.md`, `PMS_Requirements_Matrix.xlsx`, `index.md` |
 
 ---
 
