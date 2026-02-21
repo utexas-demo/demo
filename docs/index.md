@@ -111,6 +111,11 @@ _No bug fixes documented yet._
 - [Agent Teams Reference](experiments/14-agent-teams-claude-whitepaper.md) — Official Claude Code agent teams documentation: architecture, shared task lists, mailbox messaging, display modes
 - [Multi-Agent Modes Developer Tutorial](experiments/14-AgentTeams-Developer-Tutorial.md) — Hands-on comparison of single session, subagents, agent teams, and git worktrees with PMS-specific exercises and decision framework
 
+### Claude Model Selection (AI Model Routing & Cost Optimization)
+- [PRD: Claude Model Selection PMS Integration](experiments/15-PRD-ClaudeModelSelection-PMS-Integration.md) — Intelligent model routing between Claude Opus 4.6, Sonnet 4.6, and Haiku 4.5 based on task complexity, latency, and cost for 60-70% cost reduction
+- [Claude Model Selection Setup Guide](experiments/15-ClaudeModelSelection-PMS-Developer-Setup-Guide.md) — Model Router service deployment, Anthropic SDK configuration, PHI sanitization, Redis caching, and PMS integration
+- [Claude Model Selection Developer Tutorial](experiments/15-ClaudeModelSelection-Developer-Tutorial.md) — Hands-on onboarding: build a multi-tier clinical encounter pipeline with Haiku extraction, Sonnet summarization, and Opus escalation
+
 ---
 
 ## Documentation Views
