@@ -184,7 +184,7 @@ flowchart TB
     DevInstr -->|"process"| Pipeline
 
     %% ── IMPLEMENTATION MILESTONE ──
-    IMPL["⚙ STEP 7: Development<br/>& Implementation<br/>(Code is written here)"]
+    IMPL["⚙ STEP 7: Speckit Cycle<br/>clarify → plan → task → analyze → implement<br/>(Code is written here)"]
 
     %% Platform reqs drive implementation
     PlatFiles -->|"implement"| IMPL
@@ -514,65 +514,151 @@ from testing-strategy.md.
 
 ---
 
-### Step 7: Development & Implementation
+### Step 7: Development & Implementation (GitHub Speckit Cycle)
 
 **When:** Requirements are decomposed (Step 4), governance checks are done (Step 5), and test cases are planned in the traceability matrix (Step 6). This is the milestone where actual code is written.
 
 > **This is the implementation milestone.** All prior steps (1–6) are documentation and planning. Steps 8–9 are configuration and release. Code is written here.
 
-**Checklist:**
-- [ ] Read the platform requirements for your target platform in `docs/specs/requirements/platform/SUB-{code}-{PLATFORM}.md`
-- [ ] Read `docs/testing/testing-strategy.md` — follow test naming conventions and `@requirement` annotation rules
-- [ ] Read `docs/quality/processes/PMS_Developer_Working_Instructions.md` — follow development pipeline phases
-- [ ] Read `docs/api/backend-endpoints.md` — reference endpoint contracts for backend work
-- [ ] Implement the feature in the target repository:
-  - [ ] **pms-backend** (FastAPI): routers, services, models per `SUB-*-BE` requirements
-  - [ ] **pms-frontend** (Next.js): pages, components, API calls per `SUB-*-WEB` requirements
-  - [ ] **pms-android** (Kotlin/Jetpack Compose): screens, ViewModels, repositories per `SUB-*-AND` requirements
-  - [ ] **AI infrastructure**: ML models, inference services, embedding pipelines per `SUB-*-AI` requirements
-- [ ] Write tests with `@requirement` annotations linking to platform requirement IDs (e.g., `SUB-PR-0001-BE`)
+The implementation follows the **GitHub Speckit full cycle** — five phases executed per platform. The **platform constitution** (the platform requirement file `SUB-{CODE}-{PLATFORM}.md`) is the governing specification for each cycle.
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│  SPECKIT FULL CYCLE  (repeat per platform: BE, WEB, AND, AI)    │
+│                                                                  │
+│  Constitution: docs/specs/requirements/platform/SUB-*-{PLAT}.md │
+│                                                                  │
+│  7a. CLARIFY   — /specify  (double-check requirements)          │
+│  7b. PLAN      — /plan     (technical implementation plan)      │
+│  7c. TASK      — /speckit.tasks (break into testable tasks)     │
+│  7d. ANALYZE   — /analyze  (validate consistency before code)   │
+│  7e. IMPLEMENT — write code, tests, evidence, update status     │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+#### 7a. Clarify (`/specify`)
+
+Double-check that the platform requirements are complete, unambiguous, and consistent before writing any code.
+
+- [ ] Read the platform constitution: `docs/specs/requirements/platform/SUB-{CODE}-{PLATFORM}.md`
+- [ ] Read the parent domain file: `docs/specs/requirements/domain/SUB-{CODE}.md`
+- [ ] Read the API contracts: `docs/api/backend-endpoints.md`
+- [ ] Run `/specify` to validate that each requirement in the constitution is:
+  - Unambiguous and testable
+  - Linked to a parent domain requirement
+  - Assigned a test case ID (`TST-{CODE}-XXXX-{PLATFORM}`)
+  - Consistent with cross-cutting system requirements (SYS-REQ-0001 auth, SYS-REQ-0002 encryption, SYS-REQ-0003 audit, SYS-REQ-0005 RBAC)
+- [ ] Flag and resolve any gaps or ambiguities before proceeding
+
+#### 7b. Plan (`/plan`)
+
+Generate a technical implementation plan scoped to the platform constitution.
+
+- [ ] Run `/plan` referencing the platform constitution
+- [ ] The plan must specify:
+  - Which modules/files to create or modify
+  - Data models and database migrations needed
+  - API endpoint signatures (for BE) or component hierarchy (for WEB/AND)
+  - How cross-cutting concerns (auth, encryption, audit) are handled
+  - Integration points with other platforms
+
+#### 7c. Task (`/speckit.tasks`)
+
+Break the plan into small, testable implementation tasks.
+
+- [ ] Run `/speckit.tasks` to decompose the plan
+- [ ] Each task should map to one or more platform requirements from the constitution
+- [ ] Tasks should be ordered by dependency (models → services → routers → tests for BE; stores → components → pages → tests for WEB/AND)
+
+#### 7d. Analyze (`/analyze`)
+
+Validate consistency between the constitution, plan, and traceability matrix before writing code.
+
+- [ ] Run `/analyze` to verify:
+  - Every platform requirement in the constitution has a planned task
+  - Every planned test case ID exists in the traceability matrix
+  - No requirement is orphaned or contradicted
+- [ ] Save the `/analyze` output as evidence:
+  ```bash
+  git add docs/analyze/
+  git commit -m "evidence: pre-implementation analysis for SUB-{CODE}-{PLATFORM}"
+  ```
+
+#### 7e. Implement
+
+Write code, tests, and evidence. Update all traceability artifacts.
+
+- [ ] Implement the feature in the target repository per the speckit tasks:
+  - **pms-backend** (FastAPI): routers, services, models per `SUB-*-BE` constitution
+  - **pms-frontend** (Next.js): pages, components, API calls per `SUB-*-WEB` constitution
+  - **pms-android** (Kotlin/Jetpack Compose): screens, ViewModels, repositories per `SUB-*-AND` constitution
+  - **AI infrastructure**: ML models, inference services, embedding pipelines per `SUB-*-AI` constitution
+- [ ] Write tests with `@requirement` annotations linking to the platform constitution IDs (e.g., `SUB-PR-0001-BE`)
 - [ ] Use test IDs from the traceability matrix: `TST-{CODE}-XXXX-{PLATFORM}`
 - [ ] Run the test suite and verify all new tests pass
 - [ ] Record a test run in `docs/testing/evidence/RUN-YYYY-MM-DD-NNN.md`
 - [ ] Update test results in `docs/testing/traceability-matrix.md` — fill in Test Function, Last Result (PASS/FAIL), and Run ID
-- [ ] Update requirement status in platform files: `Not Started` → `Implemented`
+- [ ] Update requirement status in the platform constitution: `Not Started` → `Implemented`
 - [ ] Update domain requirement status based on platform rollup rule
 - [ ] Commit and push
 
 **AI Agent Prompt:**
 ```
-Read these files to understand what to implement:
-- docs/specs/requirements/platform/SUB-{CODE}-{PLATFORM}.md (platform requirements)
+You are implementing requirements using the GitHub Speckit full cycle.
+
+CONSTITUTION (governing spec for this cycle):
+  docs/specs/requirements/platform/SUB-{CODE}-{PLATFORM}.md
+
+Read these files before starting:
+- docs/specs/requirements/platform/SUB-{CODE}-{PLATFORM}.md (platform constitution)
 - docs/specs/requirements/domain/SUB-{CODE}.md (domain context)
+- docs/specs/requirements/SYS-REQ.md (cross-cutting system requirements)
 - docs/api/backend-endpoints.md (API contracts)
 - docs/testing/testing-strategy.md (test conventions)
 - docs/testing/traceability-matrix.md (planned test case IDs)
 - docs/quality/processes/PMS_Developer_Working_Instructions.md (process)
 
-Implement the requirements for SUB-{CODE}-{PLATFORM}:
+Execute the five-phase speckit cycle:
 
-1. For each platform requirement (SUB-{CODE}-XXXX-{PLATFORM}):
-   - Write the implementation code in the target repository
-   - Write tests annotated with @requirement SUB-{CODE}-XXXX-{PLATFORM}
-   - Use the test ID from the traceability matrix: TST-{CODE}-XXXX-{PLATFORM}
-   - Follow the test annotation format from testing-strategy.md
+PHASE 7a — CLARIFY (/specify):
+Review every requirement row in the platform constitution file.
+For each requirement, verify it is unambiguous, testable, linked to a
+parent domain req, and has a test case ID assigned. Flag any gaps.
+Verify consistency with SYS-REQ-0001 (auth), SYS-REQ-0002 (encryption),
+SYS-REQ-0003 (audit), SYS-REQ-0005 (RBAC).
 
-2. Run all tests and verify they pass.
+PHASE 7b — PLAN (/plan):
+Generate a technical implementation plan for SUB-{CODE}-{PLATFORM}.
+List every file to create/modify, data models, endpoint signatures or
+component hierarchy, and how cross-cutting concerns are handled.
 
-3. Create a test run record: docs/testing/evidence/RUN-YYYY-MM-DD-NNN.md
-   following the format in testing-strategy.md Section 6.
+PHASE 7c — TASK (/speckit.tasks):
+Break the plan into small, testable tasks. Each task maps to one or more
+platform constitution requirements. Order by dependency.
 
-4. Update docs/testing/traceability-matrix.md:
-   - Fill in "Test Function" column with the actual test function path
+PHASE 7d — ANALYZE (/analyze):
+Validate that every constitution requirement has a planned task and a
+test case ID in the traceability matrix. Save output to docs/analyze/.
+Commit: "evidence: pre-implementation analysis for SUB-{CODE}-{PLATFORM}"
+
+PHASE 7e — IMPLEMENT:
+For each platform requirement (SUB-{CODE}-XXXX-{PLATFORM}):
+  - Write the implementation code in the target repository
+  - Write tests annotated with @requirement SUB-{CODE}-XXXX-{PLATFORM}
+  - Use the test ID from the traceability matrix: TST-{CODE}-XXXX-{PLATFORM}
+  - Follow the test annotation format from testing-strategy.md
+
+After implementation:
+1. Run all tests and verify they pass.
+2. Create a test run record: docs/testing/evidence/RUN-YYYY-MM-DD-NNN.md
+3. Update docs/testing/traceability-matrix.md:
+   - Fill in "Test Function" with actual function path
    - Set "Last Result" to PASS or FAIL
    - Set "Run ID" to the new run record ID
-
-5. Update requirement status:
-   - In platform file: change status from "Not Started" to "Implemented"
-   - In domain file: update status per the rollup rule (all platforms
-     Implemented → domain becomes Implemented)
-
-6. Commit with message: "feat(SUB-{CODE}): implement {FEATURE} requirements"
+4. Update requirement status in the platform constitution:
+   "Not Started" → "Implemented"
+5. Update domain requirement status per the rollup rule.
+6. Commit: "feat(SUB-{CODE}): implement {FEATURE} for {PLATFORM}"
 ```
 
 ---
@@ -695,7 +781,7 @@ Prepare the release for {FEATURE} (branch: feature/{BRANCH_NAME}):
 | 4. Subsystem | `domain/SUB-*.md`, `platform/SUB-*-{PLATFORM}.md`, `backend-endpoints.md`, `subsystem-versions.md`, `index.md` |
 | 5. Governance | `requirements-governance.md` |
 | 6. Testing | `traceability-matrix.md` |
-| **7. Implement** | **Code in pms-backend / pms-frontend / pms-android, test evidence in `evidence/RUN-*.md`, update `traceability-matrix.md` and platform status** |
+| **7. Speckit Cycle** | **7a `/specify` → 7b `/plan` → 7c `/speckit.tasks` → 7d `/analyze` → 7e implement code + tests, `evidence/RUN-*.md`, `traceability-matrix.md`, platform status** |
 | 8. Config | `dependencies.md`, `feature-flags.md`, `environments.md`, `project-setup.md` |
 | 9. Release | `subsystem-versions.md`, `release-compatibility-matrix.md`, `feature-flags.md`, `PMS_Project_Overview.md`, `index.md` |
 
