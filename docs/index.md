@@ -121,6 +121,11 @@ _No bug fixes documented yet._
 - [FHIR Setup Guide](experiments/16-FHIR-PMS-Developer-Setup-Guide.md) — FHIR Facade FastAPI deployment, resource mappers, CapabilityStatement, SMART OAuth 2.0, AuditEvent logging, and Next.js FHIR dashboard
 - [FHIR Developer Tutorial](experiments/16-FHIR-Developer-Tutorial.md) — Hands-on onboarding: build FHIR resource mappers, Encounter endpoints, and external data import end-to-end
 
+### HL7 v2 LIS Messaging (Legacy Lab System Integration)
+- [PRD: HL7v2LIS PMS Integration](experiments/17-PRD-HL7v2LIS-PMS-Integration.md) — Bidirectional HL7 v2 messaging with laboratory information systems via MLLP for electronic lab ordering (ORM) and result reception (ORU) with TLS encryption and HIPAA audit logging
+- [HL7v2LIS Setup Guide](experiments/17-HL7v2LIS-PMS-Developer-Setup-Guide.md) — MLLP listener/sender deployment, hl7apy parser/builder, stunnel TLS, lab order/result API endpoints, and Next.js lab dashboard
+- [HL7v2LIS Developer Tutorial](experiments/17-HL7v2LIS-Developer-Tutorial.md) — Hands-on onboarding: parse ORU lab results, build ORM orders, detect critical values, and test with synthetic HL7 messages end-to-end
+
 ---
 
 ## Documentation Views
