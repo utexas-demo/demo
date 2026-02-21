@@ -33,47 +33,32 @@ Integrate Tambo AI as a **conversational analytics sidebar** within the PMS dash
 
 ### 3.1 Architecture Overview
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                     MPS Frontend (React)                   │
-│                                                               │
-│  ┌─────────────────────┐    ┌──────────────────────────────┐ │
-│  │   Existing PMS      │    │   Tambo Conversational       │ │
-│  │   Dashboard Views    │    │   Analytics Sidebar          │ │
-│  │                     │    │                              │ │
-│  │  - Weekly Reports   │    │  [User types query]          │ │
-│  │  - Patient Lists    │◄──►│  [Tambo renders component]   │ │
-│  │  - Encounter Logs   │    │  [Interactive drill-down]    │ │
-│  │                     │    │                              │ │
-│  └─────────────────────┘    └──────────────┬───────────────┘ │
-│                                             │                 │
-│         <TamboProvider>                     │                 │
-│           components={pmsComponents}        │                 │
-│           tools={pmsApiTools}               │                 │
-│           apiKey={SELF_HOSTED_KEY}           │                 │
-│                                             │                 │
-└─────────────────────────────────┬───────────┘                 │
-                                  │                             │
-                    ┌─────────────▼──────────────┐              │
-                    │  Tambo Self-Hosted Backend  │              │
-                    │  (Docker on MPS Infra)   │              │
-                    │                             │              │
-                    │  - NestJS API (port 3001)   │              │
-                    │  - Next.js Dashboard (3000) │              │
-                    │  - PostgreSQL (5432)         │              │
-                    │  - Drizzle ORM              │              │
-                    └─────────────┬──────────────┘              │
-                                  │                             │
-                    ┌─────────────▼──────────────┐              │
-                    │  MPS Backend             │              │
-                    │  (Spring Boot APIs)         │              │
-                    │                             │              │
-                    │  - /api/dw/patient-status   │              │
-                    │  - /api/dw/events           │              │
-                    │  - /api/dw/engagement       │              │
-                    │  - /api/dw/devices          │              │
-                    │  - MongoDB                  │              │
-                    └─────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Frontend["MPS Frontend (React)"]
+        direction LR
+        PMS["Existing PMS<br/>Dashboard Views<br/>- Weekly Reports<br/>- Patient Lists<br/>- Encounter Logs"]
+        TAMBO["Tambo Conversational<br/>Analytics Sidebar<br/>- User types query<br/>- Tambo renders component<br/>- Interactive drill-down"]
+        PMS <--> TAMBO
+    end
+
+    PROVIDER["TamboProvider<br/>components={pmsComponents}<br/>tools={pmsApiTools}<br/>apiKey={SELF_HOSTED_KEY}"]
+
+    subgraph DockerBE["Tambo Self-Hosted Backend (Docker on MPS Infra)"]
+        NEST["NestJS API (port 3001)"]
+        NEXTDASH["Next.js Dashboard (3000)"]
+        TPG[("PostgreSQL (5432)<br/>Drizzle ORM")]
+    end
+
+    subgraph MPSBE["MPS Backend (Spring Boot APIs)"]
+        A1["/api/dw/patient-status"]
+        A2["/api/dw/events"]
+        A3["/api/dw/engagement"]
+        A4["/api/dw/devices"]
+        MONGO[("MongoDB")]
+    end
+
+    TAMBO --> PROVIDER --> DockerBE --> MPSBE
 ```
 
 ### 3.2 Deployment Model
@@ -364,7 +349,26 @@ Access control is enforced at the Spring Boot API layer (existing RBAC), not wit
 
 ---
 
-## 13. Appendix: Related Documents
+## 13. Research Sources
+
+### Official Documentation
+
+- [Tambo AI Docs](https://docs.tambo.co/) — SDK reference, component registration, agent configuration
+- [Tambo GitHub Repository](https://github.com/tambo-ai/tambo) — Source code, architecture, and React SDK
+
+### Architecture & Ecosystem
+
+- [Introducing Tambo 1.0](https://tambo.co/blog/posts/introducing-tambo-generative-ui) — Launch announcement, SOC 2 and HIPAA compliance details
+- [What is Generative UI?](https://tambo.co/blog/posts/what-is-generative-ui) — Core concepts behind Tambo's generative UI approach
+- [Tambo: A Comprehensive Overview (Skywork AI)](https://skywork.ai/blog/tambo-a-comprehensive-overview/) — Third-party architectural analysis and comparison
+
+### Community & Tutorials
+
+- [Tambo AI: React SDK for Generative UI (YUV.AI)](https://yuv.ai/blog/tambo-ai) — Developer walkthrough and integration patterns
+
+---
+
+## 14. Appendix: Related Documents
 
 - PMS Data Warehouse Requirements (DW Collections Schema)
 - MPS API Swagger Documentation

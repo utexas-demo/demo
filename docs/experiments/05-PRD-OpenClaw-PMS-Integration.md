@@ -33,54 +33,56 @@ Deploy OpenClaw as a **task automation agent** accessible to PMS users via a web
 
 ### 3.1 Architecture Overview
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                     MPS Network Boundary                    │
-│                                                                │
-│  ┌─────────────────────┐    ┌──────────────────────────────┐  │
-│  │   PMS Web Frontend   │    │   OpenClaw Agent Interface    │  │
-│  │   (Next.js 15)       │    │   (Web UI / Sidebar)         │  │
-│  │                      │    │                               │  │
-│  │  - Patient Records   │    │  [User types task]            │  │
-│  │  - Encounters        │◄──►│  [Agent plans & executes]     │  │
-│  │  - Medications       │    │  [Results displayed]          │  │
-│  │  - Reports           │    │  [Human approves actions]     │  │
-│  └─────────────────────┘    └──────────────┬────────────────┘  │
-│                                             │                   │
-│  ┌──────────────────────────────────────────▼────────────────┐  │
-│  │                    OpenClaw Agent (Docker)                  │  │
-│  │                                                             │  │
-│  │  ┌─────────────┐  ┌──────────────┐  ┌──────────────────┐  │  │
-│  │  │  Skills      │  │  Memory      │  │  Task Scheduler  │  │  │
-│  │  │  Engine      │  │  (Markdown)  │  │  (Cron-based)    │  │  │
-│  │  └──────┬──────┘  └──────────────┘  └──────────────────┘  │  │
-│  │         │                                                   │  │
-│  │  ┌──────▼──────────────────────────────────────────────┐   │  │
-│  │  │  PMS Skills (Custom)                                 │   │  │
-│  │  │  - pms-patient-lookup    - pms-prior-auth            │   │  │
-│  │  │  - pms-encounter-query   - pms-care-coordination     │   │  │
-│  │  │  - pms-document-draft    - pms-device-reconcile      │   │  │
-│  │  │  - pms-medication-check  - pms-report-generate       │   │  │
-│  │  └──────┬──────────────────────────────────────────────┘   │  │
-│  └─────────┼──────────────────────────────────────────────────┘  │
-│            │                                                      │
-│  ┌─────────▼──────────────┐  ┌────────────────────────────────┐  │
-│  │  PMS Backend            │  │  External Integrations          │  │
-│  │  (FastAPI)              │  │  (via Skills)                   │  │
-│  │                         │  │                                  │  │
-│  │  - /api/patients        │  │  - Payer portals (web scrape)   │  │
-│  │  - /api/encounters      │  │  - Fax service (eFax API)       │  │
-│  │  - /api/prescriptions   │  │  - Scheduling (Calendly API)    │  │
-│  │  - /api/reports         │  │  - Messaging (Twilio)           │  │
-│  │  - PostgreSQL           │  │                                  │  │
-│  └─────────────────────────┘  └────────────────────────────────┘  │
-│                                                                    │
-│            ┌───────────────────────────────┐                       │
-│            │  LLM Provider (Anthropic API) │                       │
-│            │  API key in env vars          │                       │
-│            │  No PHI sent to LLM           │                       │
-│            └───────────────────────────────┘                       │
-└────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph MPS["MPS Network Boundary"]
+        direction TB
+        WEB["PMS Web Frontend (Next.js 15)<br/>- Patient Records<br/>- Encounters<br/>- Medications<br/>- Reports"]
+        OCI["OpenClaw Agent Interface<br/>(Web UI / Sidebar)<br/>- User types task<br/>- Agent plans & executes<br/>- Results displayed<br/>- Human approves actions"]
+        WEB <--> OCI
+
+        subgraph Agent["OpenClaw Agent (Docker)"]
+            direction TB
+            SK["Skills Engine"]
+            MEM["Memory (Markdown)"]
+            SCHED["Task Scheduler (Cron-based)"]
+            subgraph Skills["PMS Skills (Custom)"]
+                S1["pms-patient-lookup"]
+                S2["pms-encounter-query"]
+                S3["pms-document-draft"]
+                S4["pms-medication-check"]
+                S5["pms-prior-auth"]
+                S6["pms-care-coordination"]
+                S7["pms-device-reconcile"]
+                S8["pms-report-generate"]
+            end
+            SK --> Skills
+        end
+
+        subgraph Backend["PMS Backend (FastAPI)"]
+            P1["/api/patients"]
+            P2["/api/encounters"]
+            P3["/api/prescriptions"]
+            P4["/api/reports"]
+            PG[("PostgreSQL")]
+        end
+
+        subgraph External["External Integrations (via Skills)"]
+            E1["Payer portals (web scrape)"]
+            E2["Fax service (eFax API)"]
+            E3["Scheduling (Calendly API)"]
+            E4["Messaging (Twilio)"]
+        end
+
+        LLM["LLM Provider (Anthropic API)<br/>API key in env vars · No PHI sent to LLM"]
+    end
+
+    OCI --> Agent
+    Skills --> Backend
+    Skills --> External
+    Agent --> LLM
+
+    style LLM fill:#fff3cd,stroke:#ffc107
 ```
 
 ### 3.2 Deployment Model
@@ -383,7 +385,29 @@ Access control is enforced at the FastAPI layer via JWT-based RBAC. OpenClaw pas
 
 ---
 
-## 14. Appendix: Related Documents
+## 14. Research Sources
+
+### Official Documentation
+
+- [OpenClaw GitHub Repository](https://github.com/openclaw/openclaw) — Source code, skills architecture, and deployment guides
+- [OpenClaw Official Site](https://openclaw.ai/) — Product overview and feature summary
+- [OpenClaw Security Docs](https://docs.openclaw.ai/gateway/security) — Gateway security model and sandboxing
+
+### Architecture & Deployment
+
+- [What Is OpenClaw? (DigitalOcean)](https://www.digitalocean.com/resources/articles/what-is-openclaw) — Self-hosted AI agent architecture overview
+- [How to Deploy OpenClaw (Vultr)](https://docs.vultr.com/how-to-deploy-openclaw-autonomous-ai-agent-platform) — Docker deployment walkthrough and configuration
+- [OpenClaw Complete Guide (Milvus Blog)](https://milvus.io/blog/openclaw-formerly-clawdbot-moltbot-explained-a-complete-guide-to-the-autonomous-ai-agent.md) — History, architecture, and skill system deep-dive
+
+### Security & Healthcare
+
+- [What Security Teams Need to Know (CrowdStrike)](https://www.crowdstrike.com/en-us/blog/what-security-teams-need-to-know-about-openclaw-ai-super-agent/) — Security risk analysis and mitigation strategies
+- [OpenClaw in the Clinic (OnHealthcare)](https://www.onhealthcare.tech/p/openclaw-in-the-clinic-a-business) — HIPAA-compliant deployment plan for healthcare
+- [Autonomous AI Agents and Identity Security (CyberArk)](https://www.cyberark.com/resources/agentic-ai-security/how-autonomous-ai-agents-like-openclaw-are-reshaping-enterprise-identity-security) — Enterprise identity and access control considerations
+
+---
+
+## 15. Appendix: Related Documents
 
 - [Tambo AI PRD](05-PRD-Tambo-PMS-Integration.md) — Complementary conversational analytics integration
 - [OpenClaw Setup Guide](05-OpenClaw-PMS-Developer-Setup-Guide.md) — Step-by-step installation and configuration

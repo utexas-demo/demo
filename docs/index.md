@@ -72,6 +72,51 @@ _No bug fixes documented yet._
 - [OpenClaw Setup Guide](experiments/05-OpenClaw-PMS-Developer-Setup-Guide.md) — HIPAA-hardened Docker deployment, custom PMS skills, frontend integration
 - [OpenClaw Developer Tutorial](experiments/05-OpenClaw-Developer-Tutorial.md) — Hands-on onboarding: build your first skill with approval tiers
 
+### MedASR (Medical Speech Recognition)
+- [PRD: MedASR PMS Integration](experiments/07-PRD-MedASR-PMS-Integration.md) — On-premise medical speech-to-text for clinical dictation, encounter documentation, and structured note extraction
+- [MedASR Setup Guide](experiments/07-MedASR-PMS-Developer-Setup-Guide.md) — Self-hosted GPU Docker deployment, FastAPI inference service, PMS backend and frontend integration
+- [MedASR Developer Tutorial](experiments/07-MedASR-Developer-Tutorial.md) — Hands-on onboarding: build your first clinical dictation integration end-to-end
+
+### Adaptive Thinking (AI Reasoning Optimization)
+- [PRD: Adaptive Thinking PMS Integration](experiments/08-PRD-AdaptiveThinking-PMS-Integration.md) — Effort-routed AI reasoning for clinical decision support, cost optimization, and interleaved agentic workflows
+- [Adaptive Thinking Setup Guide](experiments/08-AdaptiveThinking-PMS-Developer-Setup-Guide.md) — SDK migration from deprecated extended thinking, effort routing, telemetry, and streaming integration
+- [Adaptive Thinking Developer Tutorial](experiments/08-AdaptiveThinking-Developer-Tutorial.md) — Hands-on onboarding: build effort-routed clinical AI features end-to-end
+
+### MCP (Universal AI Integration Protocol)
+- [PRD: MCP PMS Integration](experiments/09-PRD-MCP-PMS-Integration.md) — Standardized Model Context Protocol server exposing PMS APIs as discoverable tools, resources, and prompts for all AI clients
+- [MCP Setup Guide](experiments/09-MCP-PMS-Developer-Setup-Guide.md) — FastMCP server deployment, OAuth 2.1 auth, audit logging, Claude Desktop and Next.js client integration
+- [MCP Developer Tutorial](experiments/09-MCP-Developer-Tutorial.md) — Hands-on onboarding: build custom MCP tools, resources, and prompts for PMS clinical workflows
+
+### Speechmatics Medical (Real-Time Clinical Speech-to-Text)
+- [PRD: Speechmatics Medical PMS Integration](experiments/10-PRD-SpeechmaticsMedical-PMS-Integration.md) — Real-time medical transcription with speaker diarization, 93% clinical accuracy, and HIPAA-compliant cloud/on-prem deployment
+- [Speechmatics Medical Setup Guide](experiments/10-SpeechmaticsMedical-PMS-Developer-Setup-Guide.md) — WebSocket proxy, Speechmatics API configuration, Next.js transcription UI, audit logging
+- [Speechmatics Medical Developer Tutorial](experiments/10-SpeechmaticsMedical-Developer-Tutorial.md) — Hands-on onboarding: build real-time clinical dictation with speaker labels end-to-end
+
+### Sanford Guide (Antimicrobial Clinical Decision Support)
+
+- [PRD: Sanford Guide PMS Integration](experiments/11-PRD-SanfordGuide-PMS-Integration.md) — Real-time antimicrobial treatment recommendations, dose adjustments, drug interactions, and stewardship support embedded in prescribing workflows
+- [Sanford Guide Setup Guide](experiments/11-SanfordGuide-PMS-Developer-Setup-Guide.md) — API client configuration, Redis caching, CDS sidebar panel, audit logging, and HIPAA-compliant data sanitization
+- [Sanford Guide Developer Tutorial](experiments/11-SanfordGuide-Developer-Tutorial.md) — Hands-on onboarding: build a syndrome-to-prescription CDS pipeline with interaction checking end-to-end
+
+### AI Zero-Day Vulnerability Scan (AI-Powered Security)
+- [PRD: AI Zero-Day Scan PMS Integration](experiments/12-PRD-AIZeroDayScan-PMS-Integration.md) — AI-powered zero-day vulnerability scanning using Claude Opus 4.6 for continuous security assurance of PMS codebase and dependencies
+- [AI Zero-Day Scan Setup Guide](experiments/12-AIZeroDayScan-PMS-Developer-Setup-Guide.md) — CI/CD security gate, deep dependency auditor service, security dashboard integration
+- [AI Zero-Day Scan Developer Tutorial](experiments/12-AIZeroDayScan-Developer-Tutorial.md) — Hands-on onboarding: scan vulnerable code, triage findings, build custom healthcare security prompts
+
+### Gemma 3 (On-Premise Open-Weight Clinical AI)
+- [PRD: Gemma 3 PMS Integration](experiments/13-PRD-Gemma3-PMS-Integration.md) — Self-hosted multimodal AI backbone using Google's Gemma 3 and MedGemma for HIPAA-compliant clinical summarization, structured extraction, and medication intelligence with zero PHI egress
+- [Gemma 3 Setup Guide](experiments/13-Gemma3-PMS-Developer-Setup-Guide.md) — Ollama deployment, AI Gateway service, OpenAI-compatible API, PMS backend and frontend integration
+- [Gemma 3 Developer Tutorial](experiments/13-Gemma3-Developer-Tutorial.md) — Hands-on onboarding: build a medication reconciliation pipeline with drug interaction checking end-to-end
+
+### Claude Code Multi-Agent Modes (AI-Assisted Development Workflows)
+- [Agent Teams Reference](experiments/14-agent-teams-claude-whitepaper.md) — Official Claude Code agent teams documentation: architecture, shared task lists, mailbox messaging, display modes
+- [Multi-Agent Modes Developer Tutorial](experiments/14-AgentTeams-Developer-Tutorial.md) — Hands-on comparison of single session, subagents, agent teams, and git worktrees with PMS-specific exercises and decision framework
+
+### Claude Model Selection (AI Model Routing & Cost Optimization)
+- [PRD: Claude Model Selection PMS Integration](experiments/15-PRD-ClaudeModelSelection-PMS-Integration.md) — Intelligent model routing between Claude Opus 4.6, Sonnet 4.6, and Haiku 4.5 based on task complexity, latency, and cost for 60-70% cost reduction
+- [Claude Model Selection Setup Guide](experiments/15-ClaudeModelSelection-PMS-Developer-Setup-Guide.md) — Model Router service deployment, Anthropic SDK configuration, PHI sanitization, Redis caching, and PMS integration
+- [Claude Model Selection Developer Tutorial](experiments/15-ClaudeModelSelection-Developer-Tutorial.md) — Hands-on onboarding: build a multi-tier clinical encounter pipeline with Haiku extraction, Sonnet summarization, and Opus escalation
+
 ---
 
 ## Documentation Views
