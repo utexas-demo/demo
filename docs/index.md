@@ -116,6 +116,11 @@ _No bug fixes documented yet._
 - [Claude Model Selection Setup Guide](experiments/15-ClaudeModelSelection-PMS-Developer-Setup-Guide.md) — Model Router service deployment, Anthropic SDK configuration, PHI sanitization, Redis caching, and PMS integration
 - [Claude Model Selection Developer Tutorial](experiments/15-ClaudeModelSelection-Developer-Tutorial.md) — Hands-on onboarding: build a multi-tier clinical encounter pipeline with Haiku extraction, Sonnet summarization, and Opus escalation
 
+### FHIR (Healthcare Data Interoperability Standard)
+- [PRD: FHIR PMS Integration](experiments/16-PRD-FHIR-PMS-Integration.md) — FHIR R4 Facade for bidirectional clinical data exchange with external EHRs, HIEs, pharmacies, and labs via standards-compliant REST API with SMART on FHIR authorization
+- [FHIR Setup Guide](experiments/16-FHIR-PMS-Developer-Setup-Guide.md) — FHIR Facade FastAPI deployment, resource mappers, CapabilityStatement, SMART OAuth 2.0, AuditEvent logging, and Next.js FHIR dashboard
+- [FHIR Developer Tutorial](experiments/16-FHIR-Developer-Tutorial.md) — Hands-on onboarding: build FHIR resource mappers, Encounter endpoints, and external data import end-to-end
+
 ---
 
 ## Documentation Views
