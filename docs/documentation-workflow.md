@@ -55,7 +55,7 @@ flowchart TB
                 SubPM["SUB-PM.md<br/>Prompt Mgmt<br/>7 domain reqs"]
             end
             subgraph PLATREQ["platform/"]
-                PlatFiles["16 platform files<br/>SUB-*-BE/WEB/AND/AI.md<br/>95 platform reqs"]
+                PlatFiles["4 consolidated platform files<br/>SUB-BE/WEB/AND/AI.md<br/>95 platform reqs"]
             end
         end
 
@@ -375,12 +375,15 @@ Increment version numbers and dates in all modified file headers.
 **Checklist:**
 - [ ] Identify which subsystem(s) the feature belongs to (PR, CW, MM, RA, PM)
 - [ ] Read the target `docs/specs/requirements/domain/SUB-{code}.md` — note version, highest req ID, platform counts
+- [ ] Read `docs/specs/requirements/SYS-REQ.md` — identify the parent SYS-REQ(s) for the feature
 - [ ] Add domain requirement rows to the Requirements table: `SUB-{code}-XXXX`
+  - [ ] **Every domain requirement must include a `Parent` field** linking to its parent SYS-REQ (e.g., `SYS-REQ-0001`). Use `—` only if no system requirement applies.
 - [ ] Add platform requirement rows to the applicable consolidated platform files in `docs/specs/requirements/platform/`:
   - [ ] `SUB-{code}-XXXX-BE` in `SUB-BE.md` (under the relevant domain section) — Backend API endpoint, service, model
   - [ ] `SUB-{code}-XXXX-WEB` in `SUB-WEB.md` (under the relevant domain section) — Web UI component, page, form
   - [ ] `SUB-{code}-XXXX-AND` in `SUB-AND.md` (under the relevant domain section) — Android screen, ViewModel, repository
   - [ ] `SUB-{code}-XXXX-AI` in `SUB-AI.md` (under the relevant domain section) — ML model, inference service, embedding pipeline
+  - [ ] **Every platform requirement must include a `SYS-REQ` column** showing the system requirement(s) inherited from its domain parent. This enables direct traceability from platform implementation to system-level intent. Use `—` only if the domain parent has no SYS-REQ.
 - [ ] Update Platform Decomposition index table in the domain file (req counts)
 - [ ] Update status rollup note at bottom of Requirements table
 - [ ] Increment version number and update date in domain file header
@@ -392,22 +395,33 @@ Increment version numbers and dates in all modified file headers.
 **AI Agent Prompt:**
 ```
 Read these files to understand current state and conventions:
+- docs/specs/requirements/SYS-REQ.md (to see the parent system requirement)
 - docs/specs/requirements/domain/SUB-{CODE}.md (the target domain file)
-- docs/specs/requirements/platform/SUB-{CODE}-BE.md (example platform file)
-- docs/specs/requirements/SYS-REQ.md (to see the parent requirement)
+- docs/specs/requirements/platform/SUB-BE.md (example consolidated platform file)
 - docs/api/backend-endpoints.md
 - docs/index.md (Specifications & Requirements section)
 
 Decompose SYS-REQ-{ID} into subsystem requirements for SUB-{CODE}.
 Follow the exact table format of existing requirements in the files.
 
+TRACEABILITY RULES (mandatory):
+- Domain requirements: the "Parent" column must link to the originating
+  SYS-REQ (e.g., SYS-REQ-0001). Use "—" only if no system requirement applies.
+- Platform requirements: the "SYS-REQ" column must carry forward the system
+  requirement(s) from the domain parent. This creates a three-tier chain:
+  SYS-REQ → SUB-{CODE}-XXXX → SUB-{CODE}-XXXX-{PLATFORM}.
+  Use "—" only if the domain parent has no SYS-REQ.
+
 Add domain requirements to docs/specs/requirements/domain/SUB-{CODE}.md.
-For each domain requirement (SUB-{CODE}-XXXX), create platform requirements
-in the corresponding platform file (docs/specs/requirements/platform/SUB-{CODE}-{PLATFORM}.md):
-- BE: API endpoint with router, service, model modules and test case ID
-- WEB: UI component/page with module path and test case ID
-- AND: Screen/ViewModel with module path and test case ID (if applicable)
-- AI: ML model/inference service with module path and test case ID (if applicable)
+For each domain requirement (SUB-{CODE}-XXXX), add platform requirements
+to the relevant domain section in the consolidated platform file:
+- SUB-BE.md: API endpoint with router, service, model modules and test case ID
+- SUB-WEB.md: UI component/page with module path and test case ID
+- SUB-AND.md: Screen/ViewModel with module path and test case ID (if applicable)
+- SUB-AI.md: ML model/inference service with module path and test case ID (if applicable)
+
+Platform requirement table columns (in order):
+  Platform Req ID | Parent | SYS-REQ | Description | Module(s) | Test Case(s) | Status
 
 Use the naming convention: SUB-{CODE}-XXXX-{PLATFORM}
 Test case IDs follow: TST-{CODE}-XXXX-{PLATFORM}
@@ -475,7 +489,7 @@ Follow the exact format of existing conflict entries in the file.
 
 **Checklist:**
 - [ ] Read the domain requirements for the feature: `docs/specs/requirements/domain/SUB-{CODE}.md`
-- [ ] Read the platform requirements: `docs/specs/requirements/platform/SUB-{CODE}-{PLATFORM}.md`
+- [ ] Read the platform requirements: `docs/specs/requirements/platform/SUB-{PLATFORM}.md` (relevant domain section)
 - [ ] For each requirement, identify risks using ISO 14971 categories:
   - [ ] **Clinical safety risks** — misdiagnosis, delayed treatment, incorrect clinical data, unsafe recommendations
   - [ ] **Data integrity risks** — PHI exposure, encryption failures, audit trail gaps, unauthorized access
@@ -491,10 +505,10 @@ Follow the exact format of existing conflict entries in the file.
 ```
 Read these files to understand the feature scope and existing mitigations:
 - docs/specs/requirements/domain/SUB-{CODE}.md (domain requirements)
-- docs/specs/requirements/platform/SUB-{CODE}-BE.md (backend platform reqs)
-- docs/specs/requirements/platform/SUB-{CODE}-WEB.md (web platform reqs)
-- docs/specs/requirements/platform/SUB-{CODE}-AND.md (android platform reqs)
-- docs/specs/requirements/platform/SUB-{CODE}-AI.md (AI platform reqs, if exists)
+- docs/specs/requirements/platform/SUB-BE.md (backend platform reqs — relevant domain section)
+- docs/specs/requirements/platform/SUB-WEB.md (web platform reqs — relevant domain section)
+- docs/specs/requirements/platform/SUB-AND.md (android platform reqs — relevant domain section)
+- docs/specs/requirements/platform/SUB-AI.md (AI platform reqs — relevant domain section, if exists)
 - docs/quality/processes/requirements-governance.md (resolved conflicts = mitigations)
 - docs/architecture/ (ADRs related to this feature)
 - docs/quality/standards/iso-13485-2016.pdf (regulatory context)
@@ -711,14 +725,15 @@ Extract the matching domain requirement rows (description, status, parent
 SYS-REQ link).
 
 ──────────────────────────────────────────────────────────────────────────
-STEP 5 — READ PLATFORM REQUIREMENT FILES
+STEP 5 — READ PLATFORM REQUIREMENT FILE
 ──────────────────────────────────────────────────────────────────────────
-For each relevant subsystem code, read:
-  docs/specs/requirements/platform/SUB-{CODE}-{PLATFORM}.md
+Read the consolidated platform requirement file:
+  docs/specs/requirements/platform/SUB-{PLATFORM}.md
 
-Extract only the platform requirement rows that trace to the domain
-requirements identified in Step 3. For each row, capture: Req ID,
-description, parent domain req, modules, test case ID, status.
+Extract only the platform requirement rows (from the relevant domain
+sections) that trace to the domain requirements identified in Step 3.
+For each row, capture: Req ID, parent domain req, SYS-REQ,
+description, modules, test case ID, status.
 
 ──────────────────────────────────────────────────────────────────────────
 STEP 6 — READ SUPPORTING DOCUMENTS
@@ -811,10 +826,10 @@ Validate consistency between the constitution, plan, and traceability matrix bef
 Write code, tests, and evidence. Update all traceability artifacts.
 
 - [ ] Implement the feature in the target repository per the speckit tasks:
-  - **pms-backend** (FastAPI): routers, services, models per `SUB-*-BE` constitution
-  - **pms-frontend** (Next.js): pages, components, API calls per `SUB-*-WEB` constitution
-  - **pms-android** (Kotlin/Jetpack Compose): screens, ViewModels, repositories per `SUB-*-AND` constitution
-  - **AI infrastructure**: ML models, inference services, embedding pipelines per `SUB-*-AI` constitution
+  - **pms-backend** (FastAPI): routers, services, models per `SUB-BE.md` constitution
+  - **pms-frontend** (Next.js): pages, components, API calls per `SUB-WEB.md` constitution
+  - **pms-android** (Kotlin/Jetpack Compose): screens, ViewModels, repositories per `SUB-AND.md` constitution
+  - **AI infrastructure**: ML models, inference services, embedding pipelines per `SUB-AI.md` constitution
 - [ ] Write tests with `@requirement` annotations linking to the platform constitution IDs (e.g., `SUB-PR-0001-BE`)
 - [ ] Use test IDs from the traceability matrix: `TST-{CODE}-XXXX-{PLATFORM}`
 - [ ] Run the test suite and verify all new tests pass
@@ -829,10 +844,10 @@ Write code, tests, and evidence. Update all traceability artifacts.
 You are implementing requirements using the GitHub Speckit full cycle.
 
 CONSTITUTION (governing spec for this cycle):
-  docs/specs/requirements/platform/SUB-{CODE}-{PLATFORM}.md
+  docs/specs/requirements/platform/SUB-{PLATFORM}.md
 
 Read these files before starting:
-- docs/specs/requirements/platform/SUB-{CODE}-{PLATFORM}.md (platform constitution)
+- docs/specs/requirements/platform/SUB-{PLATFORM}.md (platform constitution — all domain sections)
 - docs/specs/requirements/domain/SUB-{CODE}.md (domain context)
 - docs/specs/requirements/SYS-REQ.md (cross-cutting system requirements)
 - docs/api/backend-endpoints.md (API contracts)
@@ -989,7 +1004,7 @@ Read these files:
 - docs/testing/testing-strategy.md (test levels, naming, run record format)
 - docs/testing/traceability-matrix.md (all test cases and current status)
 - docs/specs/requirements/domain/SUB-{CODE}.md (domain requirements)
-- docs/specs/requirements/platform/SUB-{CODE}-{PLATFORM}.md (platform requirements)
+- docs/specs/requirements/platform/SUB-{PLATFORM}.md (platform requirements — relevant domain section)
 
 Run the full verification cycle for {FEATURE}:
 
@@ -1036,7 +1051,7 @@ Run the full verification cycle for {FEATURE}:
 **Checklist:**
 - [ ] Read `docs/specs/requirements/SYS-REQ.md` — note all requirement statuses
 - [ ] Read all `docs/specs/requirements/domain/SUB-*.md` files — note domain statuses
-- [ ] Read all `docs/specs/requirements/platform/SUB-*-*.md` files — note platform statuses
+- [ ] Read all `docs/specs/requirements/platform/SUB-*.md` files — note platform statuses
 - [ ] Read `docs/testing/traceability-matrix.md` — note test run log, coverage summary, and any failures
 - [ ] Read `docs/testing/evidence/` — note all test run evidence files
 - [ ] Read `docs/quality/DHF/DHF-index.md` — note current gap analysis
@@ -1186,7 +1201,7 @@ Prepare the release for {FEATURE} (branch: feature/{BRANCH_NAME}):
    current state of all requirement documents:
    - All SYS-REQ IDs and statuses from SYS-REQ.md
    - All domain requirement IDs and statuses from domain/SUB-*.md
-   - All platform requirement IDs and statuses from platform/SUB-*-{PLATFORM}.md
+   - All platform requirement IDs and statuses from platform/SUB-{PLATFORM}.md
    - Totals must match index.md and PMS_Project_Overview.md counts
 
 6. index.md: Verify all links work, update requirement counts in
@@ -1208,7 +1223,7 @@ Prepare the release for {FEATURE} (branch: feature/{BRANCH_NAME}):
 | 1. Research | `experiments/NN-*` (3 new files), `index.md` |
 | 2. Architecture | `architecture/NNNN-*.md` (1 new file), `index.md` |
 | 3. System Reqs | `SYS-REQ.md`, `system-spec.md`, `PMS_Project_Overview.md` |
-| 4. Subsystem | `domain/SUB-*.md`, `platform/SUB-*-{PLATFORM}.md`, `backend-endpoints.md`, `subsystem-versions.md`, `index.md` |
+| 4. Subsystem | `domain/SUB-*.md`, `platform/SUB-{PLATFORM}.md`, `backend-endpoints.md`, `subsystem-versions.md`, `index.md` |
 | 5a. Conflict Analysis | `requirements-governance.md` |
 | 5b. Risk Assessment | `risk-management/RA-{CODE}-{FEATURE}.md` (new file), `index.md` |
 | 6. Testing | `traceability-matrix.md` |
@@ -1222,13 +1237,13 @@ Prepare the release for {FEATURE} (branch: feature/{BRANCH_NAME}):
 
 ## File Inventory
 
-### Total: ~135 files (125 markdown + 10 non-markdown)
+### Total: ~123 files (113 markdown + 10 non-markdown)
 
 | Directory | Files | Purpose |
 |---|---|---|
 | `experiments/` | 58 (55 .md + 3 .docx) | Technology research: PRDs, setup guides, tutorials |
 | `architecture/` | 21 | Architecture Decision Records (0001–0021) |
-| `specs/requirements/` | 1 + 5 domain + 16 platform = 22 | System, domain, and platform requirement documents |
+| `specs/requirements/` | 1 + 5 domain + 4 platform = 10 | System, domain, and platform requirement documents |
 | `specs/` | 3 (+ requirements/) | System spec, versions, compatibility matrix |
 | `config/` | 7 | Setup, dependencies, environments, deployment |
 | `testing/` | 2 (+ evidence/) | Test strategy, traceability matrix, run records |
