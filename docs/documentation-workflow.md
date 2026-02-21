@@ -183,6 +183,16 @@ flowchart TB
     Governance -->|"governs"| RTM
     DevInstr -->|"process"| Pipeline
 
+    %% ── IMPLEMENTATION MILESTONE ──
+    IMPL["⚙ STEP 7: Development<br/>& Implementation<br/>(Code is written here)"]
+
+    %% Platform reqs drive implementation
+    PlatFiles -->|"implement"| IMPL
+    Endpoints -->|"contracts"| IMPL
+    Strategy -->|"test conventions"| IMPL
+    IMPL -->|"test evidence"| Evidence
+    IMPL -->|"updates status"| RTM
+
     %% Config supports implementation
     ADR6 --> RelProcess
     ADR6 --> Flags
@@ -221,6 +231,7 @@ flowchart TB
     style DOM fill:#fff4e6,stroke:#fd7e14
     style PLAT fill:#fff4e6,stroke:#fd7e14
     style VIEWS fill:#fff4e6,stroke:#fd7e14
+    style IMPL fill:#ff922b,stroke:#d9480f,color:#fff,stroke-width:3px
     style Index fill:#343a40,stroke:#212529,color:#fff
     style Overview fill:#343a40,stroke:#212529,color:#fff
     style SysReq fill:#1971c2,stroke:#1864ab,color:#fff
@@ -503,7 +514,70 @@ from testing-strategy.md.
 
 ---
 
-### Step 7: Configuration & Deployment
+### Step 7: Development & Implementation
+
+**When:** Requirements are decomposed (Step 4), governance checks are done (Step 5), and test cases are planned in the traceability matrix (Step 6). This is the milestone where actual code is written.
+
+> **This is the implementation milestone.** All prior steps (1–6) are documentation and planning. Steps 8–9 are configuration and release. Code is written here.
+
+**Checklist:**
+- [ ] Read the platform requirements for your target platform in `docs/specs/requirements/platform/SUB-{code}-{PLATFORM}.md`
+- [ ] Read `docs/testing/testing-strategy.md` — follow test naming conventions and `@requirement` annotation rules
+- [ ] Read `docs/quality/processes/PMS_Developer_Working_Instructions.md` — follow development pipeline phases
+- [ ] Read `docs/api/backend-endpoints.md` — reference endpoint contracts for backend work
+- [ ] Implement the feature in the target repository:
+  - [ ] **pms-backend** (FastAPI): routers, services, models per `SUB-*-BE` requirements
+  - [ ] **pms-frontend** (Next.js): pages, components, API calls per `SUB-*-WEB` requirements
+  - [ ] **pms-android** (Kotlin/Jetpack Compose): screens, ViewModels, repositories per `SUB-*-AND` requirements
+  - [ ] **AI infrastructure**: ML models, inference services, embedding pipelines per `SUB-*-AI` requirements
+- [ ] Write tests with `@requirement` annotations linking to platform requirement IDs (e.g., `SUB-PR-0001-BE`)
+- [ ] Use test IDs from the traceability matrix: `TST-{CODE}-XXXX-{PLATFORM}`
+- [ ] Run the test suite and verify all new tests pass
+- [ ] Record a test run in `docs/testing/evidence/RUN-YYYY-MM-DD-NNN.md`
+- [ ] Update test results in `docs/testing/traceability-matrix.md` — fill in Test Function, Last Result (PASS/FAIL), and Run ID
+- [ ] Update requirement status in platform files: `Not Started` → `Implemented`
+- [ ] Update domain requirement status based on platform rollup rule
+- [ ] Commit and push
+
+**AI Agent Prompt:**
+```
+Read these files to understand what to implement:
+- docs/specs/requirements/platform/SUB-{CODE}-{PLATFORM}.md (platform requirements)
+- docs/specs/requirements/domain/SUB-{CODE}.md (domain context)
+- docs/api/backend-endpoints.md (API contracts)
+- docs/testing/testing-strategy.md (test conventions)
+- docs/testing/traceability-matrix.md (planned test case IDs)
+- docs/quality/processes/PMS_Developer_Working_Instructions.md (process)
+
+Implement the requirements for SUB-{CODE}-{PLATFORM}:
+
+1. For each platform requirement (SUB-{CODE}-XXXX-{PLATFORM}):
+   - Write the implementation code in the target repository
+   - Write tests annotated with @requirement SUB-{CODE}-XXXX-{PLATFORM}
+   - Use the test ID from the traceability matrix: TST-{CODE}-XXXX-{PLATFORM}
+   - Follow the test annotation format from testing-strategy.md
+
+2. Run all tests and verify they pass.
+
+3. Create a test run record: docs/testing/evidence/RUN-YYYY-MM-DD-NNN.md
+   following the format in testing-strategy.md Section 6.
+
+4. Update docs/testing/traceability-matrix.md:
+   - Fill in "Test Function" column with the actual test function path
+   - Set "Last Result" to PASS or FAIL
+   - Set "Run ID" to the new run record ID
+
+5. Update requirement status:
+   - In platform file: change status from "Not Started" to "Implemented"
+   - In domain file: update status per the rollup rule (all platforms
+     Implemented → domain becomes Implemented)
+
+6. Commit with message: "feat(SUB-{CODE}): implement {FEATURE} requirements"
+```
+
+---
+
+### Step 8: Configuration & Deployment
 
 **When:** New requirements introduce dependencies, feature flags, environment variables, or deployment changes.
 
@@ -551,7 +625,7 @@ For the new feature {FEATURE} (requirements: {REQ_IDS}), update:
 
 ---
 
-### Step 8: Release
+### Step 9: Release
 
 **When:** All implementation is complete and the feature is ready to ship.
 
@@ -562,7 +636,7 @@ For the new feature {FEATURE} (requirements: {REQ_IDS}), update:
   - [ ] All tests passing
   - [ ] Security scans clean
   - [ ] Feature flags configured for target environment
-  - [ ] Documentation complete (all steps 1-7 done)
+  - [ ] Documentation complete (all steps 1-8 done)
 - [ ] Read `docs/config/feature-flags.md` — update flag states for release environment
 - [ ] Update `docs/PMS_Project_Overview.md` — refresh all counts, coverage, gap analysis
 - [ ] Update `docs/index.md` — verify all links, update requirement counts
@@ -621,8 +695,9 @@ Prepare the release for {FEATURE} (branch: feature/{BRANCH_NAME}):
 | 4. Subsystem | `domain/SUB-*.md`, `platform/SUB-*-{PLATFORM}.md`, `backend-endpoints.md`, `subsystem-versions.md`, `index.md` |
 | 5. Governance | `requirements-governance.md` |
 | 6. Testing | `traceability-matrix.md` |
-| 7. Config | `dependencies.md`, `feature-flags.md`, `environments.md`, `project-setup.md` |
-| 8. Release | `subsystem-versions.md`, `release-compatibility-matrix.md`, `feature-flags.md`, `PMS_Project_Overview.md`, `index.md` |
+| **7. Implement** | **Code in pms-backend / pms-frontend / pms-android, test evidence in `evidence/RUN-*.md`, update `traceability-matrix.md` and platform status** |
+| 8. Config | `dependencies.md`, `feature-flags.md`, `environments.md`, `project-setup.md` |
+| 9. Release | `subsystem-versions.md`, `release-compatibility-matrix.md`, `feature-flags.md`, `PMS_Project_Overview.md`, `index.md` |
 
 ---
 
