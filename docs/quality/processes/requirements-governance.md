@@ -1,15 +1,15 @@
 # Requirements Governance & Conflict Analysis
 
 **Document ID:** PMS-GOV-001
-**Version:** 1.4
-**Date:** 2026-02-18
+**Version:** 1.5
+**Date:** 2026-02-21
 **Parent:** [System Specification](../../specs/system-spec.md)
 
 ---
 
 ## 1. Purpose
 
-This document defines the governance procedures for evolving the PMS three-tier requirements decomposition (System → Domain → Platform) and provides a systematic conflict and race condition analysis across all 43 domain requirements and 82 platform requirements.
+This document defines the governance procedures for evolving the PMS three-tier requirements decomposition (System → Domain → Platform) and provides a systematic conflict and race condition analysis across all 48 domain requirements and 95 platform requirements.
 
 ---
 
@@ -243,7 +243,7 @@ Feature branching introduces the risk of conflicts that span branches and are in
 
 Conflicts where two or more requirements within the same domain subsystem impose contradictory or ambiguous obligations.
 
-### SUB-PR — Patient Records (4 conflicts)
+### SUB-PR — Patient Records (7 conflicts)
 
 | ID | Conflict | Requirements | Severity | Resolution | Status |
 |---|---|---|---|---|---|
@@ -251,6 +251,9 @@ Conflicts where two or more requirements within the same domain subsystem impose
 | DC-PR-02 | **Unbounded list vs pagination** — SUB-PR-0003 (CRUD) includes a list endpoint that returns all active patients. SUB-PR-0008 requires paginated results (default 20/page). If both are implemented independently, the list endpoint in SUB-PR-0003 contradicts the pagination constraint. | SUB-PR-0003 vs SUB-PR-0008 | Medium | SUB-PR-0008 supersedes the list behavior of SUB-PR-0003. When SUB-PR-0008 is implemented, the existing list endpoint must be refactored to default to paginated results. Add a note to SUB-PR-0003 that the list behavior is interim. | **Resolved** — SUB-PR-0003 annotated that list behavior is interim, superseded by SUB-PR-0008. |
 | DC-PR-03 | **AI vision resource contention** — SUB-PR-0009 (wound assessment), SUB-PR-0010 (patient ID verification), and SUB-PR-0011 (document OCR) all require edge AI inference on the same Jetson Thor device. No requirement specifies priority, queuing, or resource sharing. | SUB-PR-0009, SUB-PR-0010, SUB-PR-0011 | Medium | Add a shared non-functional requirement for AI inference queuing: requests must be serialized per device with a configurable timeout. Define priority order: patient ID verification > wound assessment > document OCR. | **Resolved** — SUB-PR-0012 added with priority order and CameraSessionManager requirement. SUB-PR-0009/0010/0011-AND updated to reference CameraSessionManager. |
 | DC-PR-04 | **Email uniqueness during concurrent creation** — SUB-PR-0006 (unique email) is enforced at the database constraint level, but SUB-PR-0003 (CRUD) does not specify behavior when the constraint is violated during concurrent operations. The service layer checks uniqueness before insert, creating a TOCTOU gap. | SUB-PR-0006 vs SUB-PR-0003 | Low | The database unique constraint catches concurrent violations. The service layer should handle `IntegrityError` from the DB and return 409, not rely solely on the pre-check. Current implementation already does this correctly. | **Resolved** — SUB-PR-0006 and SUB-PR-0006-BE updated to specify IntegrityError → 409 handling. |
+| DC-PR-05 | **AI inference queuing scope expansion** — SUB-PR-0012 defines inference serialization with a priority order covering three vision features (SUB-PR-0009, 0010, 0011). SUB-PR-0013-AND introduces a fourth camera-based AI feature (dermoscopic image capture with on-device TFLite classification) that must also go through the CameraSessionManager singleton, but SUB-PR-0012 does not include it in its priority order. | SUB-PR-0012 vs SUB-PR-0013 | Medium | Update SUB-PR-0012 priority order to include dermoscopic capture as the fourth feature. Recommended priority: patient ID verification (SUB-PR-0010) > wound assessment (SUB-PR-0009) ≥ dermoscopic capture (SUB-PR-0013) > document OCR (SUB-PR-0011). Dermoscopic capture and wound assessment share equal clinical urgency; break ties by submission order (FIFO). | Open |
+| DC-PR-06 | **Lesion audit trail traceability gap** — SYS-REQ-0012 acceptance criterion #5 requires "all image uploads, classifications, and result views are recorded in the audit trail." However, SUB-PR-0013 through SUB-PR-0016 reference only SYS-REQ-0012 as their parent — they do not trace to SYS-REQ-0003 (audit trail). The audit event catalog (PC-BE-03) lacks derm-specific action strings. The `routers/lesions.py` module is not listed in SUB-PR-0005's scope. Dermoscopic images are PHI requiring HIPAA-compliant audit logging. | SUB-PR-0013, SUB-PR-0014, SUB-PR-0015, SUB-PR-0016 vs SYS-REQ-0003 | High | Add explicit audit logging requirements to SUB-PR-0013-BE through SUB-PR-0016-BE: `routers/lesions.py` must call `audit_service.log_action` for every endpoint. Extend the audit event catalog with derm-specific action strings (LESION_UPLOAD, LESION_CLASSIFY, LESION_VIEW, SIMILARITY_SEARCH, TIMELINE_VIEW; resource_type: lesion_image). Update SUB-PR-0005 scope to include lesion operations. | Open |
+| DC-PR-07 | **Encounter-patient cross-reference validation** — SUB-PR-0013 upload accepts `patient_id` (required) and `encounter_id` (optional). SUB-CW-0008 requires encounters be linked to exactly one patient via patient_id FK. If a caller provides an `encounter_id` belonging to Patient A but a `patient_id` for Patient B, the lesion image is linked to an encounter for the wrong patient — a PHI cross-contamination risk. No requirement specifies this cross-reference validation. | SUB-PR-0013 vs SUB-CW-0008 | High | SUB-PR-0013-BE must validate encounter-patient consistency: when `encounter_id` is provided, query the encounter and verify its `patient_id` matches the upload's `patient_id`. Return 422 Unprocessable Entity on mismatch with message "encounter does not belong to the specified patient." | Open |
 
 ### SUB-CW — Clinical Workflow (3 conflicts)
 
@@ -282,7 +285,7 @@ Conflicts where two or more requirements within the same domain subsystem impose
 | DC-PM-02 | **Concurrent version creation** — SUB-PM-0004 requires auto-incrementing version numbers for each prompt. Two concurrent save operations may both read `MAX(version) = N` and both attempt to create version `N+1`, causing a duplicate or overwrite. | SUB-PM-0004 | High | Use `SELECT MAX(version) FROM prompt_versions WHERE prompt_id = ? FOR UPDATE` to serialize concurrent version creation at the database row level. The `FOR UPDATE` lock ensures only one transaction reads and increments at a time. This mirrors the RC-BE-01 / RC-BE-02 pattern. | **Resolved** — SUB-PM-0004 and SUB-PM-0004-BE specify `FOR UPDATE` serialization. |
 | DC-PM-03 | **Cross-prompt comparison** — SUB-PM-0007 provides LLM-powered version comparison. A malicious or buggy request could attempt to compare versions across different prompts by supplying version IDs from different prompt records, potentially leaking prompt content across authorization boundaries. | SUB-PM-0007 | Medium | The comparison endpoint must validate that both requested versions belong to the same prompt ID specified in the URL path. Reject with 400 Bad Request if either version does not belong to the path-scoped prompt. | **Resolved** — SUB-PM-0007-BE specifies path-scoped endpoint validation for both versions. |
 
-**Total intra-domain conflicts: 14 (all resolved)**
+**Total intra-domain conflicts: 17 (14 resolved, 3 open)**
 
 ---
 
@@ -290,7 +293,7 @@ Conflicts where two or more requirements within the same domain subsystem impose
 
 Conflicts where platform-specific requirements across different subsystems or platforms impose contradictory obligations on a shared component, API, or resource.
 
-### Backend (BE) — 7 conflicts
+### Backend (BE) — 8 conflicts
 
 | ID | Conflict | Requirements | Severity | Resolution | Status |
 |---|---|---|---|---|---|
@@ -301,6 +304,7 @@ Conflicts where platform-specific requirements across different subsystems or pl
 | PC-BE-05 | **Interaction check SLA under CRUD load** — SUB-MM-0001-BE requires a 5-second response for interaction checks. During peak load, concurrent CRUD operations (SUB-PR-0003-BE, SUB-CW-0003-BE) compete for the same database connection pool. No priority mechanism exists for safety-critical queries. | SUB-MM-0001-BE vs SUB-PR-0003-BE, SUB-CW-0003-BE | Medium | Implement a dedicated connection pool (or priority queue) for medication-safety queries. Alternatively, set the database connection pool size large enough that CRUD load does not block interaction checks. Add SLA monitoring for the interaction check endpoint. | **Resolved** — SUB-MM-0001-BE updated to require dedicated connection pool or priority queue for medication-safety queries. |
 | PC-BE-06 | **Shared auth middleware (prompt endpoints)** — SUB-PM-0001-BE enforces JWT auth through the same `middleware/auth.py` shared by SUB-PR-0001-BE, SUB-CW-0001-BE, SUB-MM-0006-BE, and SUB-RA-0004-BE. A change to the auth middleware affects all subsystems simultaneously. | SUB-PM-0001-BE vs SUB-PR-0001-BE, SUB-CW-0001-BE, SUB-MM-0006-BE, SUB-RA-0004-BE | Low | Follows PC-BE-02 precedent — shared auth middleware is acceptable for the monolithic backend (DRY principle). Mitigate regression risk by maintaining TST-AUTH-0001 as a cross-cutting system test. No requirements change needed. | **Resolved** — Accepted as designed, following PC-BE-02 precedent. |
 | PC-BE-07 | **Audit catalog extension** — SUB-PM-0005-BE introduces new audit action strings (PROMPT_CREATE, PROMPT_READ, PROMPT_UPDATE, PROMPT_DELETE, VERSION_CREATE, VERSION_COMPARE) and resource type `prompt`. These must be added to the audit event catalog established by PC-BE-03 without conflicting with existing action strings. | SUB-PM-0005-BE vs SUB-PR-0005-BE, SUB-CW-0004-BE, SUB-MM-0004-BE | Medium | Add the new action strings and resource type to the audit event catalog. The PROMPT_* and VERSION_* prefixes are unique and do not collide with existing CREATE/READ/UPDATE/DELETE/DEACTIVATE action strings used by other subsystems. | **Resolved** — SUB-PM-0005-BE specifies the new action strings. Audit event catalog updated. |
+| PC-BE-08 | **Encryption module path divergence** — SUB-PR-0013-BE lists `core/encryption.py` as its encryption module, while SUB-PR-0004-BE uses `services/encryption_service.py`. Both reside in pms-backend. ADR-0016 mandates a unified versioned-envelope key management approach, but if two separate modules implement encryption, the shared KEK/DEK hierarchy cannot be enforced consistently. Key rotation would need to update both modules independently. | SUB-PR-0013-BE vs SUB-PR-0004-BE | Medium | Designate `services/encryption_service.py` as the single authoritative encryption module for all PHI (consistent with existing implementation). When AES-256-GCM support is added (per DC-PR-01/PC-BE-01 migration), both SSN and image encryption use the same module and key hierarchy. Update SUB-PR-0013-BE module reference from `core/encryption.py` to `services/encryption_service.py`. | Open |
 
 ### Web Frontend (WEB) — 3 conflicts
 
@@ -310,14 +314,21 @@ Conflicts where platform-specific requirements across different subsystems or pl
 | PC-WEB-02 | **Inconsistent patient data between list and dashboard** — SUB-PR-0008-WEB shows paginated patient lists with current data. SUB-RA-0001-WEB shows patient volume dashboards with aggregated data. If the dashboard caches aggregated counts while the patient list shows real-time data, the numbers may disagree within the same user session. | SUB-PR-0008-WEB vs SUB-RA-0001-WEB | Low | Add a cache TTL and "last refreshed" timestamp to the dashboard. Accept eventual consistency (reporting data may lag real-time data by up to the cache TTL). Document this in SUB-RA-0001-WEB acceptance criteria. | **Resolved** — SUB-RA-0001-WEB updated with cache TTL and "last refreshed" timestamp requirement. |
 | PC-WEB-03 | **Shared auth guard (prompt pages)** — SUB-PM-0001-WEB uses the parameterized `requireRole` guard from `lib/auth.ts` shared by SUB-PR-0001-WEB, SUB-CW-0001-WEB, SUB-MM-0006-WEB, and SUB-RA-0004-WEB. Different prompt pages may need role combinations (admin-only for mutation pages, admin+physician for read pages). | SUB-PM-0001-WEB vs SUB-PR-0001-WEB, SUB-CW-0001-WEB, SUB-MM-0006-WEB, SUB-RA-0004-WEB | Low | Follows PC-WEB-01 precedent — the parameterized guard supports subsystem-specific role lists. Prompt pages pass `['admin']` for mutation routes and `['admin', 'physician']` for read routes. No code change to the guard itself is needed. | **Resolved** — Accepted as designed, following PC-WEB-01 precedent. SUB-PM-0001-WEB specifies role lists per route. |
 
-### Android (AND) — 2 conflicts
+### Android (AND) — 3 conflicts
 
 | ID | Conflict | Requirements | Severity | Resolution | Status |
 |---|---|---|---|---|---|
 | PC-AND-01 | **Camera resource contention** — SUB-PR-0009-AND (wound assessment), SUB-PR-0010-AND (patient ID verification), and SUB-PR-0011-AND (document OCR) all require camera access. Android's CameraX allows only one active camera session. Rapid switching between features without proper lifecycle management will cause `CameraAccessException` or ANR. | SUB-PR-0009-AND, SUB-PR-0010-AND, SUB-PR-0011-AND | High | Implement a `CameraSessionManager` singleton that serializes camera access. Each vision feature requests and releases the camera through this manager. Use Kotlin coroutines with a `Mutex` to prevent concurrent access. | **Resolved** — SUB-PR-0012 added for CameraSessionManager. SUB-PR-0009/0010/0011-AND all reference CameraSessionManager. |
 | PC-AND-02 | **Shared auth interceptor coupling** — SUB-PR-0001-AND, SUB-CW-0001-AND, SUB-MM-0006-AND, and SUB-RA-0004-AND all share `AuthInterceptor.kt`. The interceptor handles token refresh, but if multiple concurrent API calls trigger refresh simultaneously, duplicate refresh requests are sent. | SUB-PR-0001-AND, SUB-CW-0001-AND, SUB-MM-0006-AND, SUB-RA-0004-AND | Medium | Implement token refresh synchronization in `AuthInterceptor.kt`: use a `Mutex` to serialize refresh attempts. The first caller performs the refresh; subsequent callers wait and reuse the new token. OkHttp's `Authenticator` interface supports this pattern natively. | **Resolved** — SUB-PR-0001-AND updated with Mutex-based token refresh synchronization requirement. |
+| PC-AND-03 | **Camera contention expansion for dermoscopy** — PC-AND-01 was resolved for three camera-using features (wound, ID verification, OCR). SUB-PR-0013-AND adds a fourth feature (dermoscopic image capture) that also requires CameraSessionManager access. Additionally, dermoscopic imaging may require different camera configuration (macro mode, higher resolution, specific white balance) than the other vision features. The CameraSessionManager state machine does not specify feature-specific camera configuration profiles. | SUB-PR-0013-AND vs SUB-PR-0009-AND, SUB-PR-0010-AND, SUB-PR-0011-AND | Medium | Update CameraSessionManager to support feature-specific camera configuration profiles: each feature passes a `CameraProfile` (resolution, focus mode, white balance) when requesting camera access. The manager applies the profile during the BINDING phase. Update SUB-PR-0012 to reference four features (ties to DC-PR-05 priority order expansion). | Open |
 
-**Total cross-platform conflicts: 12 (all resolved)**
+### AI Infrastructure (AI) — 1 conflict
+
+| ID | Conflict | Requirements | Severity | Resolution | Status |
+|---|---|---|---|---|---|
+| PC-AI-01 | **Model version parity between server and mobile** — SUB-PR-0013-AI deploys EfficientNet-B4 via ONNX Runtime on the server. SUB-PR-0013-AND deploys MobileNetV3 via TFLite on Android. These are architecturally different models that may produce divergent classifications for the same input image. ADR-0013 (model lifecycle) covers single-model versioning but does not specify cross-platform model version parity. A clinician receiving a "low risk" triage on-device that is later reclassified as "high risk" by the server undermines trust in the system. | SUB-PR-0013-AI vs SUB-PR-0013-AND | High | Define a model compatibility matrix in the model-manifest.json (ADR-0013): server and mobile models must be trained on the same ISIC dataset version and validated to produce concordant top-1 predictions on a reference test set (target: ≥90% agreement rate). The on-device result must be labeled "preliminary triage — pending server confirmation" and never presented as a final diagnosis. When the server classification becomes available, if it differs from the on-device result, surface a notification to the clinician. | Open |
+
+**Total cross-platform conflicts: 15 (12 resolved, 3 open)**
 
 ---
 
@@ -325,7 +336,7 @@ Conflicts where platform-specific requirements across different subsystems or pl
 
 Race conditions identified per platform where concurrent operations can produce incorrect, inconsistent, or unsafe states.
 
-### Backend (BE) — 10 race conditions
+### Backend (BE) — 12 race conditions
 
 | ID | Race Condition | Requirements | Severity | Mitigation | Status |
 |---|---|---|---|---|---|
@@ -339,6 +350,8 @@ Race conditions identified per platform where concurrent operations can produce 
 | RC-BE-08 | **Concurrent refill decrement** — Two pharmacy terminals simultaneously process a refill for the same prescription (SUB-MM-0009-BE). Both read `refills_remaining = 1`, both decrement to 0, and both dispense. The patient receives one extra fill. | SUB-MM-0009-BE | Critical | Use an atomic update: `UPDATE prescriptions SET refills_remaining = refills_remaining - 1 WHERE id = ? AND refills_remaining > 0`. Check the affected row count — if 0, the refill was already claimed. Do not read-then-write in application code. | **Resolved** — SUB-MM-0009 and SUB-MM-0009-BE updated to require atomic update with row-count check. |
 | RC-BE-09 | **Concurrent prompt update (version conflict)** — Two administrators simultaneously edit the same prompt. Both read the current text, make different changes, and submit. SUB-PM-0004's auto-versioning means both edits produce new versions (N+1 and N+2) rather than overwriting each other. However, without `FOR UPDATE` serialization, both could read `MAX(version) = N` and attempt to create version `N+1`, causing a unique constraint violation. | SUB-PM-0004-BE | Medium | The `SELECT MAX(version) ... FOR UPDATE` serialization specified in SUB-PM-0004-BE prevents this race. The first transaction acquires the lock and creates version N+1; the second transaction waits, reads N+1, and creates version N+2. Both edits are preserved as separate versions. | **Resolved** — SUB-PM-0004-BE specifies `FOR UPDATE` serialization. Auto-versioning preserves both edits. |
 | RC-BE-10 | **LLM comparison timeout under load** — Multiple administrators simultaneously request prompt version comparisons (SUB-PM-0007-BE). Each request calls the Anthropic Claude API. Under load, API responses may exceed the expected latency, consuming server threads/connections and degrading other endpoints. | SUB-PM-0007-BE | Medium | Apply a 30-second timeout on the LLM API call. Implement rate limiting on the comparison endpoint (e.g., 10 requests per minute per user). Return 504 Gateway Timeout if the LLM call exceeds 30 seconds. Return 429 Too Many Requests if rate limit is exceeded. | **Resolved** — SUB-PM-0007-BE specifies 30-second timeout and rate limiting. |
+| RC-BE-11 | **Concurrent lesion upload for same patient and anatomical site** — Two clinicians simultaneously upload dermoscopic images for the same patient at the same anatomical site (SUB-PR-0013-BE). Both uploads create new `lesion_image` records. The longitudinal tracking system (SUB-PR-0016-BE, ADR-0019) computes `change_score` by comparing the current embedding against the most recent prior embedding. With near-simultaneous uploads, the "prior" reference is ambiguous — the second upload may use the first upload (captured seconds ago) as its prior, producing a meaningless near-zero change_score rather than comparing against the clinically relevant prior assessment. | SUB-PR-0016-BE, SUB-PR-0013-BE | Medium | Serialize lesion assessment creation per (patient_id, anatomical_site) using `SELECT ... FOR UPDATE` on the lesion identity row when computing change_score. The second upload waits for the first to complete, ensuring a consistent "prior" reference. Additionally, enforce a configurable minimum interval between assessments at the same site (default: 24 hours) — return 409 if a second upload occurs within the interval unless the clinician explicitly overrides. | Open |
+| RC-BE-12 | **CDS circuit breaker during upload pipeline** — The lesion upload pipeline (SUB-PR-0013-BE) performs: validate image → encrypt with AES-256-GCM → store in PostgreSQL → forward to CDS service → receive classification → store results. If the CDS circuit breaker (ADR-0018) transitions from CLOSED to OPEN between the "store image" and "forward to CDS" steps, the encrypted image is persisted but no classification is generated. The endpoint returns 503 to the client. A client retry re-uploads the same image, creating a duplicate encrypted blob with no deduplication mechanism. | SUB-PR-0013-BE | Medium | Wrap the entire upload pipeline in a single database transaction. If the CDS call fails (timeout or circuit open), rollback the image storage — no orphaned blobs. The client retries the full upload. Additionally, implement an idempotency key: the upload request includes a client-generated UUID in an `X-Idempotency-Key` header. The backend deduplicates on this key — if the same key is retried, return the existing result (or retry the CDS call if the previous attempt failed at that stage). | Open |
 
 ### Web Frontend (WEB) — 2 race conditions
 
@@ -347,27 +360,45 @@ Race conditions identified per platform where concurrent operations can produce 
 | RC-WEB-01 | **Token refresh thundering herd** — Multiple API calls fail with 401 simultaneously (token expired). Each call independently triggers a token refresh via `lib/auth.ts`. Multiple refresh requests hit the backend concurrently, but only the first succeeds — subsequent ones may use an invalidated refresh token. | SUB-PR-0001-WEB, SUB-CW-0001-WEB, SUB-MM-0006-WEB, SUB-RA-0004-WEB | High | Implement a token refresh lock: a single Promise that all concurrent callers await. The first caller initiates the refresh; subsequent callers queue behind the same Promise and receive the new token when the refresh completes. Use a module-scoped `refreshPromise` variable. | **Resolved** — SUB-PR-0001-WEB updated to require token refresh lock via single Promise serialization. |
 | RC-WEB-02 | **Stale form submission (lost update)** — A clinician opens a patient edit form, reads version N. Another clinician updates the same patient to version N+1. The first clinician submits their edit, unknowingly overwriting version N+1's changes. No optimistic concurrency check exists on the frontend. | SUB-PR-0003-WEB | Medium | Include the patient `version` (or `updated_at`) in the edit form's hidden state. On submission, the backend (per RC-BE-01) rejects the update with 409 if the version doesn't match. The frontend must handle 409 by showing a conflict resolution dialog or prompting the user to reload. | **Resolved** — SUB-PR-0003-WEB updated to include version in form state and handle 409 with conflict resolution dialog. |
 
-### Android (AND) — 2 race conditions
+### Android (AND) — 3 race conditions
 
 | ID | Race Condition | Requirements | Severity | Mitigation | Status |
 |---|---|---|---|---|---|
 | RC-AND-01 | **Camera lifecycle race** — The user rapidly switches between wound assessment (SUB-PR-0009-AND), patient ID verification (SUB-PR-0010-AND), and document OCR (SUB-PR-0011-AND). CameraX's `unbind` from the previous feature may not complete before `bind` for the next feature. This causes `IllegalStateException` or a black camera preview. | SUB-PR-0009-AND, SUB-PR-0010-AND, SUB-PR-0011-AND | High | Use a `CameraSessionManager` with a state machine: `IDLE → BINDING → ACTIVE → UNBINDING → IDLE`. All camera operations go through this manager. Transitions are serialized via a coroutine `Mutex`. Feature switching requests queue behind the current unbind operation. | **Resolved** — SUB-PR-0012 defines CameraSessionManager. SUB-PR-0009/0010/0011-AND all reference it. |
 | RC-AND-02 | **Offline-sync conflict** — The Android app supports offline data entry (SUB-PR-0003-AND, SUB-CW-0003-AND). While offline, a clinician creates or modifies records. When connectivity restores, the sync pushes local changes to the backend, which may conflict with changes made by other users during the offline period. | SUB-PR-0003-AND, SUB-CW-0003-AND | High | Implement last-write-wins with conflict detection: each sync request includes the `version` or `updated_at` from when the record was last fetched. The backend returns 409 for conflicts. The Android app maintains a conflict queue and presents a resolution UI showing local vs server versions. | **Resolved** — SUB-PR-0003-AND and SUB-CW-0003-AND updated with offline-sync conflict resolution requirements. |
+| RC-AND-03 | **Offline TFLite vs server classification discrepancy** — SUB-PR-0013-AND performs on-device TFLite classification (MobileNetV3) when offline and syncs the image to the backend when connectivity restores. The backend re-classifies using EfficientNet-B4 (SUB-PR-0013-BE), which may produce a different top-1 prediction or significantly different confidence scores. If the clinician took action based on the on-device triage result (e.g., reassuring a patient that a lesion is benign) and the server later returns a higher-risk classification, the discrepancy creates a patient safety and liability concern. | SUB-PR-0013-AND | High | The on-device classification result must be displayed with a clear "preliminary triage" label and a warning that "server confirmation is pending." Store the on-device classification locally with a `confirmed = false` flag. When the server classification returns, compare results. If the top-1 prediction or risk level differs, fire a push notification to the clinician: "Classification updated for [patient] — please review." The patient-facing encounter record must never show the on-device result as a final classification. Ties to PC-AI-01 model parity requirements. | Open |
 
-**Total race conditions: 14 (all resolved)**
+**Total race conditions: 17 (14 resolved, 3 open)**
 
 ---
 
 ## 6. Summary
 
-All 40 conflicts and race conditions have been resolved at the requirements level as of v1.4 (2026-02-18). The requirements documents (SYS-REQ.md, SUB-PR.md, SUB-CW.md, SUB-MM.md, SUB-RA.md, SUB-PM.md) have been updated to incorporate each resolution. Implementation of the updated requirements is tracked by the individual requirement statuses in each SUB-*.md file.
+Of 49 total conflicts and race conditions, 40 have been resolved at the requirements level. 9 new open conflicts were identified in v1.5 (2026-02-21) from the Dermatology CDS requirements (SUB-PR-0013–0016, SUB-RA-0008, SYS-REQ-0012). The requirements documents (SYS-REQ.md, SUB-PR.md, SUB-CW.md, SUB-MM.md, SUB-RA.md, SUB-PM.md) have been updated to incorporate each resolved conflict. Implementation of the updated requirements is tracked by the individual requirement statuses in each SUB-*.md file.
 
 | Category | Count | Critical | High | Medium | Low | Resolved |
 |---|---|---|---|---|---|---|
-| Intra-domain conflicts | 14 | 0 | 5 | 7 | 2 | **14/14** |
-| Cross-platform conflicts | 12 | 0 | 3 | 6 | 3 | **12/12** |
-| Race conditions | 14 | 2 | 6 | 5 | 1 | **14/14** |
-| **Total** | **40** | **2** | **14** | **18** | **6** | **40/40** |
+| Intra-domain conflicts | 17 | 0 | 7 | 8 | 2 | **14/17** |
+| Cross-platform conflicts | 15 | 0 | 4 | 8 | 3 | **12/15** |
+| Race conditions | 17 | 2 | 7 | 7 | 1 | **14/17** |
+| **Total** | **49** | **2** | **18** | **23** | **6** | **40/49** |
+
+### Open Conflicts — Dermatology CDS (9 open, resolve before implementation)
+
+The following conflicts were introduced by SUB-PR-0013–0016 and SUB-RA-0008 (SYS-REQ-0012). Resolve these at the requirements level before beginning implementation of the Dermatology CDS feature.
+
+**High — resolve before any derm implementation begins:**
+1. **DC-PR-06** — Lesion audit trail traceability gap (SUB-PR-0013–0016 vs SYS-REQ-0003). Must add audit action strings and trace lesion endpoints to SYS-REQ-0003.
+2. **DC-PR-07** — Encounter-patient cross-reference validation (SUB-PR-0013 vs SUB-CW-0008). Must validate encounter.patient_id matches upload patient_id.
+3. **PC-AI-01** — Model version parity between server EfficientNet-B4 and mobile MobileNetV3 (SUB-PR-0013-AI vs SUB-PR-0013-AND). Must define compatibility matrix and label on-device results as preliminary.
+4. **RC-AND-03** — Offline TFLite vs server classification discrepancy (SUB-PR-0013-AND). Must surface classification updates via push notification.
+
+**Medium — resolve before platform-specific implementation:**
+5. **DC-PR-05** — AI inference queuing scope expansion (SUB-PR-0012 vs SUB-PR-0013). Must add dermoscopy to CameraSessionManager priority order.
+6. **PC-BE-08** — Encryption module path divergence (SUB-PR-0013-BE vs SUB-PR-0004-BE). Must unify on `services/encryption_service.py`.
+7. **PC-AND-03** — Camera contention expansion for dermoscopy (SUB-PR-0013-AND). Must add camera configuration profiles.
+8. **RC-BE-11** — Concurrent lesion upload for same patient/site (SUB-PR-0016-BE). Must serialize with `FOR UPDATE` and enforce minimum interval.
+9. **RC-BE-12** — CDS circuit breaker during upload pipeline (SUB-PR-0013-BE). Must wrap pipeline in transaction and implement idempotency key.
 
 ### Implementation Priority (requirements resolved, code implementation pending)
 
@@ -395,20 +426,27 @@ Quick lookup: which requirement IDs are involved in conflicts or race conditions
 | Requirement | Conflict/Race IDs |
 |---|---|
 | SYS-REQ-0001 | PC-BE-02, PC-BE-06, PC-WEB-01, PC-WEB-03, PC-AND-02, RC-WEB-01 |
-| SYS-REQ-0002 | DC-PR-01, PC-BE-01 |
-| SYS-REQ-0003 | PC-BE-03, PC-BE-07, DC-RA-01, RC-BE-04 |
+| SYS-REQ-0002 | DC-PR-01, PC-BE-01, PC-BE-08 |
+| SYS-REQ-0003 | PC-BE-03, PC-BE-07, DC-RA-01, RC-BE-04, DC-PR-06 |
 | SYS-REQ-0005 | PC-BE-04, DC-RA-01 |
 | SYS-REQ-0006 | DC-MM-01, PC-BE-05, RC-BE-03 |
 | SYS-REQ-0011 | DC-PM-01, DC-PM-02, DC-PM-03, RC-BE-09, RC-BE-10 |
+| SYS-REQ-0012 | DC-PR-05, DC-PR-06, DC-PR-07, PC-BE-08, PC-AND-03, PC-AI-01, RC-BE-11, RC-BE-12, RC-AND-03 |
 | SUB-PR-0003 | DC-PR-02, DC-PR-04, RC-BE-01, RC-BE-06, RC-WEB-02, RC-AND-02 |
-| SUB-PR-0004 | DC-PR-01, PC-BE-01 |
+| SUB-PR-0004 | DC-PR-01, PC-BE-01, PC-BE-08 |
 | SUB-PR-0006 | DC-PR-04, RC-BE-05 |
-| SUB-PR-0009 | DC-PR-03, PC-AND-01, RC-AND-01 |
-| SUB-PR-0010 | DC-PR-03, PC-AND-01, RC-AND-01 |
-| SUB-PR-0011 | DC-PR-03, PC-AND-01, RC-AND-01 |
+| SUB-PR-0009 | DC-PR-03, PC-AND-01, RC-AND-01, PC-AND-03 |
+| SUB-PR-0010 | DC-PR-03, PC-AND-01, RC-AND-01, PC-AND-03 |
+| SUB-PR-0011 | DC-PR-03, PC-AND-01, RC-AND-01, PC-AND-03 |
+| SUB-PR-0012 | DC-PR-03, DC-PR-05, PC-AND-01, PC-AND-03, RC-AND-01 |
+| SUB-PR-0013 | DC-PR-05, DC-PR-06, DC-PR-07, PC-BE-08, PC-AND-03, PC-AI-01, RC-BE-11, RC-BE-12, RC-AND-03 |
+| SUB-PR-0014 | DC-PR-06 |
+| SUB-PR-0015 | DC-PR-06 |
+| SUB-PR-0016 | DC-PR-06, RC-BE-11 |
 | SUB-CW-0003 | DC-CW-01, DC-CW-02, DC-CW-03, RC-BE-02, RC-BE-06, RC-AND-02 |
 | SUB-CW-0005 | DC-CW-03 |
 | SUB-CW-0007 | DC-CW-01, RC-BE-02 |
+| SUB-CW-0008 | DC-PR-07 |
 | SUB-MM-0001 | DC-MM-01, PC-BE-05, RC-BE-03, RC-BE-07 |
 | SUB-MM-0003 | DC-MM-01, PC-BE-01 |
 | SUB-MM-0007 | DC-MM-03 |
