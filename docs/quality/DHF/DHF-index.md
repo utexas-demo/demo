@@ -28,6 +28,7 @@ This Design History File (DHF) collects all design and development deliverables 
 | 7.3.8 | Design Transfer | `07-design-transfer/` | `config/release-process.md`, `specs/release-compatibility-matrix.md` | Exists |
 | 7.3.9 | Design Changes | `08-design-changes/` | ADRs (same as 03-design-output — see README) | Exists |
 | ISO 14971 | Risk Management File | `09-risk-management/` | `quality/risk-management/RA-*.md` | **GAP** (populated by Step 5b workflow) |
+| 4.2.5 / 7.3.2 | Release Conformity Records | `10-release-evidence/` | `DHF-release-YYYY-MM-DD-vX.Y.Z-*.md` | Exists |
 
 ---
 
@@ -82,6 +83,10 @@ flowchart TB
         RM1["RA-*.md files<br/>(populated by Step 5b)"]
     end
 
+    subgraph C425["4.2.5 — Release Evidence"]
+        RE1["DHF-release-*.md<br/>(per-release conformity records)"]
+    end
+
     DHF --> C732
     DHF --> C733
     DHF --> C734
@@ -91,6 +96,7 @@ flowchart TB
     DHF --> C738
     DHF --> C739
     DHF --> C14971
+    DHF --> C425
 
     %% Cross-references
     I1 -->|"decomposes to"| I2
@@ -114,6 +120,7 @@ flowchart TB
     style C738 fill:#f3f0ff,stroke:#845ef7
     style C739 fill:#fff4e6,stroke:#fd7e14
     style C14971 fill:#ff8787,stroke:#c92a2a
+    style C425 fill:#d0ebff,stroke:#1c7ed6
     style VA1 fill:#ff6b6b,stroke:#c92a2a,color:#fff
 ```
 
@@ -130,7 +137,7 @@ flowchart TB
 
 ## Refresh Process
 
-DHF copies are refreshed during **Step 10 (Release)** of the documentation workflow:
+DHF copies are refreshed during **Step 10a (Release Evidence & DHF Refresh)** of the documentation workflow:
 
 1. For each file that changed in the release, copy the updated version into the corresponding DHF sub-folder
 2. Verify DHF copies match source files: `diff docs/source docs/quality/DHF/XX-folder/copy`
@@ -152,4 +159,5 @@ DHF copies are refreshed during **Step 10 (Release)** of the documentation workf
 | `07-design-transfer/` | 2 | `docs/config/`, `docs/specs/` |
 | `08-design-changes/` | 1 (README) | References `03-design-output/` |
 | `09-risk-management/` | 0 (GAP) | `docs/quality/risk-management/` |
-| **Total** | **~36** | |
+| `10-release-evidence/` | 1 | Per-release conformity records |
+| **Total** | **~37** | |

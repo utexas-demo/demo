@@ -223,6 +223,7 @@ The PMS uses a **three-tier requirements decomposition**: System (SYS-REQ) → D
 ### Design History File (DHF)
 
 - [DHF Master Index](quality/DHF/DHF-index.md) — ISO 13485:2016 Clause 7.3 traceability matrix mapping all deliverables
+- [Release Evidence: v0.2.0-arch](quality/DHF/10-release-evidence/DHF-release-2026-02-21-v0.2.0-arch.md) — Documentation & Architecture release conformity record
 
 ### Risk Management
 

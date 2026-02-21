@@ -895,9 +895,114 @@ Run the full verification cycle for {FEATURE}:
 
 ---
 
-### Step 10: Release
+### Step 10a: Release Evidence & DHF Refresh
 
-**When:** All verification evidence is recorded (Step 9) and the feature is ready to ship.
+**When:** All verification evidence is recorded (Step 9) and the feature is ready for release. This step produces the formal release conformity record and refreshes DHF copies.
+
+> **This step must precede Step 10b.** The release evidence document captures the requirement inventory, test results, and release decision. DHF copies are refreshed to ensure the Design History File reflects the latest deliverables.
+
+**Checklist:**
+- [ ] Read `docs/specs/requirements/SYS-REQ.md` — note all requirement statuses
+- [ ] Read all `docs/specs/requirements/domain/SUB-*.md` files — note domain statuses
+- [ ] Read all `docs/specs/requirements/platform/SUB-*-*.md` files — note platform statuses
+- [ ] Read `docs/testing/traceability-matrix.md` — note test run log, coverage summary, and any failures
+- [ ] Read `docs/testing/evidence/` — note all test run evidence files
+- [ ] Read `docs/quality/DHF/DHF-index.md` — note current gap analysis
+- [ ] Read `docs/quality/processes/requirements-governance.md` — note conflict resolution status
+- [ ] Create release evidence document: `docs/quality/DHF/10-release-evidence/DHF-release-YYYY-MM-DD-vX.Y.Z-{tag}.md`
+  - [ ] Section 1: Release scope (what was delivered)
+  - [ ] Section 2: Full requirements inventory (all requirements with statuses, grouped by tier)
+  - [ ] Section 3: Not-implemented requirements justification (every requirement not yet Verified must have a justification)
+  - [ ] Section 4: Test evidence (0 failures explicitly stated, test run references, coverage summary)
+  - [ ] Section 5: DHF completeness assessment (clause-by-clause 7.3.2–7.3.9 + ISO 14971)
+  - [ ] Section 6: Release decision (acceptance criteria checklist with pass/fail)
+- [ ] Refresh DHF copies — for each file changed in this release, copy into the corresponding DHF sub-folder:
+  - [ ] `01-design-planning/`: `documentation-workflow.md`, `system-spec.md`
+  - [ ] `02-design-input/`: `SYS-REQ.md`, domain `SUB-*.md` files
+  - [ ] `03-design-output/`: `backend-endpoints.md`, ADR files
+  - [ ] `04-design-review/`: `requirements-governance.md`
+  - [ ] `05-design-verification/`: `testing-strategy.md`, `traceability-matrix.md`
+  - [ ] `07-design-transfer/`: `release-process.md`, `release-compatibility-matrix.md`
+  - [ ] `09-risk-management/`: `RA-*.md` files
+- [ ] Verify DHF copies match source files: `diff docs/source docs/quality/DHF/XX-folder/copy`
+- [ ] Update `docs/quality/DHF/DHF-index.md` — add release evidence record to traceability matrix, update file manifest
+- [ ] Commit and push
+
+**AI Agent Prompt:**
+```
+Read ALL of the following files to build a complete picture:
+
+REQUIREMENTS (all tiers):
+- docs/specs/requirements/SYS-REQ.md
+- docs/specs/requirements/domain/SUB-PR.md
+- docs/specs/requirements/domain/SUB-CW.md
+- docs/specs/requirements/domain/SUB-MM.md
+- docs/specs/requirements/domain/SUB-RA.md
+- docs/specs/requirements/domain/SUB-PM.md
+- All files in docs/specs/requirements/platform/
+
+TESTING:
+- docs/testing/traceability-matrix.md (test run log + coverage summary)
+- docs/testing/evidence/ (test run evidence files, if any)
+
+DHF & QUALITY:
+- docs/quality/DHF/DHF-index.md (current DHF state + gap analysis)
+- docs/quality/processes/requirements-governance.md (conflict status)
+- docs/quality/risk-management/ (risk assessment files, if any)
+
+RELEASE CONTEXT:
+- Read the git log for the current branch to understand what was delivered
+
+Produce the release evidence document:
+  docs/quality/DHF/10-release-evidence/DHF-release-{TODAY}-v{VERSION}-{TAG}.md
+
+The document MUST contain these sections:
+
+1. RELEASE SCOPE: List every deliverable (ADRs, requirements, conflicts
+   resolved, DHF changes, workflow additions). Include a table of all
+   ADRs delivered with their titles.
+
+2. REQUIREMENTS INVENTORY: Full status table of ALL requirements
+   (system + domain + platform). Group by tier and subsystem. Include
+   a status distribution summary (Not Started, Placeholder, Scaffolded,
+   Partial, Implemented, Verified, Verified-dev, Architecture Defined).
+
+3. NOT-IMPLEMENTED JUSTIFICATION: For every requirement not yet
+   Verified or Implemented, provide a justification row. Group by
+   status category. For documentation-only releases, the justification
+   is: "No code delivered; status unchanged from prior release."
+
+4. TEST EVIDENCE: State the number of test failures explicitly
+   (e.g., "Test failures: 0"). Reference every test run from the
+   traceability matrix Test Run Log. Include the coverage summary.
+
+5. DHF COMPLETENESS: Clause-by-clause assessment of ISO 13485
+   7.3.2-7.3.9 plus ISO 14971. For each clause: folder, status
+   (Complete/GAP), and assessment notes.
+
+6. RELEASE DECISION: Acceptance criteria checklist with pass/fail
+   for each criterion. Final decision: APPROVED or BLOCKED.
+
+After creating the release evidence document:
+
+REFRESH DHF COPIES:
+For each file that changed in this release cycle, copy the updated
+version into the corresponding DHF sub-folder. Only copy files that
+actually changed. Verify copies match sources.
+
+UPDATE DHF-index.md:
+- Add the new release evidence record to the file manifest
+- Update any gap statuses that changed
+- Increment the date
+
+Commit: "evidence: release evidence for v{VERSION}"
+```
+
+---
+
+### Step 10b: Version, Compatibility & Publish
+
+**When:** Release evidence is recorded (Step 10a) and the release is approved.
 
 **Checklist:**
 - [ ] Read `docs/specs/subsystem-versions.md` — bump version for affected subsystem(s)
@@ -906,13 +1011,12 @@ Run the full verification cycle for {FEATURE}:
   - [ ] All tests passing (verified in Step 9)
   - [ ] Security scans clean
   - [ ] Feature flags configured for target environment
-  - [ ] Documentation complete (all steps 1-9 done)
+  - [ ] Documentation complete (all steps 1–10a done)
 - [ ] Read `docs/config/feature-flags.md` — update flag states for release environment
 - [ ] Update `docs/PMS_Project_Overview.md` — refresh all counts, coverage, gap analysis
 - [ ] Update `docs/PMS_Requirements_Matrix.xlsx` — sync requirement IDs, statuses, and counts with SYS-REQ.md, domain files, and platform files
 - [ ] Update `docs/index.md` — verify all links, update requirement counts
 - [ ] Update `docs/documentation-workflow.md` — update file inventory if new files were added
-- [ ] Refresh `docs/quality/DHF/` — copy updated deliverables into the DHF folder structure (see Part C of DHF setup)
 - [ ] Commit and push
 - [ ] Create PR targeting main branch
 
@@ -927,7 +1031,6 @@ Read these files:
 - docs/PMS_Requirements_Matrix.xlsx
 - docs/index.md
 - docs/documentation-workflow.md
-- docs/quality/DHF/DHF-index.md
 
 Prepare the release for {FEATURE} (branch: feature/{BRANCH_NAME}):
 
@@ -960,17 +1063,7 @@ Prepare the release for {FEATURE} (branch: feature/{BRANCH_NAME}):
 7. documentation-workflow.md: Update file inventory if new files
    were added during this feature.
 
-8. DHF refresh: Copy updated deliverables into docs/quality/DHF/:
-   - 01-design-planning/: documentation-workflow.md, system-spec.md
-   - 02-design-input/: SYS-REQ.md, domain SUB-*.md files
-   - 03-design-output/: backend-endpoints.md, ADR files
-   - 04-design-review/: requirements-governance.md
-   - 05-design-verification/: testing-strategy.md, traceability-matrix.md
-   - 07-design-transfer/: release-process.md, release-compatibility-matrix.md
-   - 09-risk-management/: RA-*.md files
-   Only copy files that changed in this release cycle.
-
-9. Create a summary of all documentation changes made across all steps
+8. Create a summary of all documentation changes made across all steps
    for the PR description.
 ```
 
@@ -990,7 +1083,8 @@ Prepare the release for {FEATURE} (branch: feature/{BRANCH_NAME}):
 | **7. Speckit Cycle** | **7a `/specify` → 7b `/plan` → 7c `/speckit.tasks` → 7d `/analyze` → 7e implement code + tests, `evidence/RUN-*.md`, `traceability-matrix.md`, platform status** |
 | 8. Config | `dependencies.md`, `feature-flags.md`, `environments.md`, `project-setup.md` |
 | **9. Verification** | **Run full test suite, `evidence/RUN-*.md`, `traceability-matrix.md`, platform/domain status → Verified, `/analyze` report** |
-| 10. Release | `subsystem-versions.md`, `release-compatibility-matrix.md`, `feature-flags.md`, `PMS_Project_Overview.md`, `PMS_Requirements_Matrix.xlsx`, `index.md` |
+| **10a. Release Evidence** | **`DHF/10-release-evidence/DHF-release-*.md` (new), `DHF-index.md`, DHF folder copies refreshed** |
+| 10b. Version & Publish | `subsystem-versions.md`, `release-compatibility-matrix.md`, `feature-flags.md`, `PMS_Project_Overview.md`, `PMS_Requirements_Matrix.xlsx`, `index.md` |
 
 ---
 
@@ -1007,7 +1101,7 @@ Prepare the release for {FEATURE} (branch: feature/{BRANCH_NAME}):
 | `config/` | 7 | Setup, dependencies, environments, deployment |
 | `testing/` | 2 (+ evidence/) | Test strategy, traceability matrix, run records |
 | `quality/` | 3 .md + 1 .pdf + 4 assets | QMS processes, governance, ISO standard |
-| `quality/DHF/` | ~38 (copies + index) | Design History File — ISO 13485 Clause 7.3 deliverables |
+| `quality/DHF/` | ~39 (copies + index + release evidence) | Design History File — ISO 13485 Clause 7.3 deliverables + release evidence |
 | `quality/risk-management/` | RA-*.md (per feature) | Risk assessments per ISO 14971 |
 | `features/` | 2 .md + 1 .docx | Feature implementation docs |
 | `api/` | 1 | Backend API reference |
