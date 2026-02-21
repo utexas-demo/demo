@@ -2,6 +2,9 @@
 
 This directory is the single source of truth for all project context, decisions, and implementation details.
 
+- [Documentation Workflow](documentation-workflow.md) — How features flow through requirements, testing, and release across all docs
+- [PMS Project Overview](PMS_Project_Overview.md) — Bird's eye view of all repositories, requirements, and coverage
+
 ## Architecture Decisions
 
 - [ADR-0001: Use Repository-Based Knowledge Management](architecture/0001-repo-based-knowledge-management.md)
