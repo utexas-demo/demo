@@ -157,6 +157,11 @@ _No bug fixes documented yet._
 - [Superpowers Setup Guide](experiments/19-Superpowers-PMS-Developer-Setup-Guide.md) — Claude Code plugin installation, PMS custom skills creation (HIPAA patterns, testing requirements, architecture conventions), and TDD workflow configuration
 - [Superpowers Developer Tutorial](experiments/19-Superpowers-Developer-Tutorial.md) — Hands-on onboarding: build a PMS feature using the full Superpowers workflow (brainstorm, plan, TDD execute, review) with custom healthcare skills end-to-end
 
+### Qwen 3.5 (On-Premise MoE Reasoning & Code Generation AI)
+- [PRD: Qwen 3.5 PMS Integration](experiments/20-PRD-Qwen35-PMS-Integration.md) — 397B MoE model (17B active) for complex clinical reasoning, differential diagnosis, drug interaction analysis, and clinical rule code generation, complementing Gemma 3 in a dual-model on-premise strategy
+- [Qwen 3.5 Setup Guide](experiments/20-Qwen35-PMS-Developer-Setup-Guide.md) — vLLM deployment with Qwen3-32B, AI Gateway dual-model routing (Qwen + Gemma), reasoning endpoints, and medication interaction analysis pipeline
+- [Qwen 3.5 Developer Tutorial](experiments/20-Qwen35-Developer-Tutorial.md) — Hands-on onboarding: build a medication interaction analyzer with thinking mode reasoning chains, compare Qwen vs Gemma output quality, and implement task-based model routing end-to-end
+
 ---
 
 ## Documentation Views
