@@ -46,16 +46,16 @@ flowchart TB
         RelCompat["release-compatibility-matrix.md"]
 
         subgraph REQ["specs/requirements/"]
-            SysReq["SYS-REQ.md<br/>12 System Requirements"]
+            SysReq["SYS-REQ.md<br/>13 System Requirements"]
             subgraph DOMREQ["domain/"]
-                SubPR["SUB-PR.md<br/>Patient Records<br/>16 domain reqs"]
-                SubCW["SUB-CW.md<br/>Clinical Workflow<br/>8 domain reqs"]
+                SubPR["SUB-PR.md<br/>Patient Records<br/>17 domain reqs"]
+                SubCW["SUB-CW.md<br/>Clinical Workflow<br/>9 domain reqs"]
                 SubMM["SUB-MM.md<br/>Medication Mgmt<br/>9 domain reqs"]
                 SubRA["SUB-RA.md<br/>Reporting & Analytics<br/>8 domain reqs"]
                 SubPM["SUB-PM.md<br/>Prompt Mgmt<br/>7 domain reqs"]
             end
             subgraph PLATREQ["platform/"]
-                PlatFiles["4 consolidated platform files<br/>SUB-BE/WEB/AND/AI.md<br/>95 platform reqs"]
+                PlatFiles["4 consolidated platform files<br/>SUB-BE/WEB/AND/AI.md<br/>100 platform reqs"]
             end
         end
 
@@ -70,7 +70,7 @@ flowchart TB
     %% ── TESTING ──
     subgraph TEST["testing/"]
         Strategy["testing-strategy.md<br/>Test Levels & Conventions"]
-        RTM["traceability-matrix.md<br/>Forward & Backward Traceability<br/>60 domain / 95 platform reqs"]
+        RTM["traceability-matrix.md<br/>Forward & Backward Traceability<br/>63 domain / 100 platform reqs"]
         Evidence["evidence/<br/>Test Run Records"]
     end
 
@@ -298,7 +298,7 @@ Update docs/index.md with the new experiment section.
 **When:** A technology choice, structural change, or design approach needs to be recorded.
 
 **Checklist:**
-- [ ] Scan `docs/architecture/` for the highest ADR number (currently `0007`)
+- [ ] Scan `docs/architecture/` for the highest ADR number (currently `0022`)
 - [ ] Create new ADR: `docs/architecture/NNNN-{short-title}.md`
 - [ ] Include: Context, Options Considered, Decision, Rationale, Trade-offs, Consequences
 - [ ] Cross-reference related PRDs from `docs/experiments/`
@@ -1242,7 +1242,7 @@ Prepare the release for {FEATURE} (branch: feature/{BRANCH_NAME}):
 | Directory | Files | Purpose |
 |---|---|---|
 | `experiments/` | 58 (55 .md + 3 .docx) | Technology research: PRDs, setup guides, tutorials |
-| `architecture/` | 21 | Architecture Decision Records (0001–0021) |
+| `architecture/` | 22 | Architecture Decision Records (0001–0022) |
 | `specs/requirements/` | 1 + 5 domain + 4 platform = 10 | System, domain, and platform requirement documents |
 | `specs/` | 3 (+ requirements/) | System spec, versions, compatibility matrix |
 | `config/` | 7 | Setup, dependencies, environments, deployment |
