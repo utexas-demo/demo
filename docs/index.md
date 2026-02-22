@@ -29,6 +29,7 @@ This directory is the single source of truth for all project context, decisions,
 - [ADR-0019: Lesion Longitudinal Tracking](architecture/0019-lesion-longitudinal-tracking.md) — Persistent lesion identity with embedding cosine distance change detection
 - [ADR-0020: Feature Flag Strategy](architecture/0020-derm-cds-feature-flags.md) — Granular per-requirement flags for phased rollout
 - [ADR-0021: Database Migration Strategy](architecture/0021-derm-database-migration.md) — Alembic-managed migrations for pgvector tables
+- [ADR-0022: DermaCheck Core Workflow Orchestration](architecture/0022-dermacheck-workflow-orchestration.md) — Parallel fan-out pipeline for Journey 1 capture-classify-review flow
 
 ## Features
 
