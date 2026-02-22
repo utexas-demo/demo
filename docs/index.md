@@ -188,25 +188,25 @@ Browse documentation organized by deployment platform — [full index](platform/
 
 ## Specifications & Requirements
 
-The PMS uses a **three-tier requirements decomposition**: System (SYS-REQ) → Domain (SUB-*) → Platform (SUB-*-BE/WEB/AND/AI). There are 12 system requirements, 48 domain requirements, and 95 platform requirements across 4 platforms. Domain requirements live in `specs/requirements/domain/` and platform requirements in `specs/requirements/platform/`.
+The PMS uses a **three-tier requirements decomposition**: System (SYS-REQ) → Domain (SUB-*) → Platform (SUB-*-BE/WEB/AND/AI). There are 13 system requirements, 50 domain requirements, and 100 platform requirements across 4 platforms. Domain requirements live in `specs/requirements/domain/` and platform requirements in `specs/requirements/platform/`.
 
 - [System Specification](specs/system-spec.md) — System-level scope, context, subsystem decomposition, and platform codes
-- [System Requirements (SYS-REQ)](specs/requirements/SYS-REQ.md) — 12 system-level requirements with platform annotations
+- [System Requirements (SYS-REQ)](specs/requirements/SYS-REQ.md) — 13 system-level requirements with platform annotations
 
 ### Domain Requirements
 
-- [Patient Records (SUB-PR)](specs/requirements/domain/SUB-PR.md) — 16 domain requirements
-- [Clinical Workflow (SUB-CW)](specs/requirements/domain/SUB-CW.md) — 8 domain requirements
+- [Patient Records (SUB-PR)](specs/requirements/domain/SUB-PR.md) — 17 domain requirements
+- [Clinical Workflow (SUB-CW)](specs/requirements/domain/SUB-CW.md) — 9 domain requirements
 - [Medication Management (SUB-MM)](specs/requirements/domain/SUB-MM.md) — 9 domain requirements
 - [Reporting & Analytics (SUB-RA)](specs/requirements/domain/SUB-RA.md) — 8 domain requirements
 - [Prompt Management (SUB-PM)](specs/requirements/domain/SUB-PM.md) — 7 domain requirements
 
 ### Platform Requirements
 
-- [Backend (SUB-BE)](specs/requirements/platform/SUB-BE.md) — 47 requirements across 5 domains
-- [Web Frontend (SUB-WEB)](specs/requirements/platform/SUB-WEB.md) — 24 requirements across 5 domains
-- [Android (SUB-AND)](specs/requirements/platform/SUB-AND.md) — 18 requirements across 4 domains
-- [AI Infrastructure (SUB-AI)](specs/requirements/platform/SUB-AI.md) — 6 requirements across 2 domains
+- [Backend (SUB-BE)](specs/requirements/platform/SUB-BE.md) — 49 requirements across 5 domains
+- [Web Frontend (SUB-WEB)](specs/requirements/platform/SUB-WEB.md) — 25 requirements across 5 domains
+- [Android (SUB-AND)](specs/requirements/platform/SUB-AND.md) — 19 requirements across 4 domains
+- [AI Infrastructure (SUB-AI)](specs/requirements/platform/SUB-AI.md) — 7 requirements across 2 domains
 
 ## Testing & Traceability
 

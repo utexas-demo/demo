@@ -2,7 +2,7 @@
 
 **Version:** 1.0
 **Date:** 2026-02-21
-**Platform:** Backend (BE) — 47 requirements across 5 domains
+**Platform:** Backend (BE) — 49 requirements across 5 domains
 **Repository:** pms-backend
 **Technology:** FastAPI, Python 3.12, async SQLAlchemy, asyncpg, Pydantic v2, JWT auth, AES-256 encryption
 
@@ -12,12 +12,12 @@
 
 | Domain | Req Count | Status Breakdown |
 |--------|-----------|-----------------|
-| Patient Records (PR) | 15 | 3 Implemented, 2 Verified, 1 Verified (dev), 9 Not Started |
-| Clinical Workflow (CW) | 8 | 6 Placeholder, 2 Not Started |
+| Patient Records (PR) | 16 | 3 Implemented, 2 Verified, 1 Verified (dev), 10 Not Started |
+| Clinical Workflow (CW) | 9 | 6 Placeholder, 3 Not Started |
 | Medication Management (MM) | 9 | 7 Placeholder, 2 Not Started |
 | Reporting & Analytics (RA) | 8 | 5 Placeholder, 3 Not Started |
 | Prompt Management (PM) | 7 | 7 Not Started |
-| **Total** | **47** | |
+| **Total** | **49** | |
 
 ---
 
@@ -42,6 +42,7 @@
 | SUB-PR-0014-BE | SUB-PR-0014 | Similarity search API endpoint that accepts a lesion image, extracts embedding via CDS service, and queries pgvector for top-K similar ISIC reference images with diagnosis and similarity score. Must call `audit_service.log_action` with action `SIMILARITY_SEARCH` and resource_type `lesion_image` (DC-PR-06). | `routers/lesions.py`, `services/lesion_service.py` | TST-PR-0014-BE | Not Started |
 | SUB-PR-0015-BE | SUB-PR-0015 | Risk score calculation service with configurable clinical thresholds for malignant class probability, patient age, and anatomical site. Returns risk level and referral urgency. Must call `audit_service.log_action` with action `LESION_CLASSIFY` and resource_type `lesion_image` when risk score is computed (DC-PR-06). | `services/risk_scorer.py` (in CDS service) | TST-PR-0015-BE | Not Started |
 | SUB-PR-0016-BE | SUB-PR-0016 | Lesion history API endpoint (`/api/lesions/history/{patient_id}`) returning chronological classification results with change detection scores computed via embedding cosine distance. Must call `audit_service.log_action` with action `TIMELINE_VIEW` and resource_type `lesion_image` (DC-PR-06). Change_score computation must use `SELECT ... FOR UPDATE` on the lesion identity row to serialize against concurrent uploads (RC-BE-11). | `routers/lesions.py`, `services/lesion_service.py` | TST-PR-0016-BE | Not Started |
+| SUB-PR-0017-BE | SUB-PR-0017 | DermaCheck thin-proxy endpoint (`POST /api/lesions/upload`) that validates input, forwards the image to the CDS service's `/classify` endpoint via HTTP with circuit breaking (ADR-0018), persists the returned `DermaCheckResult` to PostgreSQL, and returns the full result to the client. The Backend must NOT orchestrate AI stages — all fan-out logic lives in the CDS service (ADR-0022). Must set an overall CDS timeout of 10 seconds. Must call `audit_service.log_action` with action `DERMACHECK_PIPELINE` and resource_type `lesion_image`, including `model_version`, per-stage latency, and `degraded` status in the audit metadata (DC-PR-06). | `routers/lesions.py`, `services/lesion_service.py`, `services/cds_client.py` | TST-PR-0017-BE | Not Started |
 
 ---
 
@@ -59,6 +60,7 @@
 | SUB-CW-0006-BE | SUB-CW-0006 | Validate encounter types (office_visit, telehealth, emergency, follow_up) | `models/encounter.py` | TST-CW-0006-BE | Placeholder |
 | SUB-CW-0007-BE | SUB-CW-0007 | Validate encounter status transitions against the explicit state machine (see SUB-CW-0007). Enforce via `SELECT ... FOR UPDATE` to serialize concurrent transitions (RC-BE-02). | — | TST-CW-0007-BE | Not Started |
 | SUB-CW-0008-BE | SUB-CW-0008 | Enforce patient_id FK constraint on encounters | `models/encounter.py` (FK) | TST-CW-0008-BE | Placeholder |
+| SUB-CW-0009-BE | SUB-CW-0009 | Encounter-lesion association API: `GET /api/encounters/{encounter_id}/lesions` returns all DermaCheck assessments linked to an encounter. `POST /api/lesions/upload` must accept optional `encounter_id` and validate encounter-patient consistency (return 422 on mismatch, per SUB-PR-0013-BE DC-PR-07). Multiple lesion assessments may be linked to a single encounter. | `routers/encounters.py`, `routers/lesions.py`, `services/lesion_service.py` | TST-CW-0009-BE | Not Started |
 
 ---
 

@@ -2,7 +2,7 @@
 
 **Version:** 1.0
 **Date:** 2026-02-21
-**Platform:** Android (AND) — 18 requirements across 4 domains
+**Platform:** Android (AND) — 19 requirements across 4 domains
 **Repository:** pms-android
 **Technology:** Kotlin, Jetpack Compose, Hilt (DI), Retrofit (HTTP), Room (local DB), DataStore (preferences), offline-first architecture
 
@@ -13,10 +13,10 @@
 | Domain | Req Count | Status Breakdown |
 |--------|-----------|-----------------|
 | Patient Records (PR) | 8 | 1 Scaffolded, 7 Not Started |
-| Clinical Workflow (CW) | 3 | 1 Scaffolded, 2 Not Started |
+| Clinical Workflow (CW) | 4 | 1 Scaffolded, 3 Not Started |
 | Medication Management (MM) | 2 | 1 Scaffolded, 1 Not Started |
 | Reporting & Analytics (RA) | 5 | 1 Scaffolded, 4 Not Started |
-| **Total** | **18** | |
+| **Total** | **19** | |
 
 ---
 
@@ -46,6 +46,7 @@
 | SUB-CW-0001-AND | SUB-CW-0001 | SYS-REQ-0001 | Auth interceptor for encounter API calls | `data/api/AuthInterceptor.kt` | TST-CW-0001-AND | Scaffolded |
 | SUB-CW-0003-AND | SUB-CW-0003 | — | Encounter lifecycle screens with Compose UI. Must implement offline-sync conflict resolution: sync requests include `version`/`updated_at`, backend 409 conflicts are queued and presented in a resolution UI (RC-AND-02). | `ui/encounters/` | TST-CW-0003-AND | Not Started |
 | SUB-CW-0006-AND | SUB-CW-0006 | — | Encounter type selection in Compose forms | `ui/encounters/EncountersScreen.kt` | TST-CW-0006-AND | Not Started |
+| SUB-CW-0009-AND | SUB-CW-0009 | SYS-REQ-0013 | DermaCheck encounter workflow on Android: from encounter detail screen, physician taps "DermaCheck" to open camera capture (via CameraSessionManager with dermoscopy CameraProfile per SUB-PR-0012), uploads image to backend, receives and displays `DermaCheckResult` (classification, narrative, risk score, similar images), and taps "Save to Encounter" or "Discard". Must handle `degraded` responses by showing "unavailable" indicators for missing fields. Supports "Add Another Lesion" to capture multiple lesions within the same encounter. Results rendered atomically — waits for full response, no progressive rendering. | `ui/dermatology/DermaCheckScreen.kt`, `ui/dermatology/DermaCheckViewModel.kt`, `ui/encounters/EncounterDetailScreen.kt` | TST-CW-0009-AND | Not Started |
 
 ---
 

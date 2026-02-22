@@ -2,7 +2,7 @@
 
 **Version:** 1.0
 **Date:** 2026-02-21
-**Platform:** Web Frontend (WEB) — 24 requirements across 5 domains
+**Platform:** Web Frontend (WEB) — 25 requirements across 5 domains
 **Repository:** pms-frontend
 **Technology:** Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 3
 
@@ -13,11 +13,11 @@
 | Domain | Req Count | Status Breakdown |
 |--------|-----------|-----------------|
 | Patient Records (PR) | 8 | 1 Scaffolded, 7 Not Started |
-| Clinical Workflow (CW) | 3 | 1 Scaffolded, 2 Not Started |
+| Clinical Workflow (CW) | 4 | 1 Scaffolded, 3 Not Started |
 | Medication Management (MM) | 2 | 1 Scaffolded, 1 Not Started |
 | Reporting & Analytics (RA) | 6 | 1 Scaffolded, 5 Not Started |
 | Prompt Management (PM) | 5 | 5 Not Started |
-| **Total** | **24** | |
+| **Total** | **25** | |
 
 ---
 
@@ -47,6 +47,7 @@
 | SUB-CW-0001-WEB | SUB-CW-0001 | Auth guard for encounter pages | `lib/auth.ts` | TST-CW-0001-WEB | Scaffolded |
 | SUB-CW-0003-WEB | SUB-CW-0003 | Encounter lifecycle UI (list, create, status updates) | `app/encounters/` | TST-CW-0003-WEB | Not Started |
 | SUB-CW-0006-WEB | SUB-CW-0006 | Encounter type selection in forms | `app/encounters/page.tsx` | TST-CW-0006-WEB | Not Started |
+| SUB-CW-0009-WEB | SUB-CW-0009 | DermaCheck workflow within encounter detail page: Lesion Image Capture Widget (file upload / USB dermoscope), anatomical site selector, classification results panel displaying `DermaCheckResult` (top-3 predictions, confidence chart, clinical narrative, risk level with severity color coding), similar lesions gallery, and save/discard action buttons. Accessible at `/encounters/[id]/dermatology`. Must handle `degraded` responses by showing "Narrative unavailable" or "Similar images unavailable" banners without blocking the physician from reviewing classification and risk. | `app/encounters/[id]/dermatology/page.tsx`, `components/dermatology/DermaCheckWorkflow.tsx` | TST-CW-0009-WEB | Not Started |
 
 ---
 

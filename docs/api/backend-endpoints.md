@@ -163,21 +163,22 @@ All report endpoints currently return stub data:
 
 ---
 
-## Lesions — Dermatology CDS (SUB-PR-0013, SUB-PR-0014, SUB-PR-0015, SUB-PR-0016)
+## Lesions — Dermatology CDS (SUB-PR-0013, SUB-PR-0014, SUB-PR-0015, SUB-PR-0016, SUB-PR-0017)
 
 All lesion endpoints require authentication and are gated behind feature flags (ADR-0020). When a feature flag is disabled, the endpoint returns `404 Not Found`. The backend forwards image data to the `pms-derm-cds` service (:8090) via HTTP with circuit breaking (ADR-0018). All endpoints currently return stub data until the CDS service is deployed.
 
 | Method | Path | Description | Auth | Feature Flag |
 |--------|------|-------------|------|-------------|
-| POST | `/api/lesions/upload` | Upload dermoscopic image for AI classification | Yes | `DERM_CLASSIFICATION` |
+| POST | `/api/lesions/upload` | Upload dermoscopic image for DermaCheck pipeline (classification, narrative, similarity, risk) | Yes | `DERM_CLASSIFICATION` |
 | GET | `/api/lesions/history/{patient_id}` | Lesion classification history for a patient | Yes | `DERM_CLASSIFICATION` |
 | POST | `/api/lesions/similar` | Find similar ISIC reference images | Yes | `DERM_SIMILARITY_SEARCH` |
 | GET | `/api/lesions/{lesion_id}/timeline` | Longitudinal timeline for a specific lesion | Yes | `DERM_LONGITUDINAL_TRACKING` |
+| GET | `/api/encounters/{encounter_id}/lesions` | List DermaCheck assessments for an encounter | Yes | `DERM_CLASSIFICATION` |
 | GET | `/reports/dermatology` | Dermatology classification analytics | Yes | `DERM_REPORTING_DASHBOARD` |
 
 ### POST `/api/lesions/upload`
 
-Upload a dermoscopic image for AI classification, risk scoring, and similarity search. The image is encrypted with AES-256-GCM (ADR-0010, ADR-0016) before storage.
+Upload a dermoscopic image for the full DermaCheck pipeline (SUB-PR-0017). The Backend acts as a thin proxy: validates input, encrypts the image with AES-256-GCM (ADR-0010, ADR-0016) before storage, forwards to the CDS service's `/classify` endpoint, persists the returned `DermaCheckResult`, and returns the full result. The CDS service internally orchestrates classification → parallel fan-out (narrative + similarity + risk) per ADR-0022. Overall CDS timeout: 10 seconds.
 
 **Request:** `multipart/form-data`
 
@@ -185,45 +186,48 @@ Upload a dermoscopic image for AI classification, risk scoring, and similarity s
 |-------|------|----------|-------------|
 | `image` | file | Yes | JPEG or PNG dermoscopic image (max 20 MB) |
 | `patient_id` | UUID | Yes | Patient to associate the lesion with |
-| `encounter_id` | UUID | No | Encounter to link assessment to |
+| `encounter_id` | UUID | No | Encounter to link assessment to (SUB-CW-0009). Must validate encounter-patient consistency — 422 on mismatch. |
 | `anatomical_site` | string | No | Body location (e.g., `back`, `scalp`, `trunk`, `lower_extremity`) |
 
-**Response (200):**
+**Response (200):** `DermaCheckResult` (ADR-0022)
 ```json
 {
   "lesion_image_id": "uuid",
   "classification": {
-    "predictions": [
-      { "class": "melanocytic_nevus", "probability": 0.7234 },
-      { "class": "melanoma", "probability": 0.1102 },
-      { "class": "benign_keratosis", "probability": 0.0891 }
+    "top_3": [
+      { "category": "melanocytic_nevus", "confidence": 0.7234 },
+      { "category": "melanoma", "confidence": 0.1102 },
+      { "category": "benign_keratosis", "confidence": 0.0891 }
     ],
-    "top_prediction": "melanocytic_nevus",
-    "confidence": 0.7234,
-    "model_name": "efficientnet_b4",
-    "model_version": "isic-2024-v1"
+    "all_probabilities": { "melanocytic_nevus": 0.7234, "melanoma": 0.1102, "..." : "..." }
+  },
+  "narrative": "Given the patient's age and the lesion's dermoscopic features...",
+  "risk_score": {
+    "level": "low",
+    "referral_urgency": "routine",
+    "contributing_factors": []
   },
   "similar_images": [
     {
       "isic_id": "ISIC_0024306",
       "diagnosis": "melanocytic_nevus",
       "similarity_score": 0.9412,
-      "image_url": "https://api.isic-archive.com/api/v2/images/ISIC_0024306/thumbnail",
-      "metadata": { "age": 45, "sex": "male", "site": "back" }
+      "metadata": { "age": 45, "sex": "male", "anatomical_site": "back" }
     }
   ],
-  "risk_assessment": {
-    "risk_level": "low",
-    "referral_urgency": "routine",
-    "risk_factors": [],
-    "malignant_probability": 0.1521
-  }
+  "embedding_id": "uuid",
+  "model_version": "efficientnet-b4-isic2024-v1.2",
+  "degraded": false
 }
 ```
+
+The `degraded` flag is `true` if a non-critical parallel stage (Gemma 3 narrative, similarity search, or risk scoring) timed out or failed. The response is still valid but the affected field is `null`. Classification failure returns HTTP 500 (hard-fail).
 
 **Error Responses:**
 - `400` — Invalid image file (corrupt, wrong format, or too small)
 - `422` — Image quality validation failed (blur, exposure). Body: `{"detail": "Image too blurry (score: 45.3, threshold: 100.0)."}`
+- `422` — Encounter-patient mismatch. Body: `{"detail": "Encounter patient_id does not match upload patient_id."}`
+- `500` — EfficientNet-B4 classification failed (pipeline hard-fail)
 - `503` — CDS service unavailable (circuit breaker open). Body: `{"detail": "CDS service unavailable", "cds_status": "circuit_open"}`
 
 ### GET `/api/lesions/history/{patient_id}`
@@ -309,6 +313,37 @@ Returns longitudinal timeline for a persistent lesion, including change detectio
 }
 ```
 
+### GET `/api/encounters/{encounter_id}/lesions`
+
+Returns all DermaCheck assessments linked to an encounter (SUB-CW-0009). Requires authentication.
+
+**Response (200):**
+```json
+[
+  {
+    "lesion_image_id": "uuid",
+    "captured_at": "ISO 8601",
+    "anatomical_site": "back",
+    "classification": {
+      "top_3": [
+        { "category": "melanocytic_nevus", "confidence": 0.7234 }
+      ]
+    },
+    "risk_score": {
+      "level": "low",
+      "referral_urgency": "routine"
+    },
+    "degraded": false,
+    "model_version": "efficientnet-b4-isic2024-v1.2"
+  }
+]
+```
+
+**Error Responses:**
+- `404` — Encounter not found
+
+---
+
 ### GET `/reports/dermatology`
 
 Dermatology classification analytics report (SUB-RA-0008).
@@ -339,13 +374,34 @@ Dermatology classification analytics report (SUB-RA-0008).
 
 ## Dermatology CDS Service (Internal — :8090)
 
-The `pms-derm-cds` service (ADR-0008) runs on port 8090 and is called by the PMS backend only. It is **not** exposed to clients directly.
+The `pms-derm-cds` service (ADR-0008) runs on port 8090 and is called by the PMS backend only. It is **not** exposed to clients directly. The CDS service owns all AI orchestration logic (ADR-0022).
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/health` | CDS service health check |
-| POST | `/classify` | Classify a dermoscopic image |
-| POST | `/similar` | Find similar ISIC reference images |
+| POST | `/classify` | Full DermaCheck pipeline: classify → parallel fan-out (narrative + similarity + risk) |
+| POST | `/similar` | Find similar ISIC reference images (standalone) |
+
+### POST `/classify` (ADR-0022)
+
+The primary DermaCheck orchestration endpoint. Receives an image and patient context, runs EfficientNet-B4 classification first, then fans out three parallel stages (Gemma 3 narrative via AI Gateway :8001, pgvector similarity search, risk scoring), and returns an assembled `DermaCheckResult`.
+
+**Request:**
+```json
+{
+  "image": "<base64 JPEG/PNG>",
+  "patient_id": "uuid",
+  "encounter_id": "uuid",
+  "anatomical_site": "left_forearm",
+  "clinical_notes": "Patient noticed growth over 3 months..."
+}
+```
+
+**Response:** `DermaCheckResult` — see `POST /api/lesions/upload` response format above.
+
+**Timeout configuration:** Gemma 3 = 5s, similarity = 2s, risk = 1s. Backend-to-CDS overall timeout = 10s (ADR-0018).
+
+**Graceful degradation:** Non-critical stage failure → field set to `null`, `degraded = true`. EfficientNet-B4 failure → HTTP 500.
 
 See [ISICArchive Setup Guide](../experiments/18-ISICArchive-PMS-Developer-Setup-Guide.md) for full CDS API details.
 
