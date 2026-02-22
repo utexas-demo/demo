@@ -230,3 +230,4 @@ The PMS uses a **three-tier requirements decomposition**: System (SYS-REQ) → D
 
 - Risk assessment files are created per feature using Step 5b of the [Documentation Workflow](documentation-workflow.md)
 - Location: `quality/risk-management/RA-{CODE}-{FEATURE}.md`
+- [RA-DERM-DermaCheckOrchestration](quality/risk-management/RA-DERM-DermaCheckOrchestration.md) — DermaCheck Workflow Orchestration (SYS-REQ-0013): 20 risks across Clinical Safety, Data Integrity, Availability, and Concurrency categories; 0 residual unacceptable
