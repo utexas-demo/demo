@@ -1,7 +1,7 @@
 # System-Level Requirements (SYS-REQ)
 
 **Document ID:** PMS-SYS-REQ-001
-**Version:** 1.7
+**Version:** 1.8
 **Date:** 2026-02-21
 **Parent:** [System Specification](../system-spec.md)
 
@@ -23,6 +23,7 @@
 | SYS-REQ-0010 | All system components must be deployable via Docker containers | Medium | Inspection | Scaffolded |
 | SYS-REQ-0011 | Provide centralized prompt management with versioning, CRUD operations, and LLM-powered comparison for all AI prompts used across the system | High | Test / Demo | Not Started |
 | SYS-REQ-0012 | Provide AI-assisted skin lesion classification and dermatology clinical decision support using ISIC Archive-trained models with on-premises inference, similarity search, and structured risk scoring | High | Test / Demo | Architecture Defined |
+| SYS-REQ-0013 | Orchestrate the DermaCheck capture-classify-review pipeline as a single-request parallel fan-out with graceful degradation, completing all AI stages within 5 seconds | High | Test / Demo | Architecture Defined |
 
 ---
 
@@ -154,3 +155,27 @@
 - [ADR-0021](../../architecture/0021-derm-database-migration.md): Alembic-managed migrations for pgvector tables
 
 **Decomposes To:** SUB-PR-0013 (→ BE, WEB, AND, AI), SUB-PR-0014 (→ BE, WEB, AI), SUB-PR-0015 (→ BE, WEB), SUB-PR-0016 (→ BE, WEB), SUB-RA-0008 (→ BE, WEB)
+
+---
+
+### SYS-REQ-0013: DermaCheck Workflow Orchestration
+
+**Rationale:** The DermaCheck workflow (Journey 1) chains four AI processing stages — EfficientNet-B4 classification, Gemma 3 clinical narrative, pgvector similarity search, and risk scoring — into a single clinical interaction. Without explicit orchestration requirements, stages may execute sequentially (exceeding latency targets), fail silently (returning incomplete results without indication), or create ambiguous ownership between the Backend and CDS services. HIPAA Security Rule §164.312(b) requires audit controls over each processing stage, and §164.306(a) requires contingency planning for component failures. A defined orchestration pattern ensures predictable latency, transparent degradation, and auditable processing for every lesion assessment.
+
+**Acceptance Criteria:**
+1. The DermaCheck pipeline completes classification, clinical narrative, similarity search, and risk scoring within a single HTTP request/response cycle — no client-side polling, streaming, or multi-request assembly required.
+2. EfficientNet-B4 classification executes first; Gemma 3 narrative generation, pgvector similarity search, and risk scoring execute in parallel after classification completes (fan-out pattern).
+3. Total end-to-end latency from image upload to full results response is under 5 seconds for a single image on server-side inference.
+4. If a non-critical parallel stage (Gemma 3 narrative, similarity search, or risk scoring) fails or times out, the system returns partial results with a `degraded` indicator — classification is the only hard-fail stage.
+5. The DermCDS Service (:8090) owns all AI orchestration logic; the PMS Backend (:8000) acts as a thin proxy that validates input, forwards to CDS, persists results, and returns the response.
+6. The response payload (`DermaCheckResult`) includes classification, narrative, risk score, similar images, embedding ID, model version, and degradation status as a single atomic structure.
+7. Every pipeline execution is recorded in the audit trail with: model version, per-stage latency, degradation status, and the physician who initiated the assessment.
+
+**Current Implementation:** Architecture defined in ADR-0022 (DermaCheck Core Workflow Orchestration). No code implementation started.
+
+**Architecture Decisions:**
+- [ADR-0022](../../architecture/0022-dermacheck-workflow-orchestration.md): Parallel fan-out pipeline with graceful degradation
+- [ADR-0008](../../architecture/0008-derm-cds-microservice-architecture.md): CDS as separate Docker service (pipeline host)
+- [ADR-0018](../../architecture/0018-inter-service-communication.md): Backend-to-CDS HTTP communication with circuit breaking
+
+**Decomposes To:** SUB-PR-0017 (→ BE, AI), SUB-CW-0009 (→ BE, WEB, AND)

@@ -1,7 +1,7 @@
 # PMS Project Overview — Bird's Eye View
 
 **Date:** 2026-02-21
-**Version:** 1.1
+**Version:** 1.2
 **Organization:** utexas-demo (GitHub)
 
 ---
@@ -64,8 +64,8 @@ flowchart TB
 
 | Code | Subsystem | Scope | Primary Actor |
 |---|---|---|---|
-| SUB-PR | Patient Records | Demographics, medical history, encrypted PHI, AI vision, dermatology CDS (skin lesion classification, similarity search, risk scoring, longitudinal tracking) | All roles |
-| SUB-CW | Clinical Workflow | Scheduling, encounters, status tracking, clinical notes | Physicians, Nurses |
+| SUB-PR | Patient Records | Demographics, medical history, encrypted PHI, AI vision, dermatology CDS (skin lesion classification, similarity search, risk scoring, longitudinal tracking), DermaCheck pipeline orchestration (parallel fan-out, graceful degradation) | All roles |
+| SUB-CW | Clinical Workflow | Scheduling, encounters, status tracking, clinical notes, DermaCheck encounter workflow (capture → classify → review) | Physicians, Nurses |
 | SUB-MM | Medication Management | Prescriptions, drug interactions, formulary, dispensing | Physicians, Pharmacists |
 | SUB-RA | Reporting & Analytics | Dashboards, compliance reports, audit log queries, dermatology classification analytics | Administrators, Compliance |
 | SUB-PM | Prompt Management | Centralized prompt CRUD, versioning, audit trail, LLM-powered version comparison | Administrators |
@@ -82,7 +82,7 @@ Central knowledge base shared as a git submodule across all other repos.
 - Development Pipeline Tutorial (.md / .docx)
 - PMS Developer Working Instructions (.md / .docx)
 - `docs/` directory with:
-  - 21 Architecture Decision Records (ADRs)
+  - 22 Architecture Decision Records (ADRs)
   - 7 configuration & setup guides
   - 2 feature implementation docs
   - System spec, testing strategy, requirements governance
@@ -204,6 +204,7 @@ app/src/main/java/com/utexas/pms/
 | SYS-REQ-0010 | Docker Container Deployment | Medium | Scaffolded |
 | SYS-REQ-0011 | Centralized Prompt Management | High | Not Started |
 | SYS-REQ-0012 | Dermatology Clinical Decision Support (ISIC Archive) | High | Architecture Defined |
+| SYS-REQ-0013 | DermaCheck Workflow Orchestration (parallel fan-out pipeline) | High | Architecture Defined |
 
 ---
 
@@ -211,22 +212,22 @@ app/src/main/java/com/utexas/pms/
 
 | Subsystem | Version | Domain Reqs | Platform Reqs | Verified | Implemented | Scaffolded | Not Started | Coverage |
 |---|---|---|---|---|---|---|---|---|
-| Patient Records (SUB-PR) | v0.6 | 16 | 36 | 3 | 2 | 2 | 29 | 37.5% |
-| Clinical Workflow (SUB-CW) | v0.0 | 8 | 14 | 0 | 0 | 2 | 12 | 0.0% |
+| Patient Records (SUB-PR) | v0.6 | 17 | 38 | 3 | 2 | 2 | 31 | 35.3% |
+| Clinical Workflow (SUB-CW) | v0.0 | 9 | 17 | 0 | 0 | 2 | 15 | 0.0% |
 | Medication Management (SUB-MM) | v0.0 | 9 | 13 | 0 | 0 | 2 | 11 | 0.0% |
 | Reporting & Analytics (SUB-RA) | v0.0 | 8 | 19 | 0 | 0 | 2 | 17 | 0.0% |
 | Prompt Management (SUB-PM) | v0.0 | 7 | 13 | 0 | 0 | 0 | 13 | 0.0% |
-| **Total** | — | **48** | **95** | **3** | **2** | **8** | **82** | **16.7%** |
+| **Total** | — | **50** | **100** | **3** | **2** | **8** | **87** | **16.0%** |
 
 ### Platform Coverage
 
 | Platform | Total Reqs | Verified | Implemented | Scaffolded | Placeholder | Not Started |
 |---|---|---|---|---|---|---|
-| Backend (BE) | 47 | 3 | 2 | 0 | 16 | 26 |
-| Web (WEB) | 24 | 0 | 0 | 5 | 0 | 19 |
-| Android (AND) | 18 | 0 | 0 | 4 | 0 | 14 |
-| AI | 6 | 0 | 0 | 0 | 0 | 6 |
-| **Total** | **95** | **3** | **2** | **9** | **16** | **65** |
+| Backend (BE) | 49 | 3 | 2 | 0 | 16 | 28 |
+| Web (WEB) | 25 | 0 | 0 | 5 | 0 | 20 |
+| Android (AND) | 19 | 0 | 0 | 4 | 0 | 15 |
+| AI | 7 | 0 | 0 | 0 | 0 | 7 |
+| **Total** | **100** | **3** | **2** | **9** | **16** | **70** |
 
 ---
 
@@ -247,8 +248,8 @@ app/src/main/java/com/utexas/pms/
 | Medication Mgmt (MM) | 9 | 2 | 2 | 7 | 22.2% |
 | Reporting (RA) | 8 | 0 | 0 | 8 | 0.0% |
 | Prompt Mgmt (PM) | 7 | 0 | 0 | 7 | 0.0% |
-| System (SYS) | 12 | 1 | 1 | 11 | 8.3% |
-| **Total** | **60** | **10** | **10** | **50** | **16.7%** |
+| System (SYS) | 13 | 1 | 1 | 12 | 7.7% |
+| **Total** | **63** | **10** | **10** | **53** | **15.9%** |
 
 ---
 
@@ -296,7 +297,7 @@ app/src/main/java/com/utexas/pms/
 - Implement dermatology analytics dashboard (SUB-RA-0008)
 
 ### Priority 5 — Dermatology Clinical Decision Support
-> **Architecture: COMPLETE** — 14 ADRs (ADR-0008 through ADR-0021) define all architectural decisions. PRD, setup guide, and developer tutorial documented (experiment 18). Implementation phase ready to begin.
+> **Architecture: COMPLETE** — 15 ADRs (ADR-0008 through ADR-0022) define all architectural decisions. PRD, setup guide, and developer tutorial documented (experiment 18). Implementation phase ready to begin.
 
 - Deploy Dermatology CDS Docker service with EfficientNet-B4 ONNX classifier (SUB-PR-0013) — ADR-0008, ADR-0009
 - Implement Alembic migrations for pgvector tables and lesion schema (ADR-0021)
@@ -307,6 +308,8 @@ app/src/main/java/com/utexas/pms/
 - Implement image preprocessing pipeline with quality gates (ADR-0014)
 - Implement backend-to-CDS HTTP communication with circuit breaking (ADR-0018)
 - Implement lesion longitudinal tracking with persistent identity and change detection (SUB-PR-0016) — ADR-0019
+- **Implement DermaCheck pipeline orchestration: parallel fan-out inside CDS, graceful degradation, per-stage timeouts, atomic DermaCheckResult response (SUB-PR-0017) — ADR-0022**
+- **Implement DermaCheck encounter workflow: camera capture → upload → results review → save/discard within encounter context (SUB-CW-0009) — ADR-0022**
 - Build Web UI: lesion upload, classification results, similar gallery, timeline (SUB-PR-0013/0014/0015/0016-WEB)
 - Build Android on-device TFLite triage (SUB-PR-0013-AND) — ADR-0012
 - Configure granular feature flags for phased rollout (ADR-0020)

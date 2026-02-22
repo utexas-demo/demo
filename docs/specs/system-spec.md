@@ -1,7 +1,7 @@
 # System Specification: Patient Management System (PMS)
 
 **Document ID:** PMS-SYS-SPEC-001
-**Version:** 1.4
+**Version:** 1.5
 **Date:** 2026-02-21
 **Status:** Approved
 
@@ -65,8 +65,8 @@ flowchart TB
 
 | Code | Subsystem | Scope | Primary Actor |
 |---|---|---|---|
-| SUB-PR | Patient Records | Demographics, medical history, documents, consent, encrypted PHI, AI vision (wound assessment, patient ID verification, document OCR), dermatology CDS (EfficientNet-B4/MobileNetV3 skin lesion classification across 9 ISIC categories, pgvector similarity search against 50K reference embeddings, configurable threshold-based risk scoring, persistent lesion identity with longitudinal change detection via cosine distance) | All roles |
-| SUB-CW | Clinical Workflow | Scheduling, encounters, status tracking, clinical notes, referrals, dermatology encounter integration (lesion assessments linked to encounters) | Physicians, Nurses |
+| SUB-PR | Patient Records | Demographics, medical history, documents, consent, encrypted PHI, AI vision (wound assessment, patient ID verification, document OCR), dermatology CDS (EfficientNet-B4/MobileNetV3 skin lesion classification across 9 ISIC categories, pgvector similarity search against 50K reference embeddings, configurable threshold-based risk scoring, persistent lesion identity with longitudinal change detection via cosine distance), DermaCheck pipeline orchestration (parallel fan-out classification with graceful degradation, single-request lifecycle, per-stage timeout and audit) | All roles |
+| SUB-CW | Clinical Workflow | Scheduling, encounters, status tracking, clinical notes, referrals, dermatology encounter integration (lesion assessments linked to encounters), DermaCheck encounter workflow (camera capture → image upload → results review → save/discard within encounter context) | Physicians, Nurses |
 | SUB-MM | Medication Management | Prescriptions, drug interactions, formulary, dispensing | Physicians, Pharmacists |
 | SUB-RA | Reporting & Analytics | Clinical dashboards, compliance reports, audit log queries, dermatology classification analytics (classification volumes, risk distributions, referral trends, model confidence metrics) | Administrators, Compliance |
 | SUB-PM | Prompt Management | Centralized prompt CRUD, versioning, audit trail, LLM-powered version comparison | Administrators |
