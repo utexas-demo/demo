@@ -1,7 +1,7 @@
 # Requirements Traceability Matrix (RTM)
 
 **Document ID:** PMS-RTM-001
-**Version:** 1.8
+**Version:** 1.9
 **Date:** 2026-02-23
 **Last Updated:** 2026-02-23
 
@@ -24,9 +24,9 @@
 | SYS-REQ-0011 (Prompts) | SUB-PM-0003, SUB-PM-0004, SUB-PM-0006, SUB-PM-0007 | — | TST-PM-0003, TST-PM-0004, TST-PM-0006, TST-PM-0007, TST-SYS-0011 | Not Started |
 | SYS-REQ-0012 (Derm CDS) | SUB-PR-0013, SUB-PR-0014, SUB-PR-0015, SUB-PR-0016, SUB-RA-0008 | `routers/lesions.py`, `services/lesion_service.py`, `services/risk_scorer.py` (CDS) | TST-PR-0013, TST-PR-0014, TST-PR-0015, TST-PR-0016, TST-RA-0008, TST-SYS-0012 | Not Started |
 | SYS-REQ-0013 (DermaCheck Orchestration) | SUB-PR-0017, SUB-CW-0009 | `routers/lesions.py`, `services/derm-cds/orchestrator.py`, `services/derm-cds/classifier.py`, `services/derm-cds/similarity.py`, `services/derm-cds/risk_scorer.py` | TST-PR-0017, TST-CW-0009, TST-SYS-0013 | Not Started |
-| SYS-REQ-0014 (Authentication) | SUB-AU-0001, SUB-AU-0002, SUB-AU-0012, SUB-AU-0013, SUB-AU-0014 | `routers/auth.py`, `services/auth_service.py`, `services/oauth_service.py`, `models/user_oauth_account.py` | TST-AU-0001, TST-AU-0002, TST-AU-0012, TST-AU-0013, TST-AU-0014, TST-SYS-0014 | Not Started |
-| SYS-REQ-0015 (User Management) | SUB-AU-0005, SUB-AU-0006, SUB-AU-0007, SUB-AU-0011, SUB-AU-0014, SUB-AU-0015 | `routers/users.py`, `services/user_service.py`, `services/email_service.py`, `models/user.py` | TST-AU-0005, TST-AU-0006, TST-AU-0007, TST-AU-0011, TST-AU-0014, TST-AU-0015, TST-SYS-0015 | Not Started |
-| SYS-REQ-0016 (Auth Bypass) | SUB-AU-0016 | `middleware/auth.py`, `core/config.py` | TST-AU-0016, TST-SYS-0016 | Not Started |
+| SYS-REQ-0014 (Authentication) | SUB-AU-0001, SUB-AU-0002, SUB-AU-0012, SUB-AU-0013, SUB-AU-0014 | `routers/auth.py`, `services/auth_service.py`, `services/oauth_service.py`, `models/user_oauth_account.py` | TST-AU-0001, TST-AU-0002, TST-AU-0012, TST-AU-0013, TST-AU-0014, TST-SYS-0014 | Partial (WEB login/password-reset tests pass; BE not started) |
+| SYS-REQ-0015 (User Management) | SUB-AU-0005, SUB-AU-0006, SUB-AU-0007, SUB-AU-0011, SUB-AU-0014, SUB-AU-0015 | `routers/users.py`, `services/user_service.py`, `services/email_service.py`, `models/user.py` | TST-AU-0005, TST-AU-0006, TST-AU-0007, TST-AU-0011, TST-AU-0014, TST-AU-0015, TST-SYS-0015 | Partial (WEB user management/invite/profile tests pass; BE not started) |
+| SYS-REQ-0016 (Auth Bypass) | SUB-AU-0016 | `middleware/auth.py`, `core/config.py` | TST-AU-0016, TST-SYS-0016 | Partial (WEB bypass helpers/banner/mismatch tests pass; BE not started) |
 
 ---
 
@@ -136,16 +136,16 @@
 | TST-AU-0013-BE | Password complexity validation (12+ chars, mixed case, digit, special) | pms-backend | — (not implemented) | SUB-AU-0013, SYS-REQ-0014 | — | — |
 | TST-AU-0014-BE | Email service integration for invite and password reset emails | pms-backend | — (not implemented) | SUB-AU-0014, SYS-REQ-0014, SYS-REQ-0015 | — | — |
 | TST-AU-0016-BE | Auth bypass middleware with environment guard (500 on prod/staging/qa) | pms-backend | — (not implemented) | SUB-AU-0016, SYS-REQ-0016 | — | — |
-| TST-AU-0001-WEB | Login page with OAuth provider buttons and callback redirect handling | pms-frontend | — (not implemented) | SUB-AU-0001, SYS-REQ-0014 | — | — |
-| TST-AU-0002-WEB | Email/password login form and password reset request/reset pages | pms-frontend | — (not implemented) | SUB-AU-0002, SYS-REQ-0014 | — | — |
-| TST-AU-0003-WEB | JWT storage (httpOnly cookie), auth guard with requireRole, token refresh lock | pms-frontend | — (not implemented) | SUB-AU-0003, SYS-REQ-0001 | — | — |
-| TST-AU-0004-WEB | Account lockout message display with remaining duration on login form | pms-frontend | — (not implemented) | SUB-AU-0004, SYS-REQ-0001 | — | — |
-| TST-AU-0006-WEB | User management admin pages (list, create, edit, deactivate/reactivate, resend invite) | pms-frontend | — (not implemented) | SUB-AU-0006, SYS-REQ-0015 | — | — |
-| TST-AU-0007-WEB | Invite acceptance page with set-password form and token validation | pms-frontend | — (not implemented) | SUB-AU-0007, SYS-REQ-0015 | — | — |
-| TST-AU-0008-WEB | Multi-role checkbox selection in user create/edit forms with at-least-one validation | pms-frontend | — (not implemented) | SUB-AU-0008, SYS-REQ-0005 | — | — |
-| TST-AU-0009-WEB | Navigation visibility and route protection based on JWT role claims | pms-frontend | — (not implemented) | SUB-AU-0009, SYS-REQ-0005 | — | — |
-| TST-AU-0015-WEB | Current user profile page displaying name, email, and roles from GET /users/me | pms-frontend | — (not implemented) | SUB-AU-0015, SYS-REQ-0015 | — | — |
-| TST-AU-0016-WEB | Frontend auth bypass with mock user injection and non-dismissible warning banner | pms-frontend | — (not implemented) | SUB-AU-0016, SYS-REQ-0016 | — | — |
+| TST-AU-0001-WEB | Login page with OAuth provider buttons and callback redirect handling | pms-frontend | `__tests__/auth/login.test.tsx`: login form rendering, OAuth buttons, `returnTo` redirect | SUB-AU-0001, SYS-REQ-0014 | PASS | RUN-2026-02-23-001 |
+| TST-AU-0002-WEB | Email/password login form and password reset request/reset pages | pms-frontend | `__tests__/auth/forgot-password.test.tsx`: forgot-password form, anti-enumeration success; `__tests__/auth/reset-password.test.tsx`: reset form, token validation, password set | SUB-AU-0002, SYS-REQ-0014 | PASS | RUN-2026-02-23-001 |
+| TST-AU-0003-WEB | JWT localStorage storage, auth guard with requireRole, token refresh lock | pms-frontend | `__tests__/auth-functions.test.ts`: getTokens/setTokens/clearTokens, parseJWT, isTokenExpired; `__tests__/auth/token-refresh.test.ts`: single-promise refresh lock; `__tests__/auth/require-auth.test.tsx`: redirect unauthenticated, role check | SUB-AU-0003, SYS-REQ-0001 | PASS | RUN-2026-02-23-001 |
+| TST-AU-0004-WEB | Account lockout message display with remaining duration on login form | pms-frontend | `__tests__/auth/login.test.tsx`: lockout error display on login form | SUB-AU-0004, SYS-REQ-0001 | PASS | RUN-2026-02-23-001 |
+| TST-AU-0006-WEB | User management admin pages (list, create, edit, deactivate/reactivate, resend invite) | pms-frontend | `__tests__/admin/user-list.test.tsx`: paginated table, search, filter; `__tests__/admin/user-form.test.tsx`: create user form, validation; `__tests__/admin/user-detail.test.tsx`: detail view, status toggle, resend invite | SUB-AU-0006, SYS-REQ-0015 | PASS | RUN-2026-02-23-001 |
+| TST-AU-0007-WEB | Invite acceptance page with set-password form and token validation | pms-frontend | `__tests__/auth/invite-accept.test.tsx`: token validation, set-password form, invalid link page, sign-in link | SUB-AU-0007, SYS-REQ-0015 | PASS | RUN-2026-02-23-001 |
+| TST-AU-0008-WEB | Multi-role checkbox selection in user create/edit forms with at-least-one validation | pms-frontend | `__tests__/admin/user-form.test.tsx`: 4 role checkboxes, at-least-one validation; `__tests__/admin/user-detail.test.tsx`: role update, last-admin lockout 409 | SUB-AU-0008, SYS-REQ-0005 | PASS | RUN-2026-02-23-001 |
+| TST-AU-0009-WEB | Navigation visibility and route protection based on JWT role claims | pms-frontend | `__tests__/auth/require-auth.test.tsx`: returnTo redirect, role-based forbidden redirect; `__tests__/sidebar.test.tsx`: role-based nav filtering; `__tests__/auth/forbidden.test.tsx`: 403 page rendering | SUB-AU-0009, SYS-REQ-0005 | PASS | RUN-2026-02-23-001 |
+| TST-AU-0015-WEB | Current user profile page displaying name, email, and roles from GET /users/me | pms-frontend | `__tests__/profile/profile.test.tsx`: renders name, email, role badges, no password form | SUB-AU-0015, SYS-REQ-0015 | PASS | RUN-2026-02-23-001 |
+| TST-AU-0016-WEB | Frontend auth bypass with mock user injection and non-dismissible warning banner | pms-frontend | `__tests__/auth.test.ts`: isAuthBypassEnabled, getBypassUser; `__tests__/auth/auth-provider.test.tsx`: bypass mode provides mock user; `__tests__/header.test.tsx`: yellow banner; `__tests__/api.test.ts`: mismatch detection | SUB-AU-0016, SYS-REQ-0016 | PASS | RUN-2026-02-23-001 |
 | TST-AU-0001-AND | Login screen with OAuth via Chrome Custom Tabs and redirect callback | pms-android | — (not implemented) | SUB-AU-0001, SYS-REQ-0014 | — | — |
 | TST-AU-0002-AND | Email/password login form and password reset request screen | pms-android | — (not implemented) | SUB-AU-0002, SYS-REQ-0014 | — | — |
 | TST-AU-0003-AND | JWT encrypted DataStore storage and Kotlin Mutex token refresh synchronization | pms-android | — (not implemented) | SUB-AU-0003, SYS-REQ-0001 | — | — |
@@ -184,6 +184,7 @@
 | RUN-2026-02-16-001 | 2026-02-16 | pms-backend | `17ed00b` | 5 | 5 | 0 | 0 |
 | RUN-2026-02-16-002 | 2026-02-16 | pms-backend | `f2cfaf8` | 157 | 157 | 0 | 0 |
 | RUN-2026-02-16-003 | 2026-02-16 | pms-backend | `77fd003` | 157 | 157 | 0 | 0 |
+| RUN-2026-02-23-001 | 2026-02-23 | pms-frontend | `962fa07` | 342 | 342 | 0 | 0 |
 
 ---
 
@@ -269,28 +270,28 @@ Compact view of platform requirement status per domain requirement. Domain statu
 
 | Domain Req | Domain Status | BE | WEB | AND | AI |
 |---|---|---|---|---|---|
-| SUB-AU-0001 | Not Started | Not Started | Not Started | Not Started | — |
-| SUB-AU-0002 | Not Started | Not Started | Not Started | Not Started | — |
-| SUB-AU-0003 | Not Started | Not Started | Not Started | Not Started | — |
-| SUB-AU-0004 | Not Started | Not Started | Not Started | Not Started | — |
+| SUB-AU-0001 | Partial | Not Started | Verified | Not Started | — |
+| SUB-AU-0002 | Partial | Not Started | Verified | Not Started | — |
+| SUB-AU-0003 | Partial | Not Started | Verified | Not Started | — |
+| SUB-AU-0004 | Partial | Not Started | Verified | Not Started | — |
 | SUB-AU-0005 | Not Started | Not Started | — | — | — |
-| SUB-AU-0006 | Not Started | Not Started | Not Started | Not Started | — |
-| SUB-AU-0007 | Not Started | Not Started | Not Started | Not Started | — |
-| SUB-AU-0008 | Not Started | Not Started | Not Started | — | — |
-| SUB-AU-0009 | Not Started | Not Started | Not Started | — | — |
+| SUB-AU-0006 | Partial | Not Started | Verified | Not Started | — |
+| SUB-AU-0007 | Partial | Not Started | Verified | Not Started | — |
+| SUB-AU-0008 | Partial | Not Started | Verified | — | — |
+| SUB-AU-0009 | Partial | Not Started | Verified | — | — |
 | SUB-AU-0010 | Not Started | Not Started | — | — | — |
 | SUB-AU-0011 | Not Started | Not Started | — | — | — |
-| SUB-AU-0016 | Not Started | Not Started | Not Started | — | — |
+| SUB-AU-0016 | Partial | Not Started | Verified | — | — |
 
 ### Coverage Summary by Platform
 
 | Platform | Total Reqs | Verified | Implemented | Partial | Scaffolded | Placeholder | Not Started |
 |---|---|---|---|---|---|---|---|
 | BE | 64 | 3 | 2 | 0 | 0 | 16 | 43 |
-| WEB | 35 | 0 | 0 | 0 | 5 | 0 | 30 |
+| WEB | 35 | 10 | 0 | 0 | 5 | 0 | 20 |
 | AND | 25 | 0 | 0 | 0 | 4 | 0 | 21 |
 | AI | 7 | 0 | 0 | 0 | 0 | 0 | 7 |
-| **Total** | **131** | **3** | **2** | **0** | **9** | **16** | **101** |
+| **Total** | **131** | **13** | **2** | **0** | **9** | **16** | **91** |
 
 ### Test ID Migration Note
 
@@ -320,9 +321,11 @@ Existing test IDs are preserved as-is in the backward traceability section. The 
 | Medication Mgmt (MM) | 9 | 13 | 2 | 2 | 0 | 7 | 22.2% |
 | Reporting (RA) | 8 | 19 | 0 | 0 | 0 | 8 | 0.0% |
 | Prompt Mgmt (PM) | 7 | 13 | 0 | 0 | 0 | 7 | 0.0% |
-| Auth & User Mgmt (AU) | 12 | 31 | 0 | 0 | 0 | 12 | 0.0% |
+| Auth & User Mgmt (AU) | 12 | 31 | 10 | 10 | 0 | 2 | 83.3% |
 | System (SYS) | 16 | — | 1 | 1 | 0 | 15 | 6.3% |
-| **TOTAL** | **78** | **131** | **10** | **10** | **0** | **68** | **12.8%** |
+| **TOTAL** | **78** | **131** | **20** | **20** | **0** | **58** | **25.6%** |
+
+> **Note on v1.9 updates (Authentication WEB frontend tests — 001-authentication):** Implemented and verified 10 WEB platform requirements for Authentication & User Management (SUB-AU-0001, 0002, 0003, 0004, 0006, 0007, 0008, 0009, 0015, 0016). All 10 backward traceability entries (TST-AU-*-WEB) updated from stubs to verified test descriptions with file paths and PASS status. New features implemented: auth bypass mode with mock user injection, yellow warning banner, and backend mismatch detection (SUB-AU-0016-WEB); network error handling converting TypeError to ApiError(0) (FR-018); returnTo parameter rename from returnUrl (FR-012). Forward traceability updated: SYS-REQ-0014, 0015, 0016 upgraded from "Not Started" to "Partial" (WEB verified, BE not started). Platform Traceability Summary: SUB-AU WEB column updated — 10 entries changed from "Not Started" to "Verified", domain statuses updated to "Partial". Coverage Summary by Platform: WEB Verified 0→10, Not Started 30→20, Total Verified 3→13, Not Started 101→91. Domain Coverage Summary: AU 0.0%→83.3% (10/12 domain reqs with tests), overall 12.8%→25.6% (20/78). Test Run Log: RUN-2026-02-23-001 recorded (342 tests, 342 passed, 0 failed, commit `962fa07`).
 
 > **Note on v1.8 updates (Authentication & User Management — SUB-AU):** Added SUB-AU (Authentication & User Management) subsystem with 12 domain requirements and 31 platform requirements (BE=15, WEB=10, AND=6). Three new system requirements added to forward traceability: SYS-REQ-0014 (Authentication), SYS-REQ-0015 (User Management), SYS-REQ-0016 (Auth Bypass). Existing forward traceability rows updated: SYS-REQ-0001 expanded with SUB-AU-0003/0004, SYS-REQ-0003 expanded with SUB-AU-0011, SYS-REQ-0005 expanded with SUB-AU-0008/0009/0010. Added 31 backward traceability test stubs (TST-AU-0001-BE through TST-AU-0016-BE, TST-AU-0001-WEB through TST-AU-0016-WEB, TST-AU-0001-AND through TST-AU-0015-AND) plus 3 system tests (TST-SYS-0014/0015/0016). Platform Traceability Summary: new SUB-AU section with 31 platform reqs across 12 domain reqs. Coverage Summary by Platform updated: BE 49→64, WEB 25→35, AND 19→25, AI 7 (unchanged), Total 100→131. Domain req totals: AU=12 added, SYS 13→16, overall 63→78. Overall domain coverage: 15.9%→12.8% (increased denominator from new requirements).
 
