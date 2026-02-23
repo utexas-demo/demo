@@ -1,8 +1,8 @@
 # Platform Requirements: Backend (SUB-BE)
 
-**Version:** 1.0
-**Date:** 2026-02-21
-**Platform:** Backend (BE) — 49 requirements across 5 domains
+**Version:** 1.1
+**Date:** 2026-02-23
+**Platform:** Backend (BE) — 50 requirements across 6 domains
 **Repository:** pms-backend
 **Technology:** FastAPI, Python 3.12, async SQLAlchemy, asyncpg, Pydantic v2, JWT auth, AES-256 encryption
 
@@ -17,7 +17,8 @@
 | Medication Management (MM) | 9 | 7 Placeholder, 2 Not Started |
 | Reporting & Analytics (RA) | 8 | 5 Placeholder, 3 Not Started |
 | Prompt Management (PM) | 7 | 7 Not Started |
-| **Total** | **49** | |
+| Authentication & User Mgmt (AU) | 1 | 1 Not Started |
+| **Total** | **50** | |
 
 ---
 
@@ -112,3 +113,13 @@
 | SUB-PM-0005-BE | SUB-PM-0005 | Audit log all prompt operations using standardized action strings: PROMPT_CREATE, PROMPT_READ, PROMPT_UPDATE, PROMPT_DELETE, VERSION_CREATE, VERSION_COMPARE. Resource type: `prompt`. Follows audit event catalog pattern (PC-BE-03 / PC-BE-07). | `services/audit_service.py`, `routers/prompts.py` | TST-PM-0005-BE | Not Started |
 | SUB-PM-0006-BE | SUB-PM-0006 | Paginated version history API endpoint (`GET /prompts/{id}/versions?page=1&size=20`). Returns versions ordered by version number descending with total count. | `routers/prompts.py`, `services/prompt_service.py` | TST-PM-0006-BE | Not Started |
 | SUB-PM-0007-BE | SUB-PM-0007 | Version comparison API endpoint (`POST /prompts/{id}/versions/compare`). Accepts two version numbers, retrieves both version texts, calls Anthropic Claude API (`claude-sonnet-4-20250514`) with the managed comparison prompt, and returns the natural-language diff summary. 30-second timeout on LLM call; rate-limited to prevent abuse (RC-BE-10). Endpoint validates that both versions belong to the same prompt (DC-PM-03). | `routers/prompts.py`, `services/prompt_service.py`, `services/llm_service.py` | TST-PM-0007-BE | Not Started |
+
+---
+
+## Authentication & User Management (SUB-AU)
+
+**Parent:** [SUB-AU (Domain)](../SUB-AU.md)
+
+| Platform Req ID | Parent | Description | Module(s) | Test Case(s) | Status |
+|---|---|---|---|---|---|
+| SUB-AU-0016-BE | SUB-AU-0016 | Auth bypass middleware: when `AUTH_BYPASS_ENABLED=true`, skip JWT validation and inject a mock `AuthenticatedUser` into the request context with role from `AUTH_BYPASS_ROLE` (default `admin`), email from `AUTH_BYPASS_EMAIL` (default `dev@localhost`), and name from `AUTH_BYPASS_NAME` (default `Dev User`). Log `WARN`-level message at startup. The middleware must be registered before `require_auth` / `require_role` in the middleware chain. Return 500 with descriptive error if `AUTH_BYPASS_ENABLED=true` is detected and `ENVIRONMENT` is `production`, `staging`, or `qa`. | `middleware/auth.py`, `core/config.py` | TST-AU-0016-BE | Not Started |

@@ -1,8 +1,8 @@
 # Subsystem Requirements: Authentication & User Management (SUB-AU)
 
 **Document ID:** PMS-SUB-AU-001
-**Version:** 1.0
-**Date:** 2026-02-18
+**Version:** 1.1
+**Date:** 2026-02-23
 **Parent:** [System Requirements](SYS-REQ.md)
 
 ---
@@ -26,6 +26,7 @@ The Authentication & User Management subsystem implements closed-registration au
 | SUB-AU-0009 | SYS-REQ-0005 | Enforce role-permission matrix per API endpoint; unauthorized access rejected with 403 and logged to audit trail | Test | Not Started |
 | SUB-AU-0010 | SYS-REQ-0005 | Prevent last-admin lockout: admin role cannot be removed from the sole remaining admin user | Test | Not Started |
 | SUB-AU-0011 | SYS-REQ-0003 | Audit log all authentication events (login, logout, failed attempts, lockout, OAuth link) and user management operations (create, update, deactivate, reactivate, role change, invite send) | Test | Not Started |
+| SUB-AU-0016 | SYS-REQ-0016 | Provide environment-variable-controlled authentication bypass for development and CI environments. When `AUTH_BYPASS_ENABLED=true` (backend) or `NEXT_PUBLIC_AUTH_BYPASS_ENABLED=true` (frontend), skip all authentication checks and inject a mock user with configurable role, email, and name. Default mock identity: `admin` / `dev@localhost` / `Dev User`. Log a WARN-level startup message when active. Ensure zero production leakage via CI pipeline guard and `.env.production` exclusion. | Test / Inspection | Not Started |
 
 ## Design Decisions
 
@@ -35,12 +36,13 @@ The Authentication & User Management subsystem implements closed-registration au
 4. **Bcrypt cost factor 12** — Industry standard for password hashing. Balances security with login latency.
 5. **Provider-agnostic OAuth** — All three providers follow the same Authorization Code + PKCE flow behind a common interface. Adding a new provider requires only configuration.
 6. **Refresh token serialization** — Web uses a single-Promise lock to prevent thundering herd on concurrent refresh attempts (follows RC-WEB-01). Android uses Kotlin Mutex (follows PC-AND-02).
+7. **Auth bypass via environment variable** — A compile-time environment flag (`AUTH_BYPASS_ENABLED` / `NEXT_PUBLIC_AUTH_BYPASS_ENABLED`) injects a mock user and skips token validation. The bypass is a middleware concern on backend and an auth-context concern on frontend — no new API endpoints are introduced. See [ADR-0023](../../architecture/0023-auth-bypass-flag-for-development.md).
 
 ---
 
 ## Platform Decomposition
 
-### Backend (BE) — 14 requirements
+### Backend (BE) — 15 requirements
 
 | Platform Req ID | Parent | Description | Module(s) | Test Case(s) | Status |
 | --- | --- | --- | --- | --- | --- |
@@ -58,8 +60,9 @@ The Authentication & User Management subsystem implements closed-registration au
 | SUB-AU-0012-BE | SUB-AU-0001 | `user_oauth_accounts` table: store provider identity (`provider`, `provider_user_id`, `provider_email`) linked to user. Unique constraint on (`provider`, `provider_user_id`). | `models/user_oauth_account.py` | TST-AU-0012-BE | Not Started |
 | SUB-AU-0013-BE | SUB-AU-0002 | Password validation service: enforce minimum 12 characters, at least one uppercase, one lowercase, one digit, one special character. Reject non-compliant passwords with 422 and specific violation messages. | `services/auth_service.py` | TST-AU-0013-BE | Not Started |
 | SUB-AU-0014-BE | SUB-AU-0006 | Email service integration: send invite email with tokenized link, send password reset email with tokenized link. Email service abstracted behind interface for testability (mock in dev/test). | `services/email_service.py` | TST-AU-0014-BE | Not Started |
+| SUB-AU-0016-BE | SUB-AU-0016 | Auth bypass middleware: when `AUTH_BYPASS_ENABLED=true`, skip JWT validation and inject a mock `AuthenticatedUser` into the request context with role from `AUTH_BYPASS_ROLE` (default `admin`), email from `AUTH_BYPASS_EMAIL` (default `dev@localhost`), and name from `AUTH_BYPASS_NAME` (default `Dev User`). Log `WARN`-level message at startup. The middleware must be registered before `require_auth` / `require_role` in the middleware chain. Return 500 with descriptive error if `AUTH_BYPASS_ENABLED=true` is detected and `ENVIRONMENT` is `production`, `staging`, or `qa`. | `middleware/auth.py`, `core/config.py` | TST-AU-0016-BE | Not Started |
 
-### Web Frontend (WEB) — 9 requirements
+### Web Frontend (WEB) — 10 requirements
 
 | Platform Req ID | Parent | Description | Module(s) | Test Case(s) | Status |
 | --- | --- | --- | --- | --- | --- |
@@ -72,6 +75,7 @@ The Authentication & User Management subsystem implements closed-registration au
 | SUB-AU-0004-WEB | SUB-AU-0004 | Display account lockout message on login form when backend returns lockout error. Show remaining lockout duration if provided. | `app/login/` | TST-AU-0004-WEB | Not Started |
 | SUB-AU-0009-WEB | SUB-AU-0009 | Navigation and route visibility based on user's roles from JWT claims. Hide menu items and routes the user has no role to access. Redirect unauthorized access attempts to a 403 page. | `components/navigation/`, `middleware.ts` | TST-AU-0009-WEB | Not Started |
 | SUB-AU-0015-WEB | SUB-AU-0006 | Current user profile page (`/profile`): display user name, email, and assigned roles from `GET /users/me`. Available to all authenticated users. | `app/profile/` | TST-AU-0015-WEB | Not Started |
+| SUB-AU-0016-WEB | SUB-AU-0016 | Auth bypass in frontend auth context: when `NEXT_PUBLIC_AUTH_BYPASS_ENABLED=true`, skip login redirect and inject a mock user into the auth context with role from `NEXT_PUBLIC_AUTH_BYPASS_ROLE` (default `admin`), email from `NEXT_PUBLIC_AUTH_BYPASS_EMAIL` (default `dev@localhost`), and name from `NEXT_PUBLIC_AUTH_BYPASS_NAME` (default `Dev User`). Display a persistent banner (`⚠ Auth Bypass Active — Development Mode`) in the application header. The banner must be visually prominent (yellow/warning) and non-dismissible. | `lib/auth.ts`, `components/layout/Header.tsx` | TST-AU-0016-WEB | Not Started |
 
 ### Android (AND) — 6 requirements
 

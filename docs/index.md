@@ -195,11 +195,11 @@ Browse documentation organized by deployment platform — [full index](platform/
 
 ## Specifications & Requirements
 
-The PMS uses a **three-tier requirements decomposition**: System (SYS-REQ) → Domain (SUB-*) → Platform (SUB-*-BE/WEB/AND/AI). There are 15 system requirements, 61 domain requirements, and 129 platform requirements across 4 platforms. Domain requirements live in `specs/requirements/domain/` and platform requirements in `specs/requirements/platform/`.
+The PMS uses a **three-tier requirements decomposition**: System (SYS-REQ) → Domain (SUB-*) → Platform (SUB-*-BE/WEB/AND/AI). There are 16 system requirements, 62 domain requirements, and 131 platform requirements across 4 platforms. Domain requirements live in `specs/requirements/domain/` and platform requirements in `specs/requirements/platform/`.
 
 - [System Specification](specs/system-spec.md) — System-level scope, context, subsystem decomposition, and platform codes
-- [System Requirements (SYS-REQ)](specs/requirements/SYS-REQ.md) — 15 system-level requirements with platform annotations
-- [Authentication & User Management (SUB-AU)](specs/requirements/SUB-AU.md) — 11 domain requirements, 29 platform requirements (BE=14, WEB=9, AND=6)
+- [System Requirements (SYS-REQ)](specs/requirements/SYS-REQ.md) — 16 system-level requirements with platform annotations
+- [Authentication & User Management (SUB-AU)](specs/requirements/SUB-AU.md) — 12 domain requirements, 31 platform requirements (BE=15, WEB=10, AND=6)
 
 ### Domain Requirements
 
@@ -211,8 +211,8 @@ The PMS uses a **three-tier requirements decomposition**: System (SYS-REQ) → D
 
 ### Platform Requirements
 
-- [Backend (SUB-BE)](specs/requirements/platform/SUB-BE.md) — 49 requirements across 5 domains
-- [Web Frontend (SUB-WEB)](specs/requirements/platform/SUB-WEB.md) — 25 requirements across 5 domains
+- [Backend (SUB-BE)](specs/requirements/platform/SUB-BE.md) — 50 requirements across 6 domains
+- [Web Frontend (SUB-WEB)](specs/requirements/platform/SUB-WEB.md) — 26 requirements across 6 domains
 - [Android (SUB-AND)](specs/requirements/platform/SUB-AND.md) — 19 requirements across 4 domains
 - [AI Infrastructure (SUB-AI)](specs/requirements/platform/SUB-AI.md) — 7 requirements across 2 domains
 

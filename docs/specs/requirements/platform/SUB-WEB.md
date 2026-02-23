@@ -1,8 +1,8 @@
 # Platform Requirements: Web Frontend (SUB-WEB)
 
-**Version:** 1.0
-**Date:** 2026-02-21
-**Platform:** Web Frontend (WEB) — 25 requirements across 5 domains
+**Version:** 1.1
+**Date:** 2026-02-23
+**Platform:** Web Frontend (WEB) — 26 requirements across 6 domains
 **Repository:** pms-frontend
 **Technology:** Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 3
 
@@ -17,7 +17,8 @@
 | Medication Management (MM) | 2 | 1 Scaffolded, 1 Not Started |
 | Reporting & Analytics (RA) | 6 | 1 Scaffolded, 5 Not Started |
 | Prompt Management (PM) | 5 | 5 Not Started |
-| **Total** | **25** | |
+| Authentication & User Mgmt (AU) | 1 | 1 Not Started |
+| **Total** | **26** | |
 
 ---
 
@@ -88,3 +89,13 @@
 | SUB-PM-0004-WEB | SUB-PM-0004 | Version indicator in prompt editor: display current version number, show "saving creates new version" notice before submission | `app/prompts/[id]/edit/` | TST-PM-0004-WEB | Not Started |
 | SUB-PM-0006-WEB | SUB-PM-0006 | Version history list with pagination controls for each prompt | `app/prompts/[id]/versions/` | TST-PM-0006-WEB | Not Started |
 | SUB-PM-0007-WEB | SUB-PM-0007 | Comparison UI: version selector (two dropdowns), trigger comparison, display natural-language diff summary returned by backend | `app/prompts/[id]/compare/` | TST-PM-0007-WEB | Not Started |
+
+---
+
+## Authentication & User Management (SUB-AU)
+
+**Parent:** [SUB-AU (Domain)](../SUB-AU.md)
+
+| Platform Req ID | Parent | Description | Module(s) | Test Case(s) | Status |
+|---|---|---|---|---|---|
+| SUB-AU-0016-WEB | SUB-AU-0016 | Auth bypass in frontend auth context: when `NEXT_PUBLIC_AUTH_BYPASS_ENABLED=true`, skip login redirect and inject a mock user into the auth context with role from `NEXT_PUBLIC_AUTH_BYPASS_ROLE` (default `admin`), email from `NEXT_PUBLIC_AUTH_BYPASS_EMAIL` (default `dev@localhost`), and name from `NEXT_PUBLIC_AUTH_BYPASS_NAME` (default `Dev User`). Display a persistent banner ("Auth Bypass Active — Development Mode") in the application header. The banner must be visually prominent (yellow/warning) and non-dismissible. | `lib/auth.ts`, `components/layout/Header.tsx` | TST-AU-0016-WEB | Not Started |

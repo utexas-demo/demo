@@ -2,7 +2,7 @@
 
 **Base URL:** `http://localhost:8000`
 **Docs:** `http://localhost:8000/docs` (Swagger UI)
-**Last Updated:** 2026-02-21
+**Last Updated:** 2026-02-23
 
 ## Authentication
 
@@ -21,6 +21,25 @@
 ```json
 { "access_token": "string", "token_type": "bearer" }
 ```
+
+### Authentication Bypass (Development Only) — SUB-AU-0016
+
+When `AUTH_BYPASS_ENABLED=true` is set in the environment, the auth middleware skips JWT validation on **all** endpoints and injects a mock `AuthenticatedUser` into the request context. This is a middleware-level concern — no new API endpoints are introduced. See [ADR-0023](../architecture/0023-auth-bypass-flag-for-development.md).
+
+**Environment Variables:**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AUTH_BYPASS_ENABLED` | `false` | Enable/disable auth bypass |
+| `AUTH_BYPASS_EMAIL` | `dev@localhost` | Mock user email |
+| `AUTH_BYPASS_NAME` | `Dev User` | Mock user display name |
+| `AUTH_BYPASS_ROLE` | `admin` | Mock user role (`admin`, `clinician`, `sales`, `lab-staff`) |
+
+**Behavior:**
+- Startup: logs `WARN`-level message: `"Authentication bypass is ACTIVE — all requests authenticated as {role}/{email}"`
+- All endpoints behave as if a valid JWT was provided for the mock user
+- If `AUTH_BYPASS_ENABLED=true` and `ENVIRONMENT` is `production`, `staging`, or `qa`, the server returns **500** on every request with error: `"Auth bypass is not permitted in {environment}"`
+- When `AUTH_BYPASS_ENABLED=false` (default), zero performance overhead — bypass middleware is not registered
 
 ---
 
