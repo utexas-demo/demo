@@ -1,7 +1,7 @@
 # PMS Project Overview — Bird's Eye View
 
-**Date:** 2026-02-21
-**Version:** 1.2
+**Date:** 2026-02-23
+**Version:** 1.3
 **Organization:** utexas-demo (GitHub)
 
 ---
@@ -64,6 +64,7 @@ flowchart TB
 
 | Code | Subsystem | Scope | Primary Actor |
 |---|---|---|---|
+| SUB-AU | Authentication & User Management | User authentication (OAuth 2.0, email/password), JWT sessions, RBAC, admin user provisioning, dev auth bypass | All roles |
 | SUB-PR | Patient Records | Demographics, medical history, encrypted PHI, AI vision, dermatology CDS (skin lesion classification, similarity search, risk scoring, longitudinal tracking), DermaCheck pipeline orchestration (parallel fan-out, graceful degradation) | All roles |
 | SUB-CW | Clinical Workflow | Scheduling, encounters, status tracking, clinical notes, DermaCheck encounter workflow (capture → classify → review) | Physicians, Nurses |
 | SUB-MM | Medication Management | Prescriptions, drug interactions, formulary, dispensing | Physicians, Pharmacists |
@@ -82,11 +83,11 @@ Central knowledge base shared as a git submodule across all other repos.
 - Development Pipeline Tutorial (.md / .docx)
 - PMS Developer Working Instructions (.md / .docx)
 - `docs/` directory with:
-  - 22 Architecture Decision Records (ADRs)
+  - 23 Architecture Decision Records (ADRs)
   - 7 configuration & setup guides
   - 2 feature implementation docs
   - System spec, testing strategy, requirements governance
-  - 5 subsystem requirement documents + traceability matrix
+  - 6 subsystem requirement documents + traceability matrix
   - Release compatibility matrix & subsystem versions
 
 **CI:** `validate-docs.yml` — documentation validation
@@ -205,6 +206,9 @@ app/src/main/java/com/utexas/pms/
 | SYS-REQ-0011 | Centralized Prompt Management | High | Not Started |
 | SYS-REQ-0012 | Dermatology Clinical Decision Support (ISIC Archive) | High | Architecture Defined |
 | SYS-REQ-0013 | DermaCheck Workflow Orchestration (parallel fan-out pipeline) | High | Architecture Defined |
+| SYS-REQ-0014 | Authentication Methods (OAuth 2.0 + Email/Password) | Critical | Not Started |
+| SYS-REQ-0015 | Admin-Controlled User Management | Critical | Not Started |
+| SYS-REQ-0016 | Authentication Bypass Flag for Development | Medium | Not Started |
 
 ---
 
@@ -212,22 +216,23 @@ app/src/main/java/com/utexas/pms/
 
 | Subsystem | Version | Domain Reqs | Platform Reqs | Verified | Implemented | Scaffolded | Not Started | Coverage |
 |---|---|---|---|---|---|---|---|---|
+| Auth & User Mgmt (SUB-AU) | v0.0 | 16 | 31 | 0 | 0 | 0 | 31 | 0.0% |
 | Patient Records (SUB-PR) | v0.6 | 17 | 38 | 3 | 2 | 2 | 31 | 35.3% |
 | Clinical Workflow (SUB-CW) | v0.0 | 9 | 17 | 0 | 0 | 2 | 15 | 0.0% |
 | Medication Management (SUB-MM) | v0.0 | 9 | 13 | 0 | 0 | 2 | 11 | 0.0% |
 | Reporting & Analytics (SUB-RA) | v0.0 | 8 | 19 | 0 | 0 | 2 | 17 | 0.0% |
 | Prompt Management (SUB-PM) | v0.0 | 7 | 13 | 0 | 0 | 0 | 13 | 0.0% |
-| **Total** | — | **50** | **100** | **3** | **2** | **8** | **87** | **16.0%** |
+| **Total** | — | **66** | **131** | **3** | **2** | **8** | **118** | **10.6%** |
 
 ### Platform Coverage
 
 | Platform | Total Reqs | Verified | Implemented | Scaffolded | Placeholder | Not Started |
 |---|---|---|---|---|---|---|
-| Backend (BE) | 49 | 3 | 2 | 0 | 16 | 28 |
-| Web (WEB) | 25 | 0 | 0 | 5 | 0 | 20 |
-| Android (AND) | 19 | 0 | 0 | 4 | 0 | 15 |
+| Backend (BE) | 64 | 3 | 2 | 0 | 16 | 43 |
+| Web (WEB) | 35 | 0 | 0 | 5 | 0 | 30 |
+| Android (AND) | 25 | 0 | 0 | 4 | 0 | 21 |
 | AI | 7 | 0 | 0 | 0 | 0 | 7 |
-| **Total** | **100** | **3** | **2** | **9** | **16** | **70** |
+| **Total** | **131** | **3** | **2** | **9** | **16** | **101** |
 
 ---
 
@@ -243,13 +248,14 @@ app/src/main/java/com/utexas/pms/
 
 | Subsystem | Domain Reqs | With Tests | Passing | No Tests | Domain Coverage |
 |---|---|---|---|---|---|
+| Auth & User Mgmt (AU) | 16 | 0 | 0 | 16 | 0.0% |
 | Patient Records (PR) | 16 | 6 | 6 | 10 | 37.5% |
 | Clinical Workflow (CW) | 8 | 1 | 1 | 7 | 12.5% |
 | Medication Mgmt (MM) | 9 | 2 | 2 | 7 | 22.2% |
 | Reporting (RA) | 8 | 0 | 0 | 8 | 0.0% |
 | Prompt Mgmt (PM) | 7 | 0 | 0 | 7 | 0.0% |
-| System (SYS) | 13 | 1 | 1 | 12 | 7.7% |
-| **Total** | **63** | **10** | **10** | **53** | **15.9%** |
+| System (SYS) | 16 | 1 | 1 | 15 | 6.3% |
+| **Total** | **80** | **10** | **10** | **70** | **12.5%** |
 
 ---
 
@@ -314,7 +320,12 @@ app/src/main/java/com/utexas/pms/
 - Build Android on-device TFLite triage (SUB-PR-0013-AND) — ADR-0012
 - Configure granular feature flags for phased rollout (ADR-0020)
 
-### Priority 6 — Cross-Cutting Concerns
+### Priority 6 — Authentication & User Management
+- Implement OAuth 2.0 login (Google, Microsoft, GitHub) and email/password authentication (SYS-REQ-0014, SUB-AU-0001 through SUB-AU-0004)
+- Implement admin-controlled user provisioning with invite-based onboarding (SYS-REQ-0015, SUB-AU-0005 through SUB-AU-0007)
+- Implement authentication bypass flag for development environments (SYS-REQ-0016, SUB-AU-0016, [ADR-0023](docs/architecture/0023-auth-bypass-flag-for-development.md))
+
+### Priority 7 — Cross-Cutting Concerns
 - Implement TOTP/MFA to complete SYS-REQ-0001
 - Migrate encryption from Fernet to AES-256-GCM for SYS-REQ-0002
 - Implement FHIR R4 interoperability (SYS-REQ-0004)

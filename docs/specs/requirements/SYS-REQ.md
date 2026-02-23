@@ -1,7 +1,7 @@
 # System-Level Requirements (SYS-REQ)
 
 **Document ID:** PMS-SYS-REQ-001
-**Version:** 1.9
+**Version:** 2.0
 **Date:** 2026-02-23
 **Parent:** [System Specification](../system-spec.md)
 
@@ -26,6 +26,7 @@
 | SYS-REQ-0013 | Orchestrate the DermaCheck capture-classify-review pipeline as a single-request parallel fan-out with graceful degradation, completing all AI stages within 5 seconds | High | Test / Demo | Architecture Defined |
 | SYS-REQ-0014 | Support closed-registration authentication via OAuth 2.0 (Google, Microsoft, GitHub) and email/password with JWT-based session management | Critical | Test / Demo | Not Started |
 | SYS-REQ-0015 | Provide admin-controlled user management with invite-based onboarding, account lifecycle (invited/active/inactive), and role assignment | Critical | Test / Demo | Not Started |
+| SYS-REQ-0016 | Provide an environment-variable-controlled authentication bypass flag for development and testing environments with configurable mock user identity | Medium | Test / Inspection | Not Started |
 
 ---
 
@@ -257,3 +258,27 @@
 **Related Feature:** [Authentication & User Management](../../features/authentication.md)
 
 **Decomposes To:** SUB-AU-0005 (→ BE), SUB-AU-0006 (→ BE, WEB), SUB-AU-0007 (→ BE, WEB, AND), SUB-AU-0011 (→ BE), SUB-AU-0014 (→ BE), SUB-AU-0015 (→ WEB, AND)
+
+---
+
+### SYS-REQ-0016: Authentication Bypass for Development
+
+**Rationale:** The PMS authentication system requires OAuth 2.0 provider connectivity or seeded credentials for every request (SYS-REQ-0001, SYS-REQ-0014). During local development and CI testing, this creates friction: OAuth providers are unavailable offline, tokens expire during iterative work, and test suites must maintain credentials or mock the full auth flow. HIPAA Security Rule §164.312(d) mandates authentication for production systems, but development and test environments operate with synthetic data and no PHI, making a controlled bypass acceptable. [ADR-0023](../../architecture/0023-auth-bypass-flag-for-development.md) documents the architectural decision.
+
+**Acceptance Criteria:**
+
+1. An environment variable (`AUTH_BYPASS_ENABLED` on backend, `NEXT_PUBLIC_AUTH_BYPASS_ENABLED` on frontend) controls whether authentication checks are bypassed; the variable defaults to `false` in all environments.
+2. When the bypass is enabled, the system injects a mock user identity into the authentication context with configurable email, name, and role via environment variables (`NEXT_PUBLIC_AUTH_BYPASS_EMAIL`, `NEXT_PUBLIC_AUTH_BYPASS_NAME`, `NEXT_PUBLIC_AUTH_BYPASS_ROLE`).
+3. The mock user defaults to role `admin` with email `dev@localhost` and name `Dev User` when override variables are not set.
+4. The application logs a prominent startup warning (level: WARN) when the authentication bypass is active, clearly indicating that authentication is disabled.
+5. CI deployment pipelines for QA, Staging, and Production environments fail with a hard error if `AUTH_BYPASS_ENABLED` is detected as `true`.
+6. The bypass flag is excluded from production Docker images and `.env.production` templates, and is documented in `.env.example` with a security warning.
+7. When the bypass is disabled (default), all authentication behavior is identical to the production code path with zero performance overhead.
+
+**Current Implementation:** Not started.
+
+**Related ADR:** [ADR-0023: Authentication Bypass Flag for Development](../../architecture/0023-auth-bypass-flag-for-development.md)
+
+**Related Feature:** [Authentication & User Management](../../features/authentication.md)
+
+**Decomposes To:** SUB-AU-0016 (→ BE, WEB)
