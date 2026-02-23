@@ -122,6 +122,7 @@ _No bug fixes documented yet._
 - [PRD: AI Zero-Day Scan PMS Integration](experiments/12-PRD-AIZeroDayScan-PMS-Integration.md) — AI-powered zero-day vulnerability scanning using Claude Opus 4.6 for continuous security assurance of PMS codebase and dependencies
 - [AI Zero-Day Scan Setup Guide](experiments/12-AIZeroDayScan-PMS-Developer-Setup-Guide.md) — CI/CD security gate, deep dependency auditor service, security dashboard integration
 - [AI Zero-Day Scan Developer Tutorial](experiments/12-AIZeroDayScan-Developer-Tutorial.md) — Hands-on onboarding: scan vulnerable code, triage findings, build custom healthcare security prompts
+- [AI Zero-Day Scan Implementation Plan](experiments/12-AIZeroDayScan-Implementation-Plan.md) — Phased rollout steps to incorporate Claude Code Security into PMS screening
 
 ### Gemma 3 (On-Premise Open-Weight Clinical AI)
 - [PRD: Gemma 3 PMS Integration](experiments/13-PRD-Gemma3-PMS-Integration.md) — Self-hosted multimodal AI backbone using Google's Gemma 3 and MedGemma for HIPAA-compliant clinical summarization, structured extraction, and medication intelligence with zero PHI egress
