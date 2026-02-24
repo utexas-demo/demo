@@ -1,7 +1,7 @@
 # PMS Project Overview — Bird's Eye View
 
-**Date:** 2026-02-21
-**Version:** 1.2
+**Date:** 2026-02-24
+**Version:** 1.3
 **Organization:** utexas-demo (GitHub)
 
 ---
@@ -64,8 +64,8 @@ flowchart TB
 
 | Code | Subsystem | Scope | Primary Actor |
 |---|---|---|---|
-| SUB-PR | Patient Records | Demographics, medical history, encrypted PHI, AI vision, dermatology CDS (skin lesion classification, similarity search, risk scoring, longitudinal tracking), DermaCheck pipeline orchestration (parallel fan-out, graceful degradation) | All roles |
-| SUB-CW | Clinical Workflow | Scheduling, encounters, status tracking, clinical notes, DermaCheck encounter workflow (capture → classify → review) | Physicians, Nurses |
+| SUB-PR | Patient Records | Demographics, medical history, encrypted PHI, AI vision, dermatology CDS (skin lesion classification, similarity search, risk scoring, longitudinal tracking), DermaCheck pipeline orchestration (parallel fan-out, graceful degradation), DermaCheck client capture-classify-review flow (branded entry, camera integration, multipart upload, synchronous results) | All roles |
+| SUB-CW | Clinical Workflow | Scheduling, encounters, status tracking, clinical notes, DermaCheck encounter workflow (capture → classify → review), DermaCheck clinician action lifecycle (Save/Discard/Add Another, degraded result handling) | Physicians, Nurses |
 | SUB-MM | Medication Management | Prescriptions, drug interactions, formulary, dispensing | Physicians, Pharmacists |
 | SUB-RA | Reporting & Analytics | Dashboards, compliance reports, audit log queries, dermatology classification analytics | Administrators, Compliance |
 | SUB-PM | Prompt Management | Centralized prompt CRUD, versioning, audit trail, LLM-powered version comparison | Administrators |
@@ -82,7 +82,7 @@ Central knowledge base shared as a git submodule across all other repos.
 - Development Pipeline Tutorial (.md / .docx)
 - PMS Developer Working Instructions (.md / .docx)
 - `docs/` directory with:
-  - 22 Architecture Decision Records (ADRs)
+  - 23 Architecture Decision Records (ADRs)
   - 7 configuration & setup guides
   - 2 feature implementation docs
   - System spec, testing strategy, requirements governance
@@ -205,6 +205,7 @@ app/src/main/java/com/utexas/pms/
 | SYS-REQ-0011 | Centralized Prompt Management | High | Not Started |
 | SYS-REQ-0012 | Dermatology Clinical Decision Support (ISIC Archive) | High | Architecture Defined |
 | SYS-REQ-0013 | DermaCheck Workflow Orchestration (parallel fan-out pipeline) | High | Architecture Defined |
+| SYS-REQ-0014 | DermaCheck Client Capture-Classify-Review Flow (branded entry, camera, upload, actions) | High | Architecture Defined |
 
 ---
 
@@ -212,22 +213,22 @@ app/src/main/java/com/utexas/pms/
 
 | Subsystem | Version | Domain Reqs | Platform Reqs | Verified | Implemented | Scaffolded | Not Started | Coverage |
 |---|---|---|---|---|---|---|---|---|
-| Patient Records (SUB-PR) | v0.6 | 17 | 38 | 3 | 2 | 2 | 31 | 35.3% |
-| Clinical Workflow (SUB-CW) | v0.0 | 9 | 17 | 0 | 0 | 2 | 15 | 0.0% |
+| Patient Records (SUB-PR) | v0.6 | 18 | 41 | 3 | 2 | 2 | 34 | 33.3% |
+| Clinical Workflow (SUB-CW) | v0.0 | 10 | 20 | 0 | 0 | 2 | 18 | 0.0% |
 | Medication Management (SUB-MM) | v0.0 | 9 | 13 | 0 | 0 | 2 | 11 | 0.0% |
 | Reporting & Analytics (SUB-RA) | v0.0 | 8 | 19 | 0 | 0 | 2 | 17 | 0.0% |
 | Prompt Management (SUB-PM) | v0.0 | 7 | 13 | 0 | 0 | 0 | 13 | 0.0% |
-| **Total** | — | **50** | **100** | **3** | **2** | **8** | **87** | **16.0%** |
+| **Total** | — | **52** | **106** | **3** | **2** | **8** | **93** | **14.4%** |
 
 ### Platform Coverage
 
 | Platform | Total Reqs | Verified | Implemented | Scaffolded | Placeholder | Not Started |
 |---|---|---|---|---|---|---|
-| Backend (BE) | 49 | 3 | 2 | 0 | 16 | 28 |
-| Web (WEB) | 25 | 0 | 0 | 5 | 0 | 20 |
-| Android (AND) | 19 | 0 | 0 | 4 | 0 | 15 |
+| Backend (BE) | 51 | 3 | 2 | 0 | 16 | 30 |
+| Web (WEB) | 27 | 0 | 0 | 5 | 0 | 22 |
+| Android (AND) | 21 | 0 | 0 | 4 | 0 | 17 |
 | AI | 7 | 0 | 0 | 0 | 0 | 7 |
-| **Total** | **100** | **3** | **2** | **9** | **16** | **70** |
+| **Total** | **106** | **3** | **2** | **9** | **16** | **76** |
 
 ---
 
@@ -243,13 +244,13 @@ app/src/main/java/com/utexas/pms/
 
 | Subsystem | Domain Reqs | With Tests | Passing | No Tests | Domain Coverage |
 |---|---|---|---|---|---|
-| Patient Records (PR) | 16 | 6 | 6 | 10 | 37.5% |
-| Clinical Workflow (CW) | 8 | 1 | 1 | 7 | 12.5% |
+| Patient Records (PR) | 18 | 6 | 6 | 12 | 33.3% |
+| Clinical Workflow (CW) | 10 | 1 | 1 | 9 | 10.0% |
 | Medication Mgmt (MM) | 9 | 2 | 2 | 7 | 22.2% |
 | Reporting (RA) | 8 | 0 | 0 | 8 | 0.0% |
 | Prompt Mgmt (PM) | 7 | 0 | 0 | 7 | 0.0% |
-| System (SYS) | 13 | 1 | 1 | 12 | 7.7% |
-| **Total** | **63** | **10** | **10** | **53** | **15.9%** |
+| System (SYS) | 14 | 1 | 1 | 13 | 7.1% |
+| **Total** | **66** | **10** | **10** | **56** | **15.2%** |
 
 ---
 
@@ -297,7 +298,7 @@ app/src/main/java/com/utexas/pms/
 - Implement dermatology analytics dashboard (SUB-RA-0008)
 
 ### Priority 5 — Dermatology Clinical Decision Support
-> **Architecture: COMPLETE** — 15 ADRs (ADR-0008 through ADR-0022) define all architectural decisions. PRD, setup guide, and developer tutorial documented (experiment 18). Implementation phase ready to begin.
+> **Architecture: COMPLETE** — 16 ADRs (ADR-0008 through ADR-0023) define all architectural decisions. PRD, setup guide, and developer tutorial documented (experiment 18). Implementation phase ready to begin.
 
 - Deploy Dermatology CDS Docker service with EfficientNet-B4 ONNX classifier (SUB-PR-0013) — ADR-0008, ADR-0009
 - Implement Alembic migrations for pgvector tables and lesion schema (ADR-0021)
@@ -310,6 +311,8 @@ app/src/main/java/com/utexas/pms/
 - Implement lesion longitudinal tracking with persistent identity and change detection (SUB-PR-0016) — ADR-0019
 - **Implement DermaCheck pipeline orchestration: parallel fan-out inside CDS, graceful degradation, per-stage timeouts, atomic DermaCheckResult response (SUB-PR-0017) — ADR-0022**
 - **Implement DermaCheck encounter workflow: camera capture → upload → results review → save/discard within encounter context (SUB-CW-0009) — ADR-0022**
+- **Implement DermaCheck client capture-classify-review flow: branded entry point, CameraSessionManager integration, multipart upload, synchronous wait, loading states (SUB-PR-0018) — ADR-0023**
+- **Implement DermaCheck clinician action lifecycle: Save/Discard/Add Another state machine, confirmation dialogs, degraded result banners, audit logging of all state transitions (SUB-CW-0010) — ADR-0023**
 - Build Web UI: lesion upload, classification results, similar gallery, timeline (SUB-PR-0013/0014/0015/0016-WEB)
 - Build Android on-device TFLite triage (SUB-PR-0013-AND) — ADR-0012
 - Configure granular feature flags for phased rollout (ADR-0020)

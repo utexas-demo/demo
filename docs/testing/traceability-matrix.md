@@ -1,9 +1,9 @@
 # Requirements Traceability Matrix (RTM)
 
 **Document ID:** PMS-RTM-001
-**Version:** 1.7
-**Date:** 2026-02-21
-**Last Updated:** 2026-02-21
+**Version:** 1.8
+**Date:** 2026-02-24
+**Last Updated:** 2026-02-24
 
 ---
 
@@ -24,6 +24,7 @@
 | SYS-REQ-0011 (Prompts) | SUB-PM-0003, SUB-PM-0004, SUB-PM-0006, SUB-PM-0007 | — | TST-PM-0003, TST-PM-0004, TST-PM-0006, TST-PM-0007, TST-SYS-0011 | Not Started |
 | SYS-REQ-0012 (Derm CDS) | SUB-PR-0013, SUB-PR-0014, SUB-PR-0015, SUB-PR-0016, SUB-RA-0008 | `routers/lesions.py`, `services/lesion_service.py`, `services/risk_scorer.py` (CDS) | TST-PR-0013, TST-PR-0014, TST-PR-0015, TST-PR-0016, TST-RA-0008, TST-SYS-0012 | Not Started |
 | SYS-REQ-0013 (DermaCheck Orchestration) | SUB-PR-0017, SUB-CW-0009 | `routers/lesions.py`, `services/derm-cds/orchestrator.py`, `services/derm-cds/classifier.py`, `services/derm-cds/similarity.py`, `services/derm-cds/risk_scorer.py` | TST-PR-0017, TST-CW-0009, TST-SYS-0013 | Not Started |
+| SYS-REQ-0014 (DermaCheck Client Flow) | SUB-PR-0018, SUB-CW-0010 | `routers/lesions.py`, `services/lesion_service.py`, `middleware/feature_flags.py` | TST-PR-0018, TST-CW-0010, TST-SYS-0014 | Not Started |
 
 ---
 
@@ -82,6 +83,12 @@
 | TST-CW-0009-BE | Encounter-lesion linkage: GET /api/encounters/{id}/lesions with encounter-patient validation | pms-backend | — (not implemented) | SUB-CW-0009, SYS-REQ-0013 | — | — |
 | TST-CW-0009-WEB | DermaCheck workflow at /encounters/[id]/dermatology with capture widget, results panel, and degradation banners | pms-frontend | — (not implemented) | SUB-CW-0009, SYS-REQ-0013 | — | — |
 | TST-CW-0009-AND | Android DermaCheck encounter workflow: camera capture, upload, results review, save/discard, degradation handling | pms-android | — (not implemented) | SUB-CW-0009, SYS-REQ-0013 | — | — |
+| TST-PR-0018-BE | DermaCheck multipart upload endpoint: feature flag gating, image validation, synchronous CDS call, audit logging | pms-backend | — (not implemented) | SUB-PR-0018, SYS-REQ-0014 | — | — |
+| TST-PR-0018-WEB | DermaCheck branded entry button, file upload widget, loading spinner, atomic results display | pms-frontend | — (not implemented) | SUB-PR-0018, SYS-REQ-0014 | — | — |
+| TST-PR-0018-AND | DermaCheck branded entry, CameraSessionManager capture, Retrofit multipart upload, synchronous wait | pms-android | — (not implemented) | SUB-PR-0018, SYS-REQ-0014 | — | — |
+| TST-CW-0010-BE | DermaCheck save/discard API endpoints: secure deletion, encounter validation, audit logging | pms-backend | — (not implemented) | SUB-CW-0010, SYS-REQ-0014 | — | — |
+| TST-CW-0010-WEB | DermaCheck action panel: save/discard/capture-another buttons, confirmation dialog, degradation banners | pms-frontend | — (not implemented) | SUB-CW-0010, SYS-REQ-0014 | — | — |
+| TST-CW-0010-AND | DermaCheck action screen: save/discard/capture-another, AlertDialog confirmation, degradation chips | pms-android | — (not implemented) | SUB-CW-0010, SYS-REQ-0014 | — | — |
 | TST-MM-0001 | Interaction check endpoint returns 200 with empty array for unknown patient | pms-backend | `test_check_interactions_empty` | SUB-MM-0001, SYS-REQ-0006 | PASS | RUN-2026-02-16-003 |
 | TST-MM-0002 | Interaction severity classification (contraindicated, major, moderate, minor) | pms-backend | — (not implemented) | SUB-MM-0002, SYS-REQ-0006 | — | — |
 | TST-MM-0003 | Prescription data PHI encryption | pms-backend | — (not implemented) | SUB-MM-0003, SYS-REQ-0002 | — | — |
@@ -135,6 +142,7 @@
 | TST-SYS-0011 | End-to-end prompt management: create, version, compare | SYS-REQ-0011 | — | — |
 | TST-SYS-0012 | End-to-end dermatology CDS: upload lesion, classify, similarity search, risk score | SYS-REQ-0012 | — | — |
 | TST-SYS-0013 | End-to-end DermaCheck pipeline orchestration: upload image, verify parallel fan-out (classify → narrative + similarity + risk), verify degraded response handling, verify atomic DermaCheckResult | SYS-REQ-0013 | — | — |
+| TST-SYS-0014 | End-to-end DermaCheck client flow: branded entry → camera/file capture → multipart upload → synchronous wait → results display → Save/Discard/Add Another actions → audit trail verification | SYS-REQ-0014 | — | — |
 
 ---
 
@@ -154,7 +162,7 @@
 
 Compact view of platform requirement status per domain requirement. Domain status uses **strict rollup**: a domain req is "Verified" only when all platform reqs are verified.
 
-### SUB-PR — Patient Records (38 platform reqs)
+### SUB-PR — Patient Records (41 platform reqs)
 
 | Domain Req | Domain Status | BE | WEB | AND | AI |
 |---|---|---|---|---|---|
@@ -174,8 +182,9 @@ Compact view of platform requirement status per domain requirement. Domain statu
 | SUB-PR-0015 | Not Started | Not Started | Not Started | — | — |
 | SUB-PR-0016 | Not Started | Not Started | Not Started | — | — |
 | SUB-PR-0017 | Not Started | Not Started | — | — | Not Started |
+| SUB-PR-0018 | Not Started | Not Started | Not Started | Not Started | — |
 
-### SUB-CW — Clinical Workflow (17 platform reqs)
+### SUB-CW — Clinical Workflow (20 platform reqs)
 
 | Domain Req | Domain Status | BE | WEB | AND | AI |
 |---|---|---|---|---|---|
@@ -188,6 +197,7 @@ Compact view of platform requirement status per domain requirement. Domain statu
 | SUB-CW-0007 | Not Started | Not Started | — | — | — |
 | SUB-CW-0008 | Placeholder | Placeholder | — | — | — |
 | SUB-CW-0009 | Not Started | Not Started | Not Started | Not Started | — |
+| SUB-CW-0010 | Not Started | Not Started | Not Started | Not Started | — |
 
 ### SUB-MM — Medication Management (13 platform reqs)
 
@@ -232,11 +242,11 @@ Compact view of platform requirement status per domain requirement. Domain statu
 
 | Platform | Total Reqs | Verified | Implemented | Partial | Scaffolded | Placeholder | Not Started |
 |---|---|---|---|---|---|---|---|
-| BE | 49 | 3 | 2 | 0 | 0 | 16 | 28 |
-| WEB | 25 | 0 | 0 | 0 | 5 | 0 | 20 |
-| AND | 19 | 0 | 0 | 0 | 4 | 0 | 15 |
+| BE | 51 | 3 | 2 | 0 | 0 | 16 | 30 |
+| WEB | 27 | 0 | 0 | 0 | 5 | 0 | 22 |
+| AND | 21 | 0 | 0 | 0 | 4 | 0 | 17 |
 | AI | 7 | 0 | 0 | 0 | 0 | 0 | 7 |
-| **Total** | **100** | **3** | **2** | **0** | **9** | **16** | **70** |
+| **Total** | **106** | **3** | **2** | **0** | **9** | **16** | **76** |
 
 ### Test ID Migration Note
 
@@ -261,13 +271,15 @@ Existing test IDs are preserved as-is in the backward traceability section. The 
 
 | Subsystem | Domain Reqs | Platform Reqs | With Tests | Passing | Failing | No Tests | Domain Coverage |
 |---|---|---|---|---|---|---|---|
-| Patient Records (PR) | 17 | 38 | 6 | 6 | 0 | 11 | 35.3% |
-| Clinical Workflow (CW) | 9 | 17 | 1 | 1 | 0 | 8 | 11.1% |
+| Patient Records (PR) | 18 | 41 | 6 | 6 | 0 | 12 | 33.3% |
+| Clinical Workflow (CW) | 10 | 20 | 1 | 1 | 0 | 9 | 10.0% |
 | Medication Mgmt (MM) | 9 | 13 | 2 | 2 | 0 | 7 | 22.2% |
 | Reporting (RA) | 8 | 19 | 0 | 0 | 0 | 8 | 0.0% |
 | Prompt Mgmt (PM) | 7 | 13 | 0 | 0 | 0 | 7 | 0.0% |
-| System (SYS) | 13 | — | 1 | 1 | 0 | 12 | 7.7% |
-| **TOTAL** | **63** | **100** | **10** | **10** | **0** | **53** | **15.9%** |
+| System (SYS) | 14 | — | 1 | 1 | 0 | 13 | 7.1% |
+| **TOTAL** | **66** | **106** | **10** | **10** | **0** | **56** | **15.2%** |
+
+> **Note on v1.8 updates (DermaCheck Client Flow — SYS-REQ-0014):** Added SYS-REQ-0014 (DermaCheck Client Capture-Classify-Review Flow) to forward traceability with 2 subsystem requirements (SUB-PR-0018, SUB-CW-0010). Added 6 backward traceability test stubs: TST-PR-0018-BE/WEB/AND, TST-CW-0010-BE/WEB/AND, plus TST-SYS-0014 system test. Platform Traceability Summary updated: SUB-PR expanded from 38→41 platform reqs (BE=16→17, WEB=8→9, AND=8→9), SUB-CW expanded from 17→20 platform reqs (BE=9→10, WEB=4→5, AND=4→5). Coverage Summary by Platform updated: BE 49→51, WEB 25→27, AND 19→21, AI 7 (unchanged), Total 100→106. Domain req totals: PR 17→18, CW 9→10, SYS 13→14, overall 63→66. Overall domain coverage: 15.9%→15.2% (increased denominator from new requirements).
 
 > **Note on v1.7 updates (DermaCheck Orchestration — SYS-REQ-0013):** Added SYS-REQ-0013 (DermaCheck Workflow Orchestration) to forward traceability with 2 subsystem requirements (SUB-PR-0017, SUB-CW-0009). Added 5 backward traceability test stubs: TST-PR-0017-BE/AI, TST-CW-0009-BE/WEB/AND, plus TST-SYS-0013 system test. Platform Traceability Summary updated: SUB-PR expanded from 36→38 platform reqs (BE=15→16, AI=5→6), SUB-CW expanded from 14→17 platform reqs (BE=8→9, WEB=3→4, AND=3→4). Coverage Summary by Platform updated: BE 47→49, WEB 24→25, AND 18→19, AI 6→7, Total 95→100. Domain req totals: PR 16→17, CW 8→9, SYS 12→13, overall 60→63. Overall domain coverage: 16.7%→15.9% (increased denominator from new requirements).
 
@@ -283,7 +295,7 @@ Existing test IDs are preserved as-is in the backward traceability section. The 
 
 > **Note on v1.1 corrections:** The v1.0 matrix (2026-02-15) overstated coverage. TST-MM-0002 was incorrectly marked as PASS — no test for severity classification exists. TST-PR-0003, TST-CW-0003, and TST-MM-0001 test descriptions have been corrected to reflect that they only verify stub endpoint responses (200 + empty array), not full CRUD or interaction logic. The "Test Function" column was added to link each test case to its actual pytest function.
 
-> **Gap Analysis:** 35 requirements lack test coverage. Priority:
+> **Gap Analysis:** 38 requirements lack test coverage. Priority:
 > 1. **Explicit auth/RBAC rejection tests** — TST-PR-0001, TST-PR-0002 have IMPL code but no dedicated test functions verifying 401/403 on patient endpoints
 > 2. **Explicit audit assertion tests** — TST-PR-0005 has IMPL code but no test verifying audit log entries are created
 > 3. **Auth/RBAC for other subsystems** — SUB-CW-0001/0002, SUB-MM-0006/0007, SUB-RA-0004/0005

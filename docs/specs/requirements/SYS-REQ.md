@@ -1,8 +1,8 @@
 # System-Level Requirements (SYS-REQ)
 
 **Document ID:** PMS-SYS-REQ-001
-**Version:** 1.8
-**Date:** 2026-02-21
+**Version:** 1.9
+**Date:** 2026-02-24
 **Parent:** [System Specification](../system-spec.md)
 
 ---
@@ -24,6 +24,7 @@
 | SYS-REQ-0011 | Provide centralized prompt management with versioning, CRUD operations, and LLM-powered comparison for all AI prompts used across the system | High | Test / Demo | Not Started |
 | SYS-REQ-0012 | Provide AI-assisted skin lesion classification and dermatology clinical decision support using ISIC Archive-trained models with on-premises inference, similarity search, and structured risk scoring | High | Test / Demo | Architecture Defined |
 | SYS-REQ-0013 | Orchestrate the DermaCheck capture-classify-review pipeline as a single-request parallel fan-out with graceful degradation, completing all AI stages within 5 seconds | High | Test / Demo | Architecture Defined |
+| SYS-REQ-0014 | Provide the client-side DermaCheck capture-classify-review flow with branded entry point, camera integration, multipart image upload, synchronous result display, and clinician action state machine (Save/Discard/Add Another) | High | Test / Demo | Architecture Defined |
 
 ---
 
@@ -179,3 +180,29 @@
 - [ADR-0018](../../architecture/0018-inter-service-communication.md): Backend-to-CDS HTTP communication with circuit breaking
 
 **Decomposes To:** SUB-PR-0017 (→ BE, AI), SUB-CW-0009 (→ BE, WEB, AND)
+
+---
+
+### SYS-REQ-0014: DermaCheck Client Capture-Classify-Review Flow
+
+**Rationale:** HIPAA Security Rule §164.312(b) requires audit controls over client-initiated capture events, and §164.312(a)(2)(iv) requires encryption of ePHI during upload and storage. The server-side orchestration (SYS-REQ-0013) defines the AI pipeline, but the client-side flow — branded entry point, camera integration, multipart upload, synchronous wait, and clinician action lifecycle — is not formalized. Without explicit client requirements, implementations may diverge across Web and Android platforms, omit feature flag gating, skip audit logging of state transitions, or handle degraded results inconsistently. ADR-0023 defines these architectural decisions; SYS-REQ-0014 traces them to verifiable acceptance criteria.
+
+**Acceptance Criteria:**
+1. The DermaCheck flow is accessible via a branded "DermaCheck" entry point within the encounter detail screen, gated by a feature flag (`DERM_CDS_ENABLED`).
+2. On Android, camera capture uses `CameraSessionManager` with a dermoscopy-specific `CameraProfile` (macro focus, high resolution, clinical white balance) applied during the BINDING phase. On Web, file upload accepts JPEG/PNG via drag-and-drop or file picker.
+3. The captured image is uploaded as a multipart/form-data request to `POST /api/lesions/upload` with patient_id, encounter_id, and anatomical_site fields.
+4. The client waits synchronously for the server response — no polling, streaming, or progressive rendering. A loading indicator is displayed during the wait.
+5. Upon receiving the `DermaCheckResult`, the clinician is presented with three actions: **Save** (persist to encounter), **Discard** (delete image and results), and **Add Another** (save current and start a new capture within the same encounter).
+6. All client-side state transitions (entry → capture → upload → review → save/discard) are audit-logged via the backend audit trail.
+7. If the response includes a `degraded` flag, the client displays contextual banners (e.g., "Narrative unavailable", "Similar images unavailable") without blocking the clinician from reviewing classification and risk results.
+
+**Current Implementation:** Architecture defined in ADR-0023 (DermaCheck Capture-Classify-Review Flow). No code implementation started.
+
+**Architecture Decisions:**
+- [ADR-0023](../../architecture/0023-dermacheck-capture-classify-review-flow.md): Client-side capture-classify-review flow (branded entry, camera integration, multipart upload, clinician action state machine)
+- [ADR-0022](../../architecture/0022-dermacheck-workflow-orchestration.md): Server-side parallel fan-out pipeline (provides the synchronous response contract)
+- [ADR-0020](../../architecture/0020-derm-cds-feature-flags.md): Granular feature flags gating DermaCheck entry point
+- [ADR-0014](../../architecture/0014-image-preprocessing-pipeline.md): Image preprocessing and quality gates applied before upload
+- [ADR-0010](../../architecture/0010-dermoscopic-image-storage.md): AES-256-GCM encrypted image storage
+
+**Decomposes To:** SUB-PR-0018 (→ BE, WEB, AND), SUB-CW-0010 (→ BE, WEB, AND)

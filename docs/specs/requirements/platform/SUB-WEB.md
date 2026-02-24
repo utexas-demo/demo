@@ -1,8 +1,8 @@
 # Platform Requirements: Web Frontend (SUB-WEB)
 
-**Version:** 1.0
-**Date:** 2026-02-21
-**Platform:** Web Frontend (WEB) — 25 requirements across 5 domains
+**Version:** 1.1
+**Date:** 2026-02-24
+**Platform:** Web Frontend (WEB) — 27 requirements across 5 domains
 **Repository:** pms-frontend
 **Technology:** Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 3
 
@@ -12,12 +12,12 @@
 
 | Domain | Req Count | Status Breakdown |
 |--------|-----------|-----------------|
-| Patient Records (PR) | 8 | 1 Scaffolded, 7 Not Started |
-| Clinical Workflow (CW) | 4 | 1 Scaffolded, 3 Not Started |
+| Patient Records (PR) | 9 | 1 Scaffolded, 8 Not Started |
+| Clinical Workflow (CW) | 5 | 1 Scaffolded, 4 Not Started |
 | Medication Management (MM) | 2 | 1 Scaffolded, 1 Not Started |
 | Reporting & Analytics (RA) | 6 | 1 Scaffolded, 5 Not Started |
 | Prompt Management (PM) | 5 | 5 Not Started |
-| **Total** | **25** | |
+| **Total** | **27** | |
 
 ---
 
@@ -35,6 +35,7 @@
 | SUB-PR-0014-WEB | SUB-PR-0014 | Similar Lesions Gallery component displaying top-10 ISIC reference image thumbnails with diagnosis labels and similarity scores | `components/dermatology/SimilarGallery.tsx` | TST-PR-0014-WEB | Not Started |
 | SUB-PR-0015-WEB | SUB-PR-0015 | Risk assessment banner component with severity color coding (red/yellow/green), referral urgency, and contributing risk factors. Includes clinical disclaimer. | `components/dermatology/ClassificationResults.tsx` | TST-PR-0015-WEB | Not Started |
 | SUB-PR-0016-WEB | SUB-PR-0016 | Lesion Change Timeline component showing chronological assessment history with change detection indicators for a given patient and anatomical site | `components/dermatology/LesionTimeline.tsx` | TST-PR-0016-WEB | Not Started |
+| SUB-PR-0018-WEB | SUB-PR-0018 | Branded "DermaCheck" entry button on encounter detail page at `/encounters/[id]/dermatology`, visible only when `DERM_CDS_ENABLED` feature flag is active. File upload widget accepting JPEG/PNG via drag-and-drop or file picker with anatomical site selector dropdown. Multipart/form-data upload with loading spinner during synchronous server wait. Results displayed atomically — full `DermaCheckResult` rendered after response completes, no progressive rendering. | `app/encounters/[id]/dermatology/page.tsx`, `components/dermatology/DermaCheckEntry.tsx`, `components/dermatology/ImageUploader.tsx` | TST-PR-0018-WEB | Not Started |
 
 ---
 
@@ -48,6 +49,7 @@
 | SUB-CW-0003-WEB | SUB-CW-0003 | Encounter lifecycle UI (list, create, status updates) | `app/encounters/` | TST-CW-0003-WEB | Not Started |
 | SUB-CW-0006-WEB | SUB-CW-0006 | Encounter type selection in forms | `app/encounters/page.tsx` | TST-CW-0006-WEB | Not Started |
 | SUB-CW-0009-WEB | SUB-CW-0009 | DermaCheck workflow within encounter detail page: Lesion Image Capture Widget (file upload / USB dermoscope), anatomical site selector, classification results panel displaying `DermaCheckResult` (top-3 predictions, confidence chart, clinical narrative, risk level with severity color coding), similar lesions gallery, and save/discard action buttons. Accessible at `/encounters/[id]/dermatology`. Must handle `degraded` responses by showing "Narrative unavailable" or "Similar images unavailable" banners without blocking the physician from reviewing classification and risk. | `app/encounters/[id]/dermatology/page.tsx`, `components/dermatology/DermaCheckWorkflow.tsx` | TST-CW-0009-WEB | Not Started |
+| SUB-CW-0010-WEB | SUB-CW-0010 | DermaCheck clinician action panel with three buttons: **Save** (persists assessment to encounter), **Discard** (shows confirmation dialog, then deletes image and results), and **Capture Another** (saves current and resets to capture state). Degradation banners ("Narrative unavailable", "Similar images unavailable") displayed when `degraded` fields are present but do not disable action buttons. Action panel disabled during pending API calls with loading indicators. | `components/dermatology/DermaCheckActions.tsx`, `components/dermatology/DiscardConfirmDialog.tsx` | TST-CW-0010-WEB | Not Started |
 
 ---
 
