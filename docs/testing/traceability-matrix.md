@@ -26,7 +26,7 @@
 | SYS-REQ-0013 (DermaCheck Orchestration) | SUB-PR-0017, SUB-CW-0009 | `routers/lesions.py`, `services/derm-cds/orchestrator.py`, `services/derm-cds/classifier.py`, `services/derm-cds/similarity.py`, `services/derm-cds/risk_scorer.py` | TST-PR-0017, TST-CW-0009, TST-SYS-0013 | Not Started |
 | SYS-REQ-0014 (Authentication) | SUB-AU-0001, SUB-AU-0002, SUB-AU-0012, SUB-AU-0013, SUB-AU-0014 | `routers/auth.py`, `services/auth_service.py`, `services/oauth_service.py`, `models/user_oauth_account.py` | TST-AU-0001, TST-AU-0002, TST-AU-0012, TST-AU-0013, TST-AU-0014, TST-SYS-0014 | Partial (WEB login/password-reset tests pass; BE not started) |
 | SYS-REQ-0015 (User Management) | SUB-AU-0005, SUB-AU-0006, SUB-AU-0007, SUB-AU-0011, SUB-AU-0014, SUB-AU-0015 | `routers/users.py`, `services/user_service.py`, `services/email_service.py`, `models/user.py` | TST-AU-0005, TST-AU-0006, TST-AU-0007, TST-AU-0011, TST-AU-0014, TST-AU-0015, TST-SYS-0015 | Partial (WEB user management/invite/profile tests pass; BE not started) |
-| SYS-REQ-0016 (Auth Bypass) | SUB-AU-0016 | `middleware/auth.py`, `core/config.py` | TST-AU-0016, TST-SYS-0016 | Partial (WEB bypass helpers/banner/mismatch tests pass; BE not started) |
+| SYS-REQ-0016 (Auth Bypass) | SUB-AU-0016 | `middleware/auth.py`, `config.py`, `main.py` | TST-AU-0016, TST-SYS-0016 | Partial (WEB bypass helpers/banner/mismatch tests pass; BE implemented — `require_auth` queries real admin by `ADMIN_EMAIL`, caches result, logs warnings) |
 
 ---
 
@@ -135,7 +135,7 @@
 | TST-AU-0012-BE | OAuth accounts table with unique constraint on (provider, provider_user_id) | pms-backend | — (not implemented) | SUB-AU-0012, SYS-REQ-0014 | — | — |
 | TST-AU-0013-BE | Password complexity validation (12+ chars, mixed case, digit, special) | pms-backend | — (not implemented) | SUB-AU-0013, SYS-REQ-0014 | — | — |
 | TST-AU-0014-BE | Email service integration for invite and password reset emails | pms-backend | — (not implemented) | SUB-AU-0014, SYS-REQ-0014, SYS-REQ-0015 | — | — |
-| TST-AU-0016-BE | Auth bypass middleware with environment guard (500 on prod/staging/qa) | pms-backend | — (not implemented) | SUB-AU-0016, SYS-REQ-0016 | — | — |
+| TST-AU-0016-BE | Auth bypass: real admin lookup by `ADMIN_EMAIL`, caching, RuntimeError on missing admin, startup/request WARN logs | pms-backend | `tests/test_auth_middleware.py`: test_bypass_returns_real_admin_uuid, test_bypass_fails_when_admin_not_seeded, test_bypass_caches_payload | SUB-AU-0016, SYS-REQ-0016 | IMPLEMENTED | — |
 | TST-AU-0001-WEB | Login page with OAuth provider buttons and callback redirect handling | pms-frontend | `__tests__/auth/login.test.tsx`: login form rendering, OAuth buttons, `returnTo` redirect | SUB-AU-0001, SYS-REQ-0014 | PASS | RUN-2026-02-23-001 |
 | TST-AU-0002-WEB | Email/password login form and password reset request/reset pages | pms-frontend | `__tests__/auth/forgot-password.test.tsx`: forgot-password form, anti-enumeration success; `__tests__/auth/reset-password.test.tsx`: reset form, token validation, password set | SUB-AU-0002, SYS-REQ-0014 | PASS | RUN-2026-02-23-001 |
 | TST-AU-0003-WEB | JWT localStorage storage, auth guard with requireRole, token refresh lock | pms-frontend | `__tests__/auth-functions.test.ts`: getTokens/setTokens/clearTokens, parseJWT, isTokenExpired; `__tests__/auth/token-refresh.test.ts`: single-promise refresh lock; `__tests__/auth/require-auth.test.tsx`: redirect unauthenticated, role check | SUB-AU-0003, SYS-REQ-0001 | PASS | RUN-2026-02-23-001 |
@@ -171,7 +171,7 @@
 | TST-SYS-0013 | End-to-end DermaCheck pipeline orchestration: upload image, verify parallel fan-out (classify → narrative + similarity + risk), verify degraded response handling, verify atomic DermaCheckResult | SYS-REQ-0013 | — | — |
 | TST-SYS-0014 | End-to-end authentication: OAuth login flow (authorize → callback → JWT), email/password login, token refresh, logout, failed login lockout | SYS-REQ-0014 | — | — |
 | TST-SYS-0015 | End-to-end user management: admin creates user, invite email sent, user accepts invite and sets password, admin assigns roles, admin deactivates user (sessions revoked) | SYS-REQ-0015 | — | — |
-| TST-SYS-0016 | Auth bypass flag: verify bypass active injects mock user, verify HTTP 500 on production/staging/qa environment, verify disabled by default with zero code-path changes | SYS-REQ-0016 | — | — |
+| TST-SYS-0016 | Auth bypass flag: verify `AUTH_ENABLED=false` injects real seeded admin identity (UUID + roles from DB), verify cached after first lookup, verify RuntimeError when admin not found, verify WARN logs at startup and first request, verify disabled by default with zero code-path changes | SYS-REQ-0016 | — | — |
 
 ---
 
@@ -281,7 +281,7 @@ Compact view of platform requirement status per domain requirement. Domain statu
 | SUB-AU-0009 | Partial | Not Started | Verified | — | — |
 | SUB-AU-0010 | Not Started | Not Started | — | — | — |
 | SUB-AU-0011 | Not Started | Not Started | — | — | — |
-| SUB-AU-0016 | Partial | Not Started | Verified | — | — |
+| SUB-AU-0016 | Partial | Implemented | Verified | — | — |
 
 ### Coverage Summary by Platform
 

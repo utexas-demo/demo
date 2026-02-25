@@ -26,7 +26,7 @@
 | SYS-REQ-0013 | Orchestrate the DermaCheck capture-classify-review pipeline as a single-request parallel fan-out with graceful degradation, completing all AI stages within 5 seconds | High | Test / Demo | Architecture Defined |
 | SYS-REQ-0014 | Support closed-registration authentication via OAuth 2.0 (Google, Microsoft, GitHub) and email/password with JWT-based session management | Critical | Test / Demo | Not Started |
 | SYS-REQ-0015 | Provide admin-controlled user management with invite-based onboarding, account lifecycle (invited/active/inactive), and role assignment | Critical | Test / Demo | Not Started |
-| SYS-REQ-0016 | Provide an environment-variable-controlled authentication bypass flag for development and testing environments with configurable mock user identity | Medium | Test / Inspection | Not Started |
+| SYS-REQ-0016 | Provide an environment-variable-controlled authentication bypass flag (`AUTH_ENABLED=false`) for development and testing environments that authenticates all requests as the real seeded admin user | Medium | Test / Inspection | Implemented |
 
 ---
 
@@ -267,15 +267,19 @@
 
 **Acceptance Criteria:**
 
-1. An environment variable (`AUTH_BYPASS_ENABLED` on backend, `NEXT_PUBLIC_AUTH_BYPASS_ENABLED` on frontend) controls whether authentication checks are bypassed; the variable defaults to `false` in all environments.
-2. When the bypass is enabled, the system injects a mock user identity into the authentication context with configurable email, name, and role via environment variables (`NEXT_PUBLIC_AUTH_BYPASS_EMAIL`, `NEXT_PUBLIC_AUTH_BYPASS_NAME`, `NEXT_PUBLIC_AUTH_BYPASS_ROLE`).
-3. The mock user defaults to role `admin` with email `dev@localhost` and name `Dev User` when override variables are not set.
-4. The application logs a prominent startup warning (level: WARN) when the authentication bypass is active, clearly indicating that authentication is disabled.
-5. CI deployment pipelines for QA, Staging, and Production environments fail with a hard error if `AUTH_BYPASS_ENABLED` is detected as `true`.
-6. The bypass flag is excluded from production Docker images and `.env.production` templates, and is documented in `.env.example` with a security warning.
-7. When the bypass is disabled (default), all authentication behavior is identical to the production code path with zero performance overhead.
+1. An environment variable (`AUTH_ENABLED=false` on backend, `NEXT_PUBLIC_AUTH_BYPASS_ENABLED=true` on frontend) controls whether authentication checks are bypassed; `AUTH_ENABLED` defaults to `true` (authentication enforced) in all environments.
+2. When the backend bypass is enabled (`AUTH_ENABLED=false`), the system looks up the real seeded admin user from the database by `ADMIN_EMAIL` (from config) and injects their actual UUID and roles into the authentication context — no fake/hardcoded identities are used.
+3. The bypass payload is cached after the first database lookup so subsequent requests do not repeat the query.
+4. If the seeded admin user does not exist in the database (migrations not run), the application raises a `RuntimeError` with a descriptive message at request time.
+5. The application logs a prominent startup warning (level: WARN) when `AUTH_ENABLED=false`, identifying the admin email and stating that authentication is disabled, with a "do NOT use in production" notice.
+6. A second WARN-level log is emitted on the first bypassed request, identifying the admin's email and UUID being used for all requests.
+7. All endpoints behave exactly as if the seeded admin logged in: `/users/me` returns the real admin profile, admin-only endpoints work, and audit logs reference the real admin user ID.
+8. The frontend bypass (`NEXT_PUBLIC_AUTH_BYPASS_ENABLED=true`) uses environment variables for mock user identity (`NEXT_PUBLIC_AUTH_BYPASS_EMAIL`, `NEXT_PUBLIC_AUTH_BYPASS_NAME`, `NEXT_PUBLIC_AUTH_BYPASS_ROLE`), defaulting to role `admin`, email `dev@localhost`, name `Dev User`.
+9. CI deployment pipelines for QA, Staging, and Production environments fail with a hard error if bypass is detected.
+10. The bypass flag is excluded from production Docker images and `.env.production` templates, and is documented in `.env.example` with a security warning.
+11. When the bypass is disabled (default: `AUTH_ENABLED=true`), all authentication behavior is identical to the production code path with zero performance overhead.
 
-**Current Implementation:** Not started.
+**Current Implementation:** Backend implemented — `middleware/auth.py` queries the real seeded admin by `ADMIN_EMAIL`, caches the bypass payload, and logs warnings at startup and on first bypass. Frontend implemented — bypass helpers, mock user injection, and warning banner tested and passing.
 
 **Related ADR:** [ADR-0023: Authentication Bypass Flag for Development](../../architecture/0023-auth-bypass-flag-for-development.md)
 

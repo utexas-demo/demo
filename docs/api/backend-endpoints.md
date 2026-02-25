@@ -24,22 +24,22 @@
 
 ### Authentication Bypass (Development Only) — SUB-AU-0016
 
-When `AUTH_BYPASS_ENABLED=true` is set in the environment, the auth middleware skips JWT validation on **all** endpoints and injects a mock `AuthenticatedUser` into the request context. This is a middleware-level concern — no new API endpoints are introduced. See [ADR-0023](../architecture/0023-auth-bypass-flag-for-development.md).
+When `AUTH_ENABLED=false` is set in the environment, the `require_auth` dependency skips JWT validation on **all** endpoints and injects the **real seeded admin user's** identity (UUID and roles) into the request context. The admin is looked up from the database by `ADMIN_EMAIL` and cached after the first request. This is a middleware-level concern — no new API endpoints are introduced. See [ADR-0023](../architecture/0023-auth-bypass-flag-for-development.md).
 
 **Environment Variables:**
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `AUTH_BYPASS_ENABLED` | `false` | Enable/disable auth bypass |
-| `AUTH_BYPASS_EMAIL` | `dev@localhost` | Mock user email |
-| `AUTH_BYPASS_NAME` | `Dev User` | Mock user display name |
-| `AUTH_BYPASS_ROLE` | `admin` | Mock user role (`admin`, `clinician`, `sales`, `lab-staff`) |
+| `AUTH_ENABLED` | `true` | Set to `false` to disable authentication |
+| `ADMIN_EMAIL` | `admin@pms.dev` | Email of the seeded admin user (used to look up the real identity from DB) |
 
 **Behavior:**
-- Startup: logs `WARN`-level message: `"Authentication bypass is ACTIVE — all requests authenticated as {role}/{email}"`
-- All endpoints behave as if a valid JWT was provided for the mock user
-- If `AUTH_BYPASS_ENABLED=true` and `ENVIRONMENT` is `production`, `staging`, or `qa`, the server returns **500** on every request with error: `"Auth bypass is not permitted in {environment}"`
-- When `AUTH_BYPASS_ENABLED=false` (default), zero performance overhead — bypass middleware is not registered
+- Startup: logs `WARN`-level message: `"AUTH_ENABLED=false — authentication is DISABLED. All requests will authenticate as seeded admin ({email}). Do NOT use this setting in production."`
+- First bypassed request: queries DB for admin user by `ADMIN_EMAIL`, caches the payload (`sub` UUID + roles), logs WARN with email and UUID
+- All subsequent requests use the cached payload — no additional DB queries
+- All endpoints behave exactly as if the seeded admin logged in — `/users/me` returns the real admin profile, admin-only endpoints work, audit logs reference the real admin user ID
+- If the admin user does not exist in the DB (migrations not run), raises `RuntimeError` with descriptive message
+- When `AUTH_ENABLED=true` (default), all authentication behavior is identical to the production code path with zero performance overhead
 
 ---
 

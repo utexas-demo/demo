@@ -1,6 +1,6 @@
 # ADR-0023: Authentication Bypass Flag for Development
 
-**Status:** Accepted
+**Status:** Accepted (Amended 2026-02-25 — backend uses real admin identity from DB)
 **Date:** 2026-02-23
 **Deciders:** Development Team
 
@@ -42,23 +42,43 @@ Embed a default dev user/password in the seeded database and have the frontend a
 
 ## Decision
 
-Use **Option A: Environment Variable Auth Bypass Flag**.
+Use **Option A: Environment Variable Auth Bypass Flag**, with an amendment for the backend (2026-02-25): instead of injecting a hardcoded mock identity, the backend queries the real seeded admin user from the database.
 
-When `NEXT_PUBLIC_AUTH_BYPASS_ENABLED=true` is set:
+### Frontend (unchanged)
 
-1. **Frontend** — The auth guard in the Next.js middleware and client-side route protection is skipped. A mock user object is injected into the auth context with a configurable role via `NEXT_PUBLIC_AUTH_BYPASS_ROLE` (defaults to `admin`).
-2. **Backend** — The FastAPI dependency that validates the JWT `Authorization` header accepts a special header value (`Bearer dev-bypass-token`) and resolves to a configurable mock user. This is only active when the backend's `AUTH_BYPASS_ENABLED=true` environment variable is set.
-3. **Guard rails** — The flag defaults to `false` in all environments. The application logs a prominent warning on startup when the bypass is active. CI pipelines for QA, Staging, and Production fail if the flag is detected as enabled.
+When `NEXT_PUBLIC_AUTH_BYPASS_ENABLED=true` is set, the auth guard in the Next.js middleware and client-side route protection is skipped. A mock user object is injected into the auth context with a configurable role via `NEXT_PUBLIC_AUTH_BYPASS_ROLE` (defaults to `admin`).
 
-### Mock User Defaults
+#### Frontend Mock User Defaults
 
 | Field | Default Value | Override Variable |
 |---|---|---|
-| `id` | `00000000-0000-0000-0000-000000000000` | — |
 | `email` | `dev@localhost` | `NEXT_PUBLIC_AUTH_BYPASS_EMAIL` |
 | `name` | `Dev User` | `NEXT_PUBLIC_AUTH_BYPASS_NAME` |
 | `role` | `admin` | `NEXT_PUBLIC_AUTH_BYPASS_ROLE` |
 | `status` | `active` | — |
+
+### Backend (amended 2026-02-25)
+
+When `AUTH_ENABLED=false` is set, the `require_auth` FastAPI dependency skips JWT validation and returns the **real seeded admin user's** identity:
+
+1. On the first bypassed request, `_get_bypass_payload()` queries the `users` table for the user matching `ADMIN_EMAIL` (from `config.py`, default `admin@pms.dev`), loads their roles via `selectinload(User.roles)`, and constructs a payload with the real `sub` (UUID) and `roles`.
+2. The result is cached in a module-level `_bypass_payload_cache` — subsequent requests skip the DB query.
+3. If no user matching `ADMIN_EMAIL` exists (migrations not run), a `RuntimeError` is raised with a descriptive message.
+4. A WARN-level log is emitted at startup (`main.py` lifespan) and on the first bypassed request (`middleware/auth.py`).
+
+**Why real identity instead of a mock?** The original design used a hardcoded fake UUID (`00000000-0000-0000-0000-000000000000`) that didn't exist in the database. This caused endpoints like `/users/me` (which query the DB for the authenticated user's profile) to return 404/500 errors. Using the real seeded admin ensures all endpoints work correctly — `/users/me` returns the admin profile, admin-only endpoints pass RBAC checks, and audit logs reference a real user ID.
+
+#### Backend Bypass Identity
+
+| Field | Source | Fallback |
+|---|---|---|
+| `sub` (UUID) | Real admin user's `id` from DB | — (RuntimeError if not found) |
+| `roles` | Real admin user's roles from DB | — (RuntimeError if not found) |
+| `email` (lookup key) | `ADMIN_EMAIL` setting | `admin@pms.dev` |
+
+### Guard rails
+
+The flag defaults to authentication enabled (`AUTH_ENABLED=true`) in all environments. The application logs a prominent warning on startup when the bypass is active. CI pipelines for QA, Staging, and Production should fail if the flag is detected as disabled.
 
 ## Rationale
 
@@ -85,13 +105,14 @@ Option B was rejected because the setup cost disproportionately exceeds the bene
 - Code paths diverge between dev (bypass) and production (real auth). Bugs in the actual auth flow will not be caught during bypassed development.
 - Developers may defer testing the real auth flow, leading to late-stage integration issues.
 - The `NEXT_PUBLIC_` prefix exposes the flag name in the client bundle (though the value is only set in local `.env` files).
+- The backend bypass requires the database to be running and migrations applied (the admin user must be seeded). This is acceptable since backend development already requires a running database.
 
 ### Mitigations
 
 - **Mandatory auth integration tests** — The CI pipeline runs a dedicated test suite with auth bypass disabled and real (test) credentials to validate the actual auth flow.
 - **PR checklist item** — Any PR touching auth-related code must include a test run with bypass disabled.
 - **`.env.example` documentation** — The bypass flag is documented in `.env.example` with a clear warning that it must never be enabled outside local development.
-- **CI guard** — QA, Staging, and Production deployment pipelines assert that `AUTH_BYPASS_ENABLED` is not set to `true`.
+- **CI guard** — QA, Staging, and Production deployment pipelines assert that `AUTH_ENABLED` is not set to `false`.
 
 ## References
 
