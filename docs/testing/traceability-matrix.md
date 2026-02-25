@@ -3,7 +3,7 @@
 **Document ID:** PMS-RTM-001
 **Version:** 1.8
 **Date:** 2026-02-24
-**Last Updated:** 2026-02-24
+**Last Updated:** 2026-02-25
 
 ---
 
@@ -68,8 +68,10 @@
 | TST-PR-0014-AI | Image embedding generation and pgvector cosine similarity search | pms-backend (CDS) | — (not implemented) | SUB-PR-0014, SYS-REQ-0012 | — | — |
 | TST-PR-0015-BE | Risk score calculation with configurable clinical thresholds | pms-backend | — (not implemented) | SUB-PR-0015, SYS-REQ-0012 | — | — |
 | TST-PR-0015-WEB | Risk assessment banner with severity color coding and disclaimer | pms-frontend | — (not implemented) | SUB-PR-0015, SYS-REQ-0012 | — | — |
+| TST-PR-0015-AI | Risk scoring algorithm: probability aggregation across malignant classes, configurable thresholds, referral urgency derivation with anatomical site escalation | pms-backend (CDS) | — (not implemented) | SUB-PR-0015, SYS-REQ-0012 | — | — |
 | TST-PR-0016-BE | Lesion history endpoint returns chronological results with change detection | pms-backend | — (not implemented) | SUB-PR-0016, SYS-REQ-0012 | — | — |
 | TST-PR-0016-WEB | Lesion change timeline with assessment history and change indicators | pms-frontend | — (not implemented) | SUB-PR-0016, SYS-REQ-0012 | — | — |
+| TST-PR-0016-AI | Longitudinal change detection: cosine distance between current and prior embeddings, configurable threshold, first-assessment null handling | pms-backend (CDS) | — (not implemented) | SUB-PR-0016, SYS-REQ-0012 | — | — |
 | TST-PR-0017-BE | Backend thin proxy for DermaCheck pipeline: validate input, forward to CDS, persist DermaCheckResult, return response | pms-backend | — (not implemented) | SUB-PR-0017, SYS-REQ-0013 | — | — |
 | TST-PR-0017-AI | CDS parallel fan-out orchestration: classify then gather(narrative, similarity, risk) with per-stage timeouts and graceful degradation | pms-backend (CDS) | — (not implemented) | SUB-PR-0017, SYS-REQ-0013 | — | — |
 | TST-CW-0001 | Verify encounter endpoints require auth token | pms-backend | — (not implemented) | SUB-CW-0001, SYS-REQ-0001 | — | — |
@@ -179,8 +181,8 @@ Compact view of platform requirement status per domain requirement. Domain statu
 | SUB-PR-0011 | Not Started | Not Started | — | Not Started | Not Started |
 | SUB-PR-0013 | Not Started | Not Started | Not Started | Not Started | Not Started |
 | SUB-PR-0014 | Not Started | Not Started | Not Started | — | Not Started |
-| SUB-PR-0015 | Not Started | Not Started | Not Started | — | — |
-| SUB-PR-0016 | Not Started | Not Started | Not Started | — | — |
+| SUB-PR-0015 | Not Started | Not Started | Not Started | — | Not Started |
+| SUB-PR-0016 | Not Started | Not Started | Not Started | — | Not Started |
 | SUB-PR-0017 | Not Started | Not Started | — | — | Not Started |
 | SUB-PR-0018 | Not Started | Not Started | Not Started | Not Started | — |
 
@@ -245,8 +247,8 @@ Compact view of platform requirement status per domain requirement. Domain statu
 | BE | 51 | 3 | 2 | 0 | 0 | 16 | 30 |
 | WEB | 27 | 0 | 0 | 0 | 5 | 0 | 22 |
 | AND | 21 | 0 | 0 | 0 | 4 | 0 | 17 |
-| AI | 7 | 0 | 0 | 0 | 0 | 0 | 7 |
-| **Total** | **106** | **3** | **2** | **0** | **9** | **16** | **76** |
+| AI | 9 | 0 | 0 | 0 | 0 | 0 | 9 |
+| **Total** | **108** | **3** | **2** | **0** | **9** | **16** | **78** |
 
 ### Test ID Migration Note
 
@@ -271,15 +273,17 @@ Existing test IDs are preserved as-is in the backward traceability section. The 
 
 | Subsystem | Domain Reqs | Platform Reqs | With Tests | Passing | Failing | No Tests | Domain Coverage |
 |---|---|---|---|---|---|---|---|
-| Patient Records (PR) | 18 | 41 | 6 | 6 | 0 | 12 | 33.3% |
+| Patient Records (PR) | 18 | 43 | 6 | 6 | 0 | 12 | 33.3% |
 | Clinical Workflow (CW) | 10 | 20 | 1 | 1 | 0 | 9 | 10.0% |
 | Medication Mgmt (MM) | 9 | 13 | 2 | 2 | 0 | 7 | 22.2% |
 | Reporting (RA) | 8 | 19 | 0 | 0 | 0 | 8 | 0.0% |
 | Prompt Mgmt (PM) | 7 | 13 | 0 | 0 | 0 | 7 | 0.0% |
 | System (SYS) | 14 | — | 1 | 1 | 0 | 13 | 7.1% |
-| **TOTAL** | **66** | **106** | **10** | **10** | **0** | **56** | **15.2%** |
+| **TOTAL** | **66** | **108** | **10** | **10** | **0** | **56** | **15.2%** |
 
-> **Note on v1.8 updates (DermaCheck Client Flow — SYS-REQ-0014):** Added SYS-REQ-0014 (DermaCheck Client Capture-Classify-Review Flow) to forward traceability with 2 subsystem requirements (SUB-PR-0018, SUB-CW-0010). Added 6 backward traceability test stubs: TST-PR-0018-BE/WEB/AND, TST-CW-0010-BE/WEB/AND, plus TST-SYS-0014 system test. Platform Traceability Summary updated: SUB-PR expanded from 38→41 platform reqs (BE=16→17, WEB=8→9, AND=8→9), SUB-CW expanded from 17→20 platform reqs (BE=9→10, WEB=4→5, AND=4→5). Coverage Summary by Platform updated: BE 49→51, WEB 25→27, AND 19→21, AI 7 (unchanged), Total 100→106. Domain req totals: PR 17→18, CW 9→10, SYS 13→14, overall 63→66. Overall domain coverage: 15.9%→15.2% (increased denominator from new requirements).
+> **Note on v1.8 updates (DermaCheck Client Flow — SYS-REQ-0014):** Added SYS-REQ-0014 (DermaCheck Client Capture-Classify-Review Flow) to forward traceability with 2 subsystem requirements (SUB-PR-0018, SUB-CW-0010). Added 6 backward traceability test stubs: TST-PR-0018-BE/WEB/AND, TST-CW-0010-BE/WEB/AND, plus TST-SYS-0014 system test. Platform Traceability Summary updated: SUB-PR expanded from 38→41 platform reqs (BE=16→17, WEB=8→9, AND=8→9), SUB-CW expanded from 17→20 platform reqs (BE=9→10, WEB=4→5, AND=4→5). Coverage Summary by Platform updated: BE 49→51, WEB 25→27, AND 19→21, Total 100→106. Domain req totals: PR 17→18, CW 9→10, SYS 13→14, overall 63→66.
+
+> **Note on v1.8 updates (AI platform gap resolution):** Added 2 AI platform requirements: SUB-PR-0015-AI (risk scoring algorithm) and SUB-PR-0016-AI (longitudinal change detection). Added 2 backward traceability test stubs: TST-PR-0015-AI, TST-PR-0016-AI. Platform Traceability Summary updated: SUB-PR-0015 and SUB-PR-0016 now show AI column (Not Started). Coverage Summary by Platform updated: AI 7→9, Total 102→108. SUB-PR platform reqs 40→43. SUB-PR-0017-AI description enhanced with explicit Gemma 3 narrative acceptance criteria (top-3 summary, clinical significance, disclaimer, 500-token max). Overall domain coverage: 15.2% (combined with DermaCheck Client Flow additions).
 
 > **Note on v1.7 updates (DermaCheck Orchestration — SYS-REQ-0013):** Added SYS-REQ-0013 (DermaCheck Workflow Orchestration) to forward traceability with 2 subsystem requirements (SUB-PR-0017, SUB-CW-0009). Added 5 backward traceability test stubs: TST-PR-0017-BE/AI, TST-CW-0009-BE/WEB/AND, plus TST-SYS-0013 system test. Platform Traceability Summary updated: SUB-PR expanded from 36→38 platform reqs (BE=15→16, AI=5→6), SUB-CW expanded from 14→17 platform reqs (BE=8→9, WEB=3→4, AND=3→4). Coverage Summary by Platform updated: BE 47→49, WEB 24→25, AND 18→19, AI 6→7, Total 95→100. Domain req totals: PR 16→17, CW 8→9, SYS 12→13, overall 60→63. Overall domain coverage: 16.7%→15.9% (increased denominator from new requirements).
 
