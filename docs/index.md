@@ -174,6 +174,11 @@ _No bug fixes documented yet._
 ### Atlas — Agentic AI in Healthcare (50 Use Cases Synergy Analysis)
 - [Atlas Agentic AI Healthcare Synergies](experiments/23-Atlas-Agentic-AI-Healthcare-Synergies.md) — Mapping of 50 agentic AI healthcare use cases from the Atlas publication against PMS subsystems and experiments, with priority synergy matrix and new agentic ideas
 
+### Knowledge Work Plugins (Claude Code Plugin Framework for Healthcare Development)
+- [PRD: Knowledge Work Plugins PMS Integration](experiments/24-PRD-KnowledgeWorkPlugins-PMS-Integration.md) — Custom Claude Code healthcare plugin bundling PMS-specific skills, HIPAA compliance enforcement, clinical workflow commands, and MCP connections into an installable developer experience package
+- [Knowledge Work Plugins Setup Guide](experiments/24-KnowledgeWorkPlugins-PMS-Developer-Setup-Guide.md) — Plugin directory creation, skill authoring, command building, MCP configuration, hook setup, and local testing with `--plugin-dir`
+- [Knowledge Work Plugins Developer Tutorial](experiments/24-KnowledgeWorkPlugins-Developer-Tutorial.md) — Hands-on onboarding: build a medication reconciliation command, FHIR interop skill, evaluate plugin strengths/weaknesses, and distribute via marketplace
+
 ---
 
 ## Documentation Views
