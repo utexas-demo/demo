@@ -1,8 +1,8 @@
 # Product Requirements Document: Qwen 3.5 Integration into Patient Management System (PMS)
 
 **Document ID:** PRD-PMS-QWEN35-001
-**Version:** 1.0
-**Date:** 2026-02-22
+**Version:** 1.1
+**Date:** March 2, 2026
 **Author:** Ammar (CEO, MPS Inc.)
 **Status:** Draft
 
@@ -10,7 +10,7 @@
 
 ## 1. Executive Summary
 
-Qwen 3.5 is Alibaba Cloud's open-weight Mixture-of-Experts (MoE) language model, released on February 16, 2026. The flagship model, Qwen3.5-397B-A17B, contains 397 billion total parameters but activates only 17 billion per forward pass through a sparse MoE architecture with 512 experts. This achieves near-frontier performance — 83.6 on LiveCodeBench v6, 91.3 on AIME26, 88.4 on GPQA Diamond, and top-1% CodeForces Elo (2056) — while consuming a fraction of the compute of dense models with equivalent capability. The model supports a 1M token context window and native multimodal input (text + image + video) via early fusion, all under the permissive Apache 2.0 license.
+Qwen 3.5 is Alibaba Cloud's open-weight Mixture-of-Experts (MoE) language model family, with the flagship Qwen3.5-397B-A17B released on February 16, 2026 and the full family (0.8B through 397B) completed by March 2, 2026. The flagship contains 397 billion total parameters but activates only 17 billion per forward pass through a sparse MoE architecture with 512 experts, using a novel hybrid of Gated DeltaNet (linear attention) and standard attention layers. This achieves near-frontier performance — 83.6 on LiveCodeBench v6, 91.3 on AIME26, 88.4 on GPQA Diamond, 76.4 on SWE-bench Verified, and 99.0 on HumanEval — while consuming a fraction of the compute of dense models. The model supports a 262K native context window (extendable to 1M+ via YaRN RoPE scaling), native multimodal input (text + image + video) via early fusion, and 201 languages, all under the permissive Apache 2.0 license.
 
 Integrating Qwen 3.5 into the PMS provides a **high-performance on-premise reasoning and code generation engine** that complements the existing Gemma 3 integration (Experiment 13). While Gemma 3 excels at clinical multimodal tasks (medical imaging, encounter summarization, MedGemma clinical QA), Qwen 3.5 fills a distinct gap: complex clinical reasoning, structured data transformation, agentic workflow automation, and code generation for clinical rule engines. With only 17B active parameters per token, it achieves inference efficiency comparable to much smaller models while delivering frontier-class reasoning.
 
@@ -107,15 +107,21 @@ flowchart TB
 - TLS 1.3 encryption for all internal service-to-service communication
 - Same RBAC controls as Gemma 3 integration (Experiment 13)
 
-**Model Selection Strategy:**
+**Qwen 3.5 Model Family (as of March 2, 2026):**
 
-| Model | Architecture | Active Params | VRAM (int4) | Use Case |
-|-------|-------------|---------------|-------------|----------|
-| Qwen3.5-397B-A17B | MoE (512 experts) | 17B | ~50 GB (2x GPU) | Complex reasoning, differential diagnosis, long-context analysis |
-| Qwen3-32B | Dense | 32B | ~18 GB | Clinical protocol navigation, code generation, structured extraction |
-| Qwen3-8B | Dense | 8B | ~5 GB | Real-time autocomplete, quick reasoning, medication lookups |
-| Gemma 3 27B-IT | Dense | 27B | ~14.1 GB | Clinical summarization, multimodal imaging (Exp 13) |
-| MedGemma 27B | Dense | 27B | ~14.1 GB | Medical QA, CXR analysis, pathology (Exp 13) |
+| Model | Architecture | Active Params | VRAM (Q4) | Context | Use Case |
+|-------|-------------|---------------|-----------|---------|----------|
+| Qwen3.5-397B-A17B | MoE (512 experts) | 17B | ~214 GB (4-8x GPU) | 262K–1M+ | Complex reasoning, differential diagnosis, long-context |
+| Qwen3.5-122B-A10B | MoE | 10B | ~81 GB (2x GPU) | 1M+ | Mid-tier reasoning, tool use (72.2 BFCL-V4) |
+| Qwen3.5-35B-A3B | MoE | 3B | ~24 GB (1x GPU) | 256K | **Consumer sweet spot** — surpasses prev Qwen3-235B |
+| Qwen3.5-27B | Dense | 27B | ~17 GB | 800K+ | Dense alternative, ties GPT-5 mini on SWE-bench (72.4) |
+| Qwen3.5-9B | MoE/Dense | TBD | ~6 GB | TBD | Fast reasoning (released March 2, 2026) |
+| Qwen3.5-4B | MoE/Dense | TBD | ~3 GB | TBD | Edge/mobile deployment (released March 2, 2026) |
+| Qwen3-32B | Dense | 32B | ~18 GB | 128K | Clinical protocol navigation, structured extraction |
+| Gemma 3 27B-IT | Dense | 27B | ~14.1 GB | 128K | Clinical summarization, multimodal imaging (Exp 13) |
+| MedGemma 27B | Dense | 27B | ~14.1 GB | 128K | Medical QA, CXR analysis, pathology (Exp 13) |
+
+> **New recommendation:** For single-GPU consumer deployments, **Qwen3.5-35B-A3B** (24 GB, 3B active params) replaces Qwen3-32B as the default reasoning model — it achieves higher benchmarks with less active compute.
 
 **Task Routing Matrix:**
 
@@ -227,19 +233,24 @@ Qwen 3.5 interacts with the following PMS APIs through the AI Gateway:
 
 | Component | Requirement |
 |-----------|------------|
-| GPU (397B int4) | 2x NVIDIA A100 80GB or 2x H100 80GB (tensor parallel) |
-| GPU (32B int4) | 1x NVIDIA GPU with 24+ GB VRAM (RTX 4090, A6000, L40) |
-| GPU (8B int4) | 1x NVIDIA GPU with 8+ GB VRAM (RTX 3070, RTX 4060 Ti) |
+| GPU (397B FP8) | 8x H200 80GB or 4x GB200 (tensor + expert parallel) |
+| GPU (397B NVFP4) | 4x H100 80GB (~200 GB) |
+| GPU (397B Q4 GGUF) | 214–256 GB combined (e.g., 4x A100 80GB) |
+| GPU (122B-A10B) | 2x A100 80GB |
+| GPU (35B-A3B Q4) | 1x RTX 4090 24GB — **consumer sweet spot** |
+| GPU (27B Q4) | 1x RTX 4090 or RTX 3090 24GB (~17 GB) |
+| GPU (9B Q4) | 1x RTX 3060 12GB (~6 GB) |
 | RAM | 64 GB system RAM minimum (128 GB recommended for 397B) |
 | Storage | 250 GB for Qwen model files + existing Gemma storage |
-| vLLM | vLLM 0.7+ with MoE support |
+| vLLM | vLLM nightly (0.17.0 pending GA) with MoE/expert parallel support |
 | Docker | Docker 24+ with NVIDIA Container Toolkit |
 | OS | Ubuntu 22.04 LTS or later |
+| Supported GPUs | NVIDIA H200, H100, A100, L40, RTX 4090; AMD MI300X/MI325X/MI35X |
 
 ## 7. Implementation Phases
 
 ### Phase 1: Foundation (Sprints 1-2, 4 weeks)
-- Deploy vLLM with Qwen3-8B and Qwen3-32B in Docker
+- Deploy vLLM (nightly/0.17.0) with Qwen3.5-35B-A3B (single GPU) and optionally Qwen3.5-9B in Docker
 - Extend AI Gateway with Qwen model routing and task-type headers
 - Implement Clinical Reasoning Engine with thinking mode
 - Add Qwen models to model health checks and audit logging
@@ -280,7 +291,8 @@ Qwen 3.5 interacts with the following PMS APIs through the AI Gateway:
 |------|--------|------------|
 | 397B model requires 2x A100/H100 GPUs ($20,000-$60,000) | High upfront CapEx | Start with Qwen3-32B on existing GPU; upgrade when ROI justified |
 | MoE architecture has higher memory bandwidth requirements | Inference slower than expected | Use vLLM with optimized MoE kernels; enable tensor parallelism |
-| Qwen 3.5 not trained specifically on medical data | Lower clinical accuracy than MedGemma | Use for reasoning/coding tasks, not clinical QA; MedGemma handles medical-specific tasks |
+| Qwen 3.5 not trained specifically on medical data | Lower clinical accuracy than MedGemma | Use for reasoning/coding tasks, not clinical QA; MedGemma handles medical-specific tasks. Community medical fine-tunes available (Qwen-3-32B-Medical-Reasoning) for evaluation |
+| MCP tool calling regression on long requests | Multi-step agentic workflows may fail | Monitor [GitHub issue #12](https://github.com/QwenLM/Qwen3.5/issues/12); fall back to direct API calls for critical paths |
 | 1M token context requires significant KV cache memory | OOM on long patient histories | Implement progressive context loading; fall back to chunked analysis |
 | Thinking mode produces verbose reasoning chains | Storage bloat in audit logs | Compress thinking chains after 90-day retention; summarize for long-term archive |
 | Alibaba Cloud model — geopolitical/supply chain risk | Model access restricted | Download and archive all weights offline under Apache 2.0; no cloud dependency |
@@ -291,11 +303,12 @@ Qwen 3.5 interacts with the following PMS APIs through the AI Gateway:
 
 | Dependency | Type | Notes |
 |------------|------|-------|
-| Qwen3.5-397B-A17B weights | Model | Downloaded from Hugging Face (Qwen/Qwen3.5-397B-A17B) |
-| Qwen3-32B weights | Model | Downloaded from Hugging Face (Qwen/Qwen3-32B) |
-| Qwen3-8B weights | Model | Downloaded from Hugging Face (Qwen/Qwen3-8B) |
-| vLLM | Inference Runtime | Apache 2.0 licensed; MoE support required |
-| NVIDIA GPU (2x A100/H100 for 397B) | Hardware | Tensor parallelism for MoE model |
+| Qwen3.5-397B-A17B weights | Model | Downloaded from Hugging Face; FP8 or NVFP4 recommended |
+| Qwen3.5-35B-A3B weights | Model | Consumer-friendly MoE model (24 GB Q4, fits RTX 4090) |
+| Qwen3.5-27B weights | Model | Dense alternative (17 GB Q4) |
+| Qwen3.5-9B weights | Model | Fast inference for real-time tasks |
+| vLLM | Inference Runtime | Nightly/0.17.0+; Apache 2.0; `--enable-expert-parallel` for MoE |
+| NVIDIA GPU (4-8x H100/H200 for 397B) | Hardware | Tensor + expert parallelism for flagship model |
 | PMS Backend API | Internal | FastAPI endpoints for patients, encounters, prescriptions |
 | AI Gateway (Experiment 13) | Internal | Existing OpenAI-compatible proxy — extended, not replaced |
 | Redis | Cache | Response caching (shared with Gemma 3 setup) |
@@ -329,28 +342,45 @@ Adaptive Thinking routes between Claude effort levels for cloud-based reasoning.
 AI Zero-Day Scan uses Claude for security analysis. Qwen 3.5's top-1% coding performance makes it a viable **on-premise replacement** for code security analysis, eliminating cloud API dependency for security scanning of PMS source code.
 
 ### vs. Experiment 15 — Claude Model Selection
-Claude Model Selection optimizes cost across Claude model tiers. Qwen 3.5's model family (8B/32B/397B) provides an **analogous local tier structure** — the same routing logic (complexity estimation → tier selection) applies to on-premise models.
+Claude Model Selection optimizes cost across Claude model tiers. Qwen 3.5's expanded model family (4B/9B/27B/35B-A3B/122B-A10B/397B-A17B) provides an **even richer local tier structure** — the same routing logic applies with more granularity.
+
+### vs. Experiment 09 — MCP (Model Context Protocol)
+Qwen 3.5 now supports MCP via the [Qwen-Agent framework](https://qwenlm.github.io/Qwen-Agent/en/guide/core_moduls/mcp/) (`pip install -U "qwen-agent[mcp]"`). This means PMS MCP servers (Experiment 09) can be used with Qwen 3.5 as the model backend — providing on-premise, zero-PHI-egress tool discovery and invocation. Note: a [known issue](https://github.com/QwenLM/Qwen3.5/issues/12) with tool calling regression on longer multi-step requests is being tracked.
+
+### vs. Experiment 27 — Claude Code / Experiment 28 — AI Coding Tools
+The open-source [Qwen-Code](https://github.com/QwenLM/qwen-code) terminal agent provides a Claude Code-equivalent experience backed by Qwen models, with native MCP support. This is a key component of the emergency transition playbook documented in [Experiment 28](28-AI-Coding-Tools-Landscape-2026.md).
 
 ## 12. Research Sources
 
 ### Official Documentation
-- [Qwen 3.5 Developer Guide — NxCode](https://www.nxcode.io/resources/news/qwen-3-5-developer-guide-api-visual-agents-2026) — Architecture, API access, self-hosting instructions
-- [Qwen3.5 GitHub Repository](https://github.com/QwenLM/Qwen3.5) — Source code, model cards, deployment examples
-- [Qwen3.5 Ollama Registry](https://ollama.com/library/qwen3.5) — Ollama model tags and download commands
-- [Qwen3.5 vLLM Usage Guide](https://docs.vllm.ai/projects/recipes/en/latest/Qwen/Qwen3.5.html) — vLLM deployment with MoE optimizations
+- [Qwen3.5 GitHub Repository](https://github.com/QwenLM/Qwen3.5) — Full model family, releases, deployment examples
+- [Qwen3.5-397B-A17B on Hugging Face](https://huggingface.co/Qwen/Qwen3.5-397B-A17B) — Model card, 1.1M+ downloads, 28 community quantizations
+- [Qwen3.5 Ollama Registry](https://ollama.com/library/qwen3.5) — 12 model tags including 27B, 35B, 122B, cloud variants
+- [Qwen3.5 vLLM Usage Guide](https://docs.vllm.ai/projects/recipes/en/latest/Qwen/Qwen3.5.html) — vLLM nightly/0.17.0 deployment with expert parallelism, FP8/NVFP4
+- [Qwen-Agent MCP Documentation](https://qwenlm.github.io/Qwen-Agent/en/guide/core_moduls/mcp/) — MCP server integration via Qwen-Agent framework
+- [Qwen-Code Terminal Agent](https://github.com/QwenLM/qwen-code) — Open-source Claude Code alternative with MCP support
 
 ### Architecture & Benchmarks
 - [Qwen 3.5 Complete Guide — Digital Applied](https://www.digitalapplied.com/blog/qwen-3-5-agentic-ai-benchmarks-guide) — 397B MoE benchmarks, pricing, agentic capabilities
-- [Qwen 3.5 NVIDIA NIM Model Card](https://build.nvidia.com/qwen/qwen3.5-397b-a17b/modelcard) — Hardware requirements, deployment on NVIDIA infrastructure
-- [VentureBeat — Qwen 3.5 Analysis](https://venturebeat.com/technology/alibabas-qwen-3-5-397b-a17-beats-its-larger-trillion-parameter-model-at-a) — Performance vs cost analysis
-- [Analytics Vidhya — Hands-on Tests](https://www.analyticsvidhya.com/blog/2026/02/qwen3-5-open-weight-qwen3-5-plus/) — Real-world testing and evaluation
+- [Qwen 3.5 Medium Series — Digital Applied](https://www.digitalapplied.com/blog/qwen-3-5-medium-model-series-benchmarks-pricing-guide) — 27B/35B/122B benchmarks and pricing
+- [Qwen 3.5 NVIDIA NIM Model Card](https://build.nvidia.com/qwen/qwen3.5-397b-a17b/modelcard) — Hardware requirements, NVIDIA deployment
+- [VentureBeat — Qwen 3.5 Medium Models](https://venturebeat.com/technology/alibabas-new-open-source-qwen3-5-medium-models-offer-sonnet-4-5-performance) — Medium series achieves Sonnet-class performance
+- [Best AI for Coding 2026 — Marc0.dev](https://www.marc0.dev/en/blog/best-ai-for-coding-2026-swe-bench-breakdown-opus-4-6-qwen3-coder-next-gpt-5-3-and-what-actually-matters-1770387434111) — SWE-bench breakdown across all models
+- [AMD Day-0 Support for Qwen 3.5](https://www.amd.com/en/developer/resources/technical-articles/2026/day-0-support-for-qwen-3-5-on-amd-instinct-gpus.html) — MI300X/MI325X/MI35X verified
 
-### Function Calling & Structured Output
+### Medical AI & Fine-Tuning
+- [Qwen-3-32B-Medical-Reasoning — Hugging Face](https://huggingface.co/nicoboss/Qwen-3-32B-Medical-Reasoning) — Community medical reasoning fine-tune
+- [Fine-Tuning Qwen3-8B for Medical Reasoning — E2E Networks](https://www.e2enetworks.com/blog/fine-tuning-qwen3-8b-medical-reasoning-qlora-e2e-networks-a100) — QLoRA medical fine-tune guide (<$3 training cost)
+- [Qwen3-Medical-SFT GitHub](https://github.com/Zeyi-Lin/Qwen3-Medical-SFT) — R1-style medical chat fine-tune
+
+### Coding Capabilities
+- [Qwen3-Coder-Next Blog](https://qwen.ai/blog?id=qwen3-coder-next) — 80B-A3B dedicated coding model (70.6 SWE-bench)
 - [Qwen Function Calling Documentation](https://qwen.readthedocs.io/en/latest/framework/function_call.html) — Tool use and function calling guide
 - [Qwen Structured Output — Alibaba Cloud](https://www.alibabacloud.com/help/en/model-studio/qwen-structured-output) — JSON mode and schema enforcement
 
 ### Comparison
 - [Gemma 3 vs Qwen 3 Comparison — CoderSera](https://codersera.com/blog/gemma-3-vs-qwen-3-in-depth-comparison-of-two-leading-open-source-llms) — Feature-by-feature comparison
+- [Kimi 2.5 vs Qwen 3.5 vs DeepSeek R2 — Index.dev](https://www.index.dev/blog/kimi-2-5-vs-qwen-3-5-vs-deepseek-r2) — Frontier open-weight model comparison
 
 ## 13. Appendix: Related Documents
 

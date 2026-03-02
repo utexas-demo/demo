@@ -5,8 +5,8 @@
 This tutorial will take you from zero to building your first Qwen 3.5 integration with the PMS. By the end, you will understand how Qwen 3.5's Mixture-of-Experts architecture works, how it complements Gemma 3 for clinical AI, and have built and tested a clinical reasoning pipeline end-to-end.
 
 **Document ID:** PMS-EXP-QWEN35-002
-**Version:** 1.0
-**Date:** 2026-02-22
+**Version:** 1.1
+**Date:** 2026-03-02
 **Applies To:** PMS project (all platforms)
 **Prerequisite:** [Qwen 3.5 Setup Guide](20-Qwen35-PMS-Developer-Setup-Guide.md)
 **Estimated time:** 2-3 hours
@@ -18,7 +18,7 @@ This tutorial will take you from zero to building your first Qwen 3.5 integratio
 
 1. What Qwen 3.5 is and why its MoE architecture matters for on-premise healthcare AI
 2. How Qwen 3.5 complements Gemma 3 in the PMS dual-model strategy
-3. How Mixture-of-Experts routing activates only 17B of 397B parameters per token
+3. How Mixture-of-Experts routing activates only 17B of 397B parameters per token (or 3B of 35B in the consumer model)
 4. How thinking mode produces auditable clinical reasoning chains
 5. How to build a differential diagnosis pipeline with Qwen 3.5
 6. How to use function calling for structured medication interaction analysis
@@ -41,8 +41,8 @@ The PMS already has Gemma 3 (Experiment 13) providing on-premise clinical AI. So
 | Medical image analysis (CXR, pathology) | Excellent (MedGemma) | Limited | Gemma 3 |
 | Multi-step differential diagnosis | Good | Excellent (thinking mode) | Qwen 3.5 |
 | ICD-10/CPT code extraction (structured) | Good | Excellent (JSON schema) | Qwen 3.5 |
-| Clinical rule code generation | Adequate | Excellent (top-1% CodeForces) | Qwen 3.5 |
-| Long patient history analysis (500K+ tokens) | 128K limit | 1M token context | Qwen 3.5 |
+| Clinical rule code generation | Adequate | Excellent (SWE-bench 76.4%) | Qwen 3.5 |
+| Long patient history analysis (500K+ tokens) | 128K limit | 262K native (1M YaRN) | Qwen 3.5 |
 | Drug interaction cascade (5+ medications) | Adequate | Excellent | Qwen 3.5 |
 | Medical QA (clinical guidelines) | Excellent (MedGemma) | Good | Gemma 3 |
 
@@ -59,13 +59,13 @@ flowchart TB
     end
 
     subgraph MoE["Mixture-of-Experts (MoE)"]
-        ROUTER["Expert Router<br/>Selects 10 of 512"]
-        subgraph Experts["Expert Pool (512 total)"]
+        ROUTER["Expert Router<br/>Selects 10 of 512 (397B)<br/>or 4 of 128 (35B)"]
+        subgraph Experts["Expert Pool"]
             E1["Expert 1"]
             E2["Expert 2"]
             E10["Expert 10"]
             SHARED["Shared Expert<br/>(Always Active)"]
-            DOTS1["...502 inactive..."]
+            DOTS1["...remaining inactive..."]
         end
         GDN["Gated DeltaNet<br/>Linear Attention"]
     end
@@ -106,7 +106,7 @@ flowchart TB
     style ANSWER fill:#C8E6C9,stroke:#2E7D32,color:#000
 ```
 
-**The key insight:** Each token only activates 10 routed experts + 1 shared expert out of 512 total. This means the 397B model uses only ~17B parameters per forward pass — achieving frontier reasoning with mid-tier compute costs.
+**The key insight:** Each token only activates a small subset of experts. In the 397B flagship, 10 of 512 experts activate (~17B active params). In the consumer-friendly 35B-A3B, 4 of 128 experts activate (~3B active params) — achieving strong reasoning on a single RTX 4090 24GB GPU. Both use Gated DeltaNet linear attention for efficient long-context processing.
 
 ### 1.3 How Qwen 3.5 Fits with Other PMS Technologies
 
@@ -117,23 +117,27 @@ flowchart TB
 | 07 — MedASR | Medical speech-to-text | **Upstream** — MedASR transcribes, Qwen reasons over the transcript |
 | 10 — Speechmatics | Real-time transcription | **Upstream** — Real-time transcript feeds into Qwen reasoning pipeline |
 | 11 — Sanford Guide | Antimicrobial CDS | **Complementary** — Qwen generates natural-language explanations for Sanford Guide recommendations |
-| 12 — AI Zero-Day Scan | Security code analysis | **Potential replacement** — Qwen's top-1% coding could replace cloud Claude for code security review |
-| 15 — Claude Model Selection | Cost-optimized model routing | **Pattern reuse** — Same routing logic applies to Qwen 8B/32B/397B tiers |
+| 09 — MCP | Model Context Protocol | **Complementary** — Qwen-Agent MCP support enables tool-use workflows via `pip install -U "qwen-agent[mcp]"` |
+| 12 — AI Zero-Day Scan | Security code analysis | **Potential replacement** — Qwen's SWE-bench 76.4% could replace cloud Claude for code security review |
+| 15 — Claude Model Selection | Cost-optimized model routing | **Pattern reuse** — Same routing logic applies to Qwen 9B/35B/397B tiers |
 | 18 — ISIC Archive | Dermatology CDS | **Complementary** — ISIC handles image classification; Qwen generates clinical reasoning for risk assessment |
+| 26 — LangGraph | Stateful agents | **Downstream** — LangGraph orchestrates multi-step agent workflows with Qwen as the reasoning engine |
+| 27 — Claude Code | AI coding tool | **Complementary** — Claude Code for development workflow; Qwen for on-premise production inference |
+| 28 — AI Coding Tools | Landscape comparison | **Reference** — Emergency transition roadmap if cloud tools become unavailable |
 
 ### 1.4 Key Vocabulary
 
 | Term | Meaning |
 |------|---------|
 | **MoE (Mixture-of-Experts)** | Architecture where each token is processed by a subset of "expert" neural networks, not the full model |
-| **Active Parameters** | The 17B parameters actually used per token (out of 397B total) |
-| **Expert Router** | Neural network that decides which 10 of 512 experts to activate for each token |
+| **Active Parameters** | The subset of parameters actually used per token — 17B/397B (flagship), 10B/122B (medium), or 3B/35B (consumer) |
+| **Expert Router** | Neural network that decides which experts to activate for each token (10 of 512 in 397B, 4 of 128 in 35B) |
 | **Shared Expert** | One expert that always activates for every token, providing common knowledge |
 | **Gated DeltaNet** | Qwen 3.5's hybrid linear attention mechanism — uses 64 heads for values and 16 for queries/keys |
 | **Thinking Mode** | Explicit reasoning mode where Qwen shows step-by-step logic before answering |
 | **JSON Schema Mode** | Structured output mode that guarantees valid JSON conforming to a provided schema |
 | **vLLM** | High-throughput inference engine optimized for MoE models with tensor parallelism |
-| **AWQ (Activation-Aware Quantization)** | Quantization method that selectively preserves important weights, used for int4 Qwen models |
+| **FP8 / NVFP4** | Quantization formats — FP8 halves memory vs FP16; NVFP4 halves again. Used for deploying 397B on fewer GPUs |
 | **Tensor Parallelism** | Splitting a model across multiple GPUs, required for the 397B model |
 | **Apache 2.0** | Permissive open-source license — no restrictions on commercial healthcare use, no telemetry |
 
@@ -163,8 +167,8 @@ flowchart TB
     end
 
     subgraph VLLM["vLLM :8080"]
-        Q32["Qwen3-32B"]
-        Q8["Qwen3-8B"]
+        Q35["Qwen3.5-35B-A3B"]
+        Q9["Qwen3.5-9B"]
     end
 
     DB[(PostgreSQL :5432)]
@@ -190,8 +194,8 @@ flowchart TB
     style ROUTER fill:#CE93D8,stroke:#7B1FA2,color:#000
     style G27 fill:#FFF59D,stroke:#F9A825,color:#000
     style MG fill:#FFF59D,stroke:#F9A825,color:#000
-    style Q32 fill:#B3E5FC,stroke:#0277BD,color:#000
-    style Q8 fill:#B3E5FC,stroke:#0277BD,color:#000
+    style Q35 fill:#B3E5FC,stroke:#0277BD,color:#000
+    style Q9 fill:#B3E5FC,stroke:#0277BD,color:#000
     style DB fill:#FFB74D,stroke:#F57C00,color:#000
     style CACHE fill:#A5D6A7,stroke:#2E7D32,color:#000
 ```
@@ -211,7 +215,7 @@ curl -s http://localhost:8080/health
 
 # 2. vLLM models loaded
 curl -s http://localhost:8080/v1/models | python3 -c "import sys,json; [print(m['id']) for m in json.load(sys.stdin)['data']]"
-# Expected: qwen3-32b
+# Expected: qwen3.5-35b
 
 # 3. Ollama (Gemma 3 — from Exp 13)
 curl -s http://localhost:11434/api/tags | python3 -c "import sys,json; [print(m['name']) for m in json.load(sys.stdin)['models']]"
@@ -238,7 +242,7 @@ Send a clinical question to Qwen 3.5 and verify you get a reasoning-rich respons
 curl -s http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "qwen3-32b",
+    "model": "qwen3.5-35b",
     "messages": [
       {"role": "system", "content": "You are a clinical reasoning assistant. Think step by step."},
       {"role": "user", "content": "A patient on metformin and lisinopril is starting warfarin. What interactions should I monitor?"}
@@ -345,7 +349,7 @@ async def analyze_interactions(
         user_content += f"\n\nPatient context:\n{patient_context}"
 
     response = await ai_client.chat.completions.create(
-        model="qwen3-32b",
+        model="qwen3.5-35b",
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_content},
@@ -415,7 +419,7 @@ async def api_analyze_interactions(req: InteractionRequest):
         )
         return {
             "result": result,
-            "model": "qwen3-32b",
+            "model": "qwen3.5-35b",
             "disclaimer": "AI-Analyzed — Verify with pharmacist before clinical action",
         }
     except Exception as e:
@@ -657,18 +661,18 @@ export function MedicationInteractions({
 ### 4.1 Strengths
 
 1. **Reasoning Quality:** Qwen 3.5's thinking mode produces multi-step clinical reasoning chains that are auditable — critical for healthcare AI where "why" matters as much as "what"
-2. **Code Generation:** Top-1% CodeForces Elo (2056) means generated clinical rules, alert logic, and data transformations are reliably correct
+2. **Code Generation:** SWE-bench Verified 76.4%, HumanEval 99.0% — generated clinical rules, alert logic, and data transformations are reliably correct
 3. **MoE Efficiency:** 397B total parameters but only 17B active — you get frontier reasoning at mid-tier compute costs
-4. **1M Token Context:** Process entire patient histories without chunking, preserving longitudinal patterns that chunked summarization would lose
+4. **262K Native Context (1M with YaRN):** Process entire patient histories without chunking, preserving longitudinal patterns that chunked summarization would lose
 5. **Structured Output:** JSON schema mode enforces valid JSON structure, eliminating parsing failures in extraction pipelines
-6. **Apache 2.0 License:** No usage restrictions, no telemetry, no BAA needed — most permissive license in the open-weight frontier model space
+6. **Apache 2.0 License:** No usage restrictions, no telemetry, no BAA needed — most permissive license in the open-weight frontier model space. Full model family from 0.8B to 397B under same license
 7. **vLLM Optimization:** Native vLLM support with MoE-specific kernels, continuous batching, and tensor parallelism
 
 ### 4.2 Weaknesses
 
-1. **No Healthcare-Specific Variant:** Unlike Gemma 3 (which has MedGemma), Qwen 3.5 has no medical fine-tune. It relies on general knowledge for clinical tasks
+1. **No Official Healthcare Variant:** Unlike Gemma 3 (which has MedGemma), Qwen 3.5 has no official medical fine-tune. Community medical fine-tunes exist (e.g., Qwen-3-32B-Medical-Reasoning, Qwen3-Medical-SFT) but are not clinically validated
 2. **Multimodal Limitations:** While Qwen 3.5 supports image input via early fusion, it hasn't been validated on medical imaging (CXR, dermoscopy, pathology) — MedGemma is far superior here
-3. **GPU Requirements for 397B:** The flagship model requires 2x A100 80GB (~$20,000-$60,000). The 32B model is more practical for most deployments
+3. **GPU Requirements for 397B:** The flagship model requires 8x H200 (FP8) or 4x H100 (NVFP4). The new 35B-A3B model fits on a single RTX 4090 24GB, making it the practical default
 4. **MoE Memory Bandwidth:** MoE models are memory-bandwidth bound, not compute-bound. Inference speed depends heavily on GPU memory bandwidth, not just FLOPS
 5. **Thinking Mode Latency:** Thinking mode roughly doubles response time. Acceptable for reasoning tasks but too slow for real-time autocomplete
 6. **JSON Schema + Thinking Incompatibility:** JSON schema mode (strict structured output) disables thinking mode. You must choose between auditable reasoning chains and guaranteed JSON structure
@@ -684,11 +688,11 @@ export function MedicationInteractions({
 | Drug interaction analysis (5+ drugs) | **Qwen 3.5** | Complex cascade reasoning |
 | ICD-10 code extraction | **Qwen 3.5** (JSON schema) | Guaranteed valid JSON structure |
 | Clinical rule code generation | **Qwen 3.5** | Top-1% CodeForces code quality |
-| Real-time autocomplete during charting | **Qwen3-8B** or **Gemma 3 4B** | Fastest TTFT, lowest latency |
-| Longitudinal patient analysis (years of data) | **Qwen 3.5** (1M context) | Only model with sufficient context window |
+| Real-time autocomplete during charting | **Qwen3.5-9B** or **Gemma 3 4B** | Fastest TTFT, lowest latency |
+| Longitudinal patient analysis (years of data) | **Qwen 3.5** (262K native) | Largest context window among on-premise models |
 | Medical QA ("What's the first-line treatment for...") | **MedGemma 27B** | 87.7% MedQA — trained for this |
 | Needs to work without any internet | **Either** | Both are fully local after model download |
-| Needs smallest possible GPU | **Gemma 3 4B** (2.6 GB) | Qwen3-8B needs ~5 GB |
+| Needs smallest possible GPU | **Gemma 3 4B** (2.6 GB) | Qwen3.5-4B needs ~3 GB |
 
 ### 4.4 HIPAA / Healthcare Considerations
 
@@ -731,7 +735,7 @@ curl -s http://localhost:8080/v1/models | python3 -m json.tool
 # Pre-warm the model after startup
 curl -s http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -d '{"model": "qwen3-32b", "messages": [{"role": "user", "content": "warmup"}], "max_tokens": 1}' > /dev/null
+  -d '{"model": "qwen3.5-35b", "messages": [{"role": "user", "content": "warmup"}], "max_tokens": 1}' > /dev/null
 
 # Add this to a startup script or Docker healthcheck
 ```
@@ -752,7 +756,7 @@ elif "```" in content:
 
 # For guaranteed JSON, use response_format in non-thinking mode:
 response = await client.chat.completions.create(
-    model="qwen3-32b",
+    model="qwen3.5-35b",
     messages=messages,
     response_format={"type": "json_object"},  # Disables thinking mode
 )
@@ -805,7 +809,7 @@ Build an endpoint that takes a clinical scenario and returns which treatment pro
 
 **Hints:**
 1. Create `app/services/protocol_navigator.py`
-2. Use Qwen3-32B with thinking mode
+2. Use Qwen3.5-35B with thinking mode
 3. System prompt should include common protocol frameworks (e.g., ACLS, Sepsis Bundle)
 4. Output: `{reasoning: "...", protocol: "...", steps: [...], contraindications: [...]}`
 5. Add a `/api/ai/reasoning/protocol` endpoint
@@ -817,7 +821,7 @@ Build a pipeline that takes raw lab results and generates a clinical interpretat
 
 **Hints:**
 1. Create `app/services/lab_interpreter.py`
-2. Use Qwen3-32B with JSON schema mode (non-thinking, for structured output)
+2. Use Qwen3.5-35B with JSON schema mode (non-thinking, for structured output)
 3. Input: list of `{test: "...", value: "...", unit: "...", reference_range: "..."}`
 4. Output: `{interpretations: [{test, status: "normal|low|high|critical", clinical_significance: "..."}], summary: "..."}`
 5. Test with a comprehensive metabolic panel (CMP)
@@ -880,7 +884,7 @@ pms-ai/
 | Router files (Qwen) | `snake_case` matching service | `reasoning.py` |
 | API endpoints (Qwen) | `/api/ai/reasoning/{action}` | `/api/ai/reasoning/differential` |
 | Frontend components (Qwen) | PascalCase with `Panel` suffix | `DifferentialDiagnosisPanel` |
-| Model names in Gateway | `qwen3-{size}` | `qwen3-32b`, `qwen3-8b` |
+| Model names in Gateway | `qwen3.5-{size}` | `qwen3.5-35b`, `qwen3.5-9b` |
 | Task-type headers | `X-Task-Type: {category}` | `X-Task-Type: reasoning` |
 | Docker containers (Qwen) | `pms-vllm` or `pms-vllm-fast` | `pms-vllm` |
 
@@ -917,7 +921,7 @@ When submitting PRs that involve Qwen 3.5:
 | Start all AI services | `cd ~/pms-ai && docker compose up -d` |
 | Check vLLM health | `curl -s http://localhost:8080/health` |
 | List vLLM models | `curl -s http://localhost:8080/v1/models \| python3 -m json.tool` |
-| Quick Qwen test | `curl -s http://localhost:8080/v1/chat/completions -H "Content-Type: application/json" -d '{"model":"qwen3-32b","messages":[{"role":"user","content":"Hello"}]}'` |
+| Quick Qwen test | `curl -s http://localhost:8080/v1/chat/completions -H "Content-Type: application/json" -d '{"model":"qwen3.5-35b","messages":[{"role":"user","content":"Hello"}]}'` |
 | GPU memory usage | `nvidia-smi` |
 | vLLM logs | `docker logs -f pms-vllm` |
 | vLLM metrics | `curl -s http://localhost:8080/metrics` |
@@ -958,7 +962,7 @@ ai_client = AsyncOpenAI(base_url="http://localhost:8001/v1", api_key="not-needed
 
 async def my_clinical_service(patient_data: str) -> dict:
     response = await ai_client.chat.completions.create(
-        model="qwen3-32b",
+        model="qwen3.5-35b",
         messages=[
             {"role": "system", "content": "You are a clinical assistant. Think step by step. Output JSON."},
             {"role": "user", "content": patient_data},
@@ -981,4 +985,4 @@ async def my_clinical_service(patient_data: str) -> dict:
 2. **Explore the [Qwen 3.5 PRD](20-PRD-Qwen35-PMS-Integration.md)** for the full integration roadmap and Phase 2-3 plans
 3. **Review the [Gemma 3 Tutorial (Experiment 13)](13-Gemma3-Developer-Tutorial.md)** if you haven't completed it — understanding both models is essential for dual-model development
 4. **Read the [vLLM Qwen3.5 deployment guide](https://docs.vllm.ai/projects/recipes/en/latest/Qwen/Qwen3.5.html)** for advanced features: tensor parallelism, speculative decoding, and prefix caching
-5. **Evaluate Qwen3.5-397B** if you have access to 2x A100/H100 GPUs — the reasoning quality jump from 32B to 397B is significant for complex clinical scenarios
+5. **Evaluate Qwen3.5-397B** if you have access to 8x H200 or 4x H100 GPUs — the reasoning quality jump from 35B to 397B is significant for complex clinical scenarios

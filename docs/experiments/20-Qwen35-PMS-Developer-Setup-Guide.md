@@ -1,8 +1,8 @@
 # Qwen 3.5 Setup Guide for PMS Integration
 
 **Document ID:** PMS-EXP-QWEN35-001
-**Version:** 1.0
-**Date:** 2026-02-22
+**Version:** 1.1
+**Date:** March 2, 2026
 **Applies To:** PMS project (all platforms)
 **Prerequisites Level:** Intermediate
 
@@ -27,7 +27,7 @@ This guide walks you through deploying Alibaba's Qwen 3.5 open-weight MoE model 
 
 By the end, you will have:
 
-- vLLM running with Qwen3-8B (real-time) and Qwen3-32B (reasoning) models
+- vLLM running with Qwen3.5-9B (real-time) and Qwen3.5-35B-A3B (reasoning) models
 - The existing AI Gateway extended with Qwen model routing
 - PMS Backend connected to Qwen models for clinical reasoning and code generation
 - PMS Frontend displaying reasoning chains from thinking mode
@@ -54,8 +54,8 @@ flowchart LR
         OL["Ollama :11434<br/>(Gemma 3)"]
         VL["vLLM :8080<br/>(Qwen 3.5)"]
         G27["Gemma 3 27B"]
-        Q32["Qwen3-32B"]
-        Q8["Qwen3-8B"]
+        Q35["Qwen3.5-35B-A3B"]
+        Q9["Qwen3.5-9B"]
     end
 
     FE --> API
@@ -64,8 +64,8 @@ flowchart LR
     GW -->|"Clinical tasks"| OL
     GW -->|"Reasoning tasks"| VL
     OL --> G27
-    VL --> Q32
-    VL --> Q8
+    VL --> Q35
+    VL --> Q9
     API --> DB
 
     style FE fill:#4FC3F7,stroke:#0288D1,color:#000
@@ -76,8 +76,8 @@ flowchart LR
     style OL fill:#F48FB1,stroke:#C2185B,color:#000
     style VL fill:#B3E5FC,stroke:#0277BD,color:#000
     style G27 fill:#FFF59D,stroke:#F9A825,color:#000
-    style Q32 fill:#B3E5FC,stroke:#0277BD,color:#000
-    style Q8 fill:#B3E5FC,stroke:#0277BD,color:#000
+    style Q35 fill:#B3E5FC,stroke:#0277BD,color:#000
+    style Q9 fill:#B3E5FC,stroke:#0277BD,color:#000
 ```
 
 ---
@@ -100,13 +100,19 @@ flowchart LR
 
 ### 2.2 GPU Requirements
 
-| Model | Min VRAM | Recommended GPU |
-|-------|----------|-----------------|
-| Qwen3-8B (int4) | 8 GB | RTX 4060 Ti 16GB, RTX 3070 |
-| Qwen3-32B (int4) | 24 GB | RTX 4090, A6000, L40 |
-| Qwen3.5-397B-A17B (int4) | 2x 80 GB | 2x A100 80GB, 2x H100 80GB |
+| Model | Min VRAM (Q4) | Recommended GPU |
+|-------|---------------|-----------------|
+| Qwen3.5-9B | ~6 GB | RTX 3060 12GB, RTX 4060 Ti |
+| Qwen3.5-27B (dense) | ~17 GB | RTX 4090 24GB, RTX 3090 |
+| Qwen3.5-35B-A3B (MoE) | ~24 GB | RTX 4090 24GB — **consumer sweet spot** |
+| Qwen3-32B | ~18 GB | RTX 4090, A6000, L40 |
+| Qwen3.5-122B-A10B | ~81 GB | 2x A100 80GB |
+| Qwen3.5-397B-A17B (FP8) | ~400 GB | 8x H200 80GB or 4x GB200 |
+| Qwen3.5-397B-A17B (NVFP4) | ~200 GB | 4x H100 80GB |
 
-> **Getting started:** This guide uses **Qwen3-8B and Qwen3-32B** which run on a single consumer GPU. The 397B model requires multi-GPU setup and is covered as an advanced option.
+> **Getting started:** This guide uses **Qwen3.5-35B-A3B** (the new consumer sweet spot — 3B active params in 24 GB, outperforms the previous Qwen3-235B-A22B). The 397B flagship requires multi-GPU setup and is covered as an advanced option.
+>
+> **New since v1.0:** The Qwen3.5 medium series (February 24, 2026) and small series (March 2, 2026) offer more deployment options. Qwen3.5-35B-A3B is now the recommended default over Qwen3-32B.
 
 ### 2.3 Verify Existing PMS Services
 
@@ -138,7 +144,7 @@ Edit `~/pms-ai/docker-compose.yml` to add the vLLM service alongside the existin
 ```yaml
   # Add this service block alongside existing services
   vllm:
-    image: vllm/vllm-openai:latest
+    image: vllm/vllm-openai:nightly  # Use nightly until vLLM 0.17.0 GA
     container_name: pms-vllm
     restart: unless-stopped
     ports:
@@ -156,14 +162,14 @@ Edit `~/pms-ai/docker-compose.yml` to add the vLLM service alongside the existin
     environment:
       - HF_HOME=/root/.cache/huggingface
     command: >
-      --model Qwen/Qwen3-32B-AWQ
-      --quantization awq
+      --model Qwen/Qwen3.5-35B-A3B
       --port 8080
       --max-model-len 32768
       --gpu-memory-utilization 0.90
       --enable-auto-tool-choice
-      --tool-call-parser hermes
-      --served-model-name qwen3-32b
+      --tool-call-parser qwen3_coder
+      --reasoning-parser qwen3
+      --served-model-name qwen3.5-35b
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -186,13 +192,17 @@ vLLM downloads models automatically on first startup, but you can pre-download f
 # Install huggingface-hub CLI
 pip install huggingface-hub
 
-# Download Qwen3-32B (AWQ quantized, ~18 GB)
-huggingface-cli download Qwen/Qwen3-32B-AWQ \
-  --local-dir ~/pms-ai/models/vllm/models--Qwen--Qwen3-32B-AWQ
+# Download Qwen3.5-35B-A3B (recommended default, ~24 GB)
+huggingface-cli download Qwen/Qwen3.5-35B-A3B \
+  --local-dir ~/pms-ai/models/vllm/models--Qwen--Qwen3.5-35B-A3B
 
-# Optional: Download Qwen3-8B for real-time tasks (~5 GB)
-huggingface-cli download Qwen/Qwen3-8B-AWQ \
-  --local-dir ~/pms-ai/models/vllm/models--Qwen--Qwen3-8B-AWQ
+# Optional: Download Qwen3.5-9B for real-time tasks (~6 GB)
+huggingface-cli download Qwen/Qwen3.5-9B \
+  --local-dir ~/pms-ai/models/vllm/models--Qwen--Qwen3.5-9B
+
+# Optional: Download Qwen3.5-397B-A17B FP8 for multi-GPU setups
+# huggingface-cli download Qwen/Qwen3.5-397B-A17B-FP8 \
+#   --local-dir ~/pms-ai/models/vllm/models--Qwen--Qwen3.5-397B-A17B-FP8
 ```
 
 ### Step 4: Start vLLM Service
@@ -217,13 +227,13 @@ curl -s http://localhost:8080/health
 
 # List models
 curl -s http://localhost:8080/v1/models | python3 -m json.tool
-# Expected: {"data": [{"id": "qwen3-32b", ...}]}
+# Expected: {"data": [{"id": "qwen3.5-35b", ...}]}
 
 # Quick test
 curl -s http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "qwen3-32b",
+    "model": "qwen3.5-35b",
     "messages": [{"role": "user", "content": "What is HIPAA in one sentence?"}],
     "max_tokens": 100
   }' | python3 -m json.tool
@@ -237,7 +247,7 @@ Qwen 3.5 supports a thinking mode where it produces explicit reasoning chains be
 curl -s http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "qwen3-32b",
+    "model": "qwen3.5-35b",
     "messages": [
       {"role": "system", "content": "You are a clinical reasoning assistant. Think step by step."},
       {"role": "user", "content": "A 58-year-old male presents with sudden onset crushing chest pain radiating to the left arm, diaphoresis, and nausea. BP 160/95, HR 102. What is your differential diagnosis?"}
@@ -248,14 +258,14 @@ curl -s http://localhost:8080/v1/chat/completions \
 
 You should see a structured reasoning chain followed by a ranked differential diagnosis.
 
-### Step 7: Optional — Add Qwen3-8B for Real-Time Tasks
+### Step 7: Optional — Add Qwen3.5-9B for Real-Time Tasks
 
 To run a second model for fast, real-time tasks, you can start a second vLLM instance:
 
 ```yaml
   # Add to docker-compose.yml
   vllm-fast:
-    image: vllm/vllm-openai:latest
+    image: vllm/vllm-openai:nightly
     container_name: pms-vllm-fast
     restart: unless-stopped
     ports:
@@ -272,17 +282,16 @@ To run a second model for fast, real-time tasks, you can start a second vLLM ins
     environment:
       - HF_HOME=/root/.cache/huggingface
     command: >
-      --model Qwen/Qwen3-8B-AWQ
-      --quantization awq
+      --model Qwen/Qwen3.5-9B
       --port 8081
       --max-model-len 32768
       --gpu-memory-utilization 0.45
-      --served-model-name qwen3-8b
+      --served-model-name qwen3.5-9b
 ```
 
-> **GPU sharing:** If running both models on one GPU, set `--gpu-memory-utilization` to 0.45 for each to avoid OOM. Alternatively, use Ollama to serve the 8B model (it handles model swapping automatically).
+> **GPU sharing:** If running both models on one GPU, set `--gpu-memory-utilization` to 0.45 for each to avoid OOM. Alternatively, use Ollama to serve the smaller model (it handles model swapping automatically).
 
-**Checkpoint:** vLLM is running with Qwen3-32B, serving OpenAI-compatible chat completions on port 8080. Thinking mode is working and producing reasoning chains.
+**Checkpoint:** vLLM is running with Qwen3.5-35B-A3B, serving OpenAI-compatible chat completions on port 8080. Thinking mode is working and producing reasoning chains.
 
 ---
 
@@ -305,20 +314,20 @@ MODEL_MAP = {
     "medgemma-4b": {"tag": "medgemma:4b", "backend": "ollama"},
     "medgemma-27b": {"tag": "medgemma:27b", "backend": "ollama"},
     # Qwen 3.5 models (via vLLM)
-    "qwen3-8b": {"tag": "qwen3-8b", "backend": "vllm"},
-    "qwen3-32b": {"tag": "qwen3-32b", "backend": "vllm"},
+    "qwen3.5-9b": {"tag": "qwen3.5-9b", "backend": "vllm"},
+    "qwen3.5-35b": {"tag": "qwen3.5-35b", "backend": "vllm"},
     "qwen3.5-397b": {"tag": "qwen3.5-397b", "backend": "vllm"},
 }
 
 # Task-type to model routing
 TASK_ROUTING = {
-    "reasoning": "qwen3-32b",
-    "differential": "qwen3-32b",
-    "code-generation": "qwen3-32b",
+    "reasoning": "qwen3.5-35b",
+    "differential": "qwen3.5-35b",
+    "code-generation": "qwen3.5-35b",
     "summarization": "gemma3-27b",
     "medical-qa": "medgemma-27b",
-    "extraction": "qwen3-32b",
-    "autocomplete": "qwen3-8b",
+    "extraction": "qwen3.5-35b",
+    "autocomplete": "qwen3.5-9b",
     "imaging": "medgemma-4b",
 }
 ```
@@ -390,7 +399,7 @@ ai_client = AsyncOpenAI(
     api_key="not-needed",
 )
 
-REASONING_MODEL = "qwen3-32b"
+REASONING_MODEL = "qwen3.5-35b"
 
 
 async def differential_diagnosis(
@@ -519,7 +528,7 @@ async def api_differential(req: DifferentialRequest):
         )
         return {
             "result": result,
-            "model": "qwen3-32b",
+            "model": "qwen3.5-35b",
             "disclaimer": "AI-Suggested — Requires Physician Review",
         }
     except Exception as e:
@@ -536,7 +545,7 @@ async def api_generate_rule(req: ClinicalRuleRequest):
         )
         return {
             "result": result,
-            "model": "qwen3-32b",
+            "model": "qwen3.5-35b",
             "disclaimer": "AI-Generated Code — Requires Human Review and Testing",
         }
     except Exception as e:
@@ -558,8 +567,8 @@ Add to `.env`:
 ```env
 # Qwen 3.5 Configuration (extends existing AI config)
 VLLM_BASE_URL=http://localhost:8080
-AI_REASONING_MODEL=qwen3-32b
-AI_FAST_MODEL=qwen3-8b
+AI_REASONING_MODEL=qwen3.5-35b
+AI_FAST_MODEL=qwen3.5-9b
 ```
 
 **Checkpoint:** PMS Backend now has `/api/ai/reasoning/differential` and `/api/ai/reasoning/generate-rule` endpoints that route to Qwen 3.5 via vLLM for clinical reasoning and code generation.
@@ -817,7 +826,7 @@ curl -s http://localhost:8080/health
 
 # 2. vLLM models
 curl -s http://localhost:8080/v1/models | python3 -m json.tool
-# Expected: {"data": [{"id": "qwen3-32b", ...}]}
+# Expected: {"data": [{"id": "qwen3.5-35b", ...}]}
 
 # 3. AI Gateway health (should show both Ollama and vLLM)
 curl -s http://localhost:8001/health | python3 -m json.tool
@@ -854,7 +863,7 @@ curl -s http://localhost:8000/api/ai/reasoning/generate-rule \
 curl -s http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "qwen3-32b",
+    "model": "qwen3.5-35b",
     "messages": [
       {"role": "system", "content": "Think step by step before answering."},
       {"role": "user", "content": "Patient on warfarin (INR 2.5) needs dental extraction. What are the management options?"}
@@ -880,11 +889,11 @@ curl -s http://localhost:8001/v1/chat/completions \
 echo ""
 
 # Qwen 3.5 (via vLLM)
-echo "=== Qwen3-32B ===" && \
+echo "=== Qwen3.5-35B ===" && \
 curl -s http://localhost:8001/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "qwen3-32b",
+    "model": "qwen3.5-35b",
     "messages": [{"role": "user", "content": "Explain the pathophysiology of diabetic ketoacidosis step by step."}]
   }' | python3 -c "import sys,json; print(json.load(sys.stdin)['choices'][0]['message']['content'][:500])"
 ```
@@ -892,20 +901,20 @@ curl -s http://localhost:8001/v1/chat/completions \
 ### Performance Baseline
 
 ```bash
-# Measure Qwen3-32B latency
+# Measure Qwen3.5-35B latency
 time curl -s http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "qwen3-32b",
+    "model": "qwen3.5-35b",
     "messages": [{"role": "user", "content": "Hello"}],
     "max_tokens": 50
   }' > /dev/null
 
-# Measure Qwen3-32B reasoning latency (thinking mode)
+# Measure Qwen3.5-35B reasoning latency (thinking mode)
 time curl -s http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "qwen3-32b",
+    "model": "qwen3.5-35b",
     "messages": [
       {"role": "system", "content": "Think step by step."},
       {"role": "user", "content": "What drug interactions exist between warfarin, aspirin, and omeprazole?"}
@@ -914,7 +923,7 @@ time curl -s http://localhost:8080/v1/chat/completions \
   }' > /dev/null
 ```
 
-**Checkpoint:** vLLM and Qwen3-32B are healthy, differential diagnosis and rule generation produce correct outputs, you have baseline latency numbers, and you can compare Qwen vs Gemma output quality on the same clinical questions.
+**Checkpoint:** vLLM and Qwen3.5-35B-A3B are healthy, differential diagnosis and rule generation produce correct outputs, you have baseline latency numbers, and you can compare Qwen vs Gemma output quality on the same clinical questions.
 
 ---
 
@@ -928,11 +937,11 @@ time curl -s http://localhost:8080/v1/chat/completions \
 ```bash
 # Pre-download the model manually
 pip install huggingface-hub
-huggingface-cli download Qwen/Qwen3-32B-AWQ \
-  --local-dir ~/pms-ai/models/vllm/models--Qwen--Qwen3-32B-AWQ
+huggingface-cli download Qwen/Qwen3.5-35B-A3B \
+  --local-dir ~/pms-ai/models/vllm/models--Qwen--Qwen3.5-35B-A3B
 
 # Point vLLM to local path in docker-compose.yml:
-# command: --model /root/.cache/huggingface/models--Qwen--Qwen3-32B-AWQ
+# command: --model /root/.cache/huggingface/models--Qwen--Qwen3.5-35B-A3B
 ```
 
 ### GPU Out of Memory (OOM) Running Both Ollama and vLLM
@@ -948,7 +957,7 @@ nvidia-smi
 # In docker-compose.yml, set: --gpu-memory-utilization 0.50
 
 # Option 2: Use Ollama only (it handles model swapping)
-docker exec pms-ollama ollama pull qwen3.5
+docker exec pms-ollama ollama pull qwen3.5:35b-a3b
 
 # Option 3: Stop Gemma models when not needed
 docker exec pms-ollama ollama stop gemma3:27b
@@ -1033,7 +1042,7 @@ curl -s http://localhost:8080/v1/models | python3 -m json.tool
 docker exec pms-vllm nvidia-smi
 
 # Pull Qwen models via Ollama (alternative to vLLM)
-docker exec pms-ollama ollama pull qwen3.5
+docker exec pms-ollama ollama pull qwen3.5:35b-a3b
 
 # List all models across both backends
 echo "=== Ollama ===" && curl -s http://localhost:11434/api/tags | python3 -c "import sys,json; [print(m['name']) for m in json.load(sys.stdin)['models']]"
@@ -1084,11 +1093,14 @@ docker logs pms-ai-gateway 2>&1 | grep latency_ms | tail -20
 ## Resources
 
 - [Qwen3.5 GitHub Repository](https://github.com/QwenLM/Qwen3.5)
-- [Qwen3.5 on Hugging Face](https://huggingface.co/Qwen/Qwen3.5-397B-A17B)
+- [Qwen3.5-35B-A3B on Hugging Face](https://huggingface.co/Qwen/Qwen3.5-35B-A3B) — Consumer sweet spot model
+- [Qwen3.5-397B-A17B on Hugging Face](https://huggingface.co/Qwen/Qwen3.5-397B-A17B) — Flagship model
 - [Qwen3.5 Ollama Registry](https://ollama.com/library/qwen3.5)
 - [vLLM Qwen3.5 Deployment Guide](https://docs.vllm.ai/projects/recipes/en/latest/Qwen/Qwen3.5.html)
 - [vLLM Documentation](https://docs.vllm.ai/)
+- [Qwen-Agent MCP Integration](https://github.com/QwenLM/Qwen-Agent) — MCP support via `pip install -U "qwen-agent[mcp]"`
 - [Qwen Function Calling Guide](https://qwen.readthedocs.io/en/latest/framework/function_call.html)
 - [Qwen Structured Output Guide](https://www.alibabacloud.com/help/en/model-studio/qwen-structured-output)
 - [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
 - [Gemma 3 Setup Guide — Experiment 13](13-Gemma3-PMS-Developer-Setup-Guide.md)
+- [AI Coding Tools Landscape — Experiment 28](28-AI-Coding-Tools-Landscape-2026.md) — Emergency transition roadmap
