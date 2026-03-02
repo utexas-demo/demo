@@ -194,6 +194,9 @@ _No bug fixes documented yet._
 ### Claude Code (AI-Native Development Environment)
 - [Claude Code Developer Tutorial](experiments/27-ClaudeCode-Developer-Tutorial.md) — Comprehensive Claude Code mastery guide: foundations (tools, context window, permissions), personalization (CLAUDE.md, memory, models), power features (sub-agents, MCP, hooks, skills), and autonomous usage (headless mode, worktrees, git integration)
 
+### AI Coding Tools Landscape (Strategic Assessment)
+- [AI Coding Tools Landscape 2026](experiments/28-AI-Coding-Tools-Landscape-2026.md) — Comprehensive comparison of 12+ AI coding tools (Claude Code, Codex, Qwen 3.5, Copilot, Cursor, Windsurf, Gemini, Amazon Q, Aider, Cline, Roo Code, Devin), healthcare compliance matrix, vendor lock-in risk analysis, and emergency transition playbook
+
 ---
 
 ## Documentation Views
