@@ -540,3 +540,55 @@ Each worktree has full isolation — changes in one cannot affect another until 
 - [Experiment 14: Agent Teams](14-agent-teams-claude-whitepaper.md) — Multi-agent architecture
 - [Experiment 19: Superpowers](19-PRD-Superpowers-PMS-Integration.md) — Skills framework
 - [Experiment 24: Knowledge Work Plugins](24-PRD-KnowledgeWorkPlugins-PMS-Integration.md) — Plugin packaging
+
+---
+
+# Claude Code: Core Concepts
+[Video: Claude Code Complete Guide](https://youtu.be/ZlDnsf_DOzg?si=_PqEbVtiPoilVxHW)
+
+
+## 1. The Foundations
+
+- **Claude Code** (1:00) — An AI tool that interacts with your computer to create files, build websites, and automate tasks through plain English. Unlike chatbots, it takes action.
+- **The Terminal** (1:40) — The black screen where Claude Code runs. Users don't need to know many complex commands; Claude handles most underlying operations.
+- **Prompts** (2:30) — What you type to tell Claude Code what to do. Being specific leads to better results.
+- **Permissions** (3:09) — Claude Code can make changes to your computer. By default it asks for approval, but you can pre-approve safe actions in `settings.json` for a faster workflow (3:38).
+- **Tools (Read / Write / Bash)** (5:29) — Built-in capabilities that allow Claude to interact with your computer. You describe the goal; Claude picks the right tool.
+- **Context Window** (6:22) — Claude's short-term memory. Everything Claude can see and think about; keeping it clean prevents "context rot."
+- **Conversation History / Resume** (7:20) — Claude automatically saves previous conversations, allowing you to resume with `claude --resume`.
+- **Token Usage / Cost Tracking** (8:00) — Tokens are roughly ¾ of a word. Costs vary by model (Sonnet is cheaper; Opus is more powerful).
+
+---
+
+## 2. Making Claude Personal
+
+- **CLAUDE.md** (8:52) — A markdown file where you write your preferences, rules, and project structure. Claude reads this first in every new session.
+- **Memory Usage** (9:25) — An auto-memory file that stores persistent preferences and facts across sessions.
+- **Compact Context** (10:30) — Manages the context window by automatically summarizing key information when it gets too full. Can be triggered manually with `/compact`.
+- **Models (Sonnet, Opus, Haiku)** (11:26) — Different AI models with varying strengths, speeds, and costs. Haiku is fastest/cheapest; Sonnet is an all-rounder; Opus is most intelligent but most expensive.
+- **Denying Access to Files** (12:05) — Add a deny list in `settings.json` to prevent Claude from accessing large, sensitive, or irrelevant files.
+- **Flags** (12:56) — Options used when launching Claude Code to customize its behavior for a specific session.
+
+---
+
+## 3. Power Features
+
+- **Extended Thinking** (14:13) — Claude's ability to reason through complex problems step-by-step using a dedicated "thinking budget." On by default.
+- **Slash Commands** (15:03) — Shortcuts (e.g., `/init`, `/compact`, `/clear`) that trigger specific, repetitive actions. You can create your own.
+- **Skills** (15:50) — Pre-written instructions that teach Claude how to do specific tasks really well, improving output quality for specialized work like copywriting.
+- **Hooks** (16:46) — Custom scripts that trigger automatically at specific moments after an event (e.g., auto-formatting files after saving).
+- **MCP Servers** (17:23) — (Model Context Protocol) Connect Claude Code to external tools like Airtable, Notion, or Asana, allowing it to interact with your full tech stack.
+- **Sub-Agents** (18:00) — Specialists that run in their own separate context window, improving output quality and speed by delegating self-contained tasks.
+- **Agent Teams** (19:30) — A newer feature where agents communicate directly with each other and share a task list, designed for complex builds requiring collaboration.
+- **Image / Screenshot Support** (20:48) — Upload images or screenshots for Claude to analyze or build from, speeding up problem description.
+- **Checkpoints / Undo** (21:38) — Claude automatically creates session-level snapshots of your code before every file edit. Use `/re` to review and restore previous states.
+
+---
+
+## 4. Using Claude Autonomously
+
+- **Git Integration** (22:19) — Connects Claude Code to Git/GitHub for version control, change tracking, and team collaboration.
+- **Headless Mode (CLI Mode)** (23:09) — Allows Claude Code to work completely autonomously with no human input using the `-p` flag.
+- **Claude Max vs. API** (24:23) — Two payment options: a monthly subscription (Claude Max) or pay-as-you-go via API.
+- **Worktrees** (25:02) — Enables multiple Claude instances to work on different tasks simultaneously in separate working directories, ensuring total isolation and parallel development.
+```
