@@ -67,6 +67,8 @@ _No bug fixes documented yet._
 
 ## Experiments & Tool Evaluations
 
+- **[Experiment Interconnection Roadmap](experiments/00-Experiment-Interconnection-Roadmap.md)** — Master navigation guide: dependency graph, execution tiers, parallel tracks, critical path analysis, and quick-start recommendations for all 27 experiments
+
 ### Tambo AI (Conversational Analytics)
 - [PRD: Tambo PMS Integration](experiments/00-PRD-Tambo-PMS-Integration.md) — Conversational analytics sidebar with generative UI components
 - [Tambo Setup Guide](experiments/00-Tambo-PMS-Developer-Setup-Guide.md) — Self-hosted backend, component registration, tool definitions
