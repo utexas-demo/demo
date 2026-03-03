@@ -197,6 +197,11 @@ _No bug fixes documented yet._
 ### AI Coding Tools Landscape (Strategic Assessment)
 - [AI Coding Tools Landscape 2026](experiments/28-AI-Coding-Tools-Landscape-2026.md) — Comprehensive comparison of 12+ AI coding tools (Claude Code, Codex, Qwen 3.5, Copilot, Cursor, Windsurf, Gemini, Amazon Q, Aider, Cline, Roo Code, Devin), healthcare compliance matrix, vendor lock-in risk analysis, and emergency transition playbook
 
+### Gemini Interactions API (Cloud-Hosted Agentic Research & Extraction)
+- [PRD: Gemini Interactions API PMS Integration](experiments/29-PRD-GeminiInteractions-PMS-Integration.md) — Managed cloud agentic layer using Google's Interactions API for stateful multi-turn conversations, Deep Research Agent for clinical evidence synthesis, and structured extraction with JSON Schema enforcement
+- [Gemini Interactions API Setup Guide](experiments/29-GeminiInteractions-PMS-Developer-Setup-Guide.md) — SDK installation, PHI de-identification gateway, FastAPI router, Next.js research and chat components, and Vertex AI BAA configuration
+- [Gemini Interactions API Developer Tutorial](experiments/29-GeminiInteractions-Developer-Tutorial.md) — Hands-on onboarding: build a drug interaction research pipeline with Deep Research Agent, streaming events, structured extraction, and PHI-safe clinical workflows end-to-end
+
 ---
 
 ## Documentation Views
