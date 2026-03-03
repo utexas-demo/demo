@@ -212,6 +212,11 @@ _No bug fixes documented yet._
 - [VS Code Multi-Agent Setup Guide](experiments/31-VSCodeMultiAgent-PMS-Developer-Setup-Guide.md) — VS Code 1.109 configuration, Agent Skills creation, MCP server setup, terminal sandbox rules, and auto-approval configuration
 - [VS Code Multi-Agent Developer Tutorial](experiments/31-VSCodeMultiAgent-Developer-Tutorial.md) — Hands-on onboarding: orchestrate Claude, Copilot, and Codex agents to build a lab results endpoint with parallel test generation and HIPAA-compliant code end-to-end
 
+### GitHub Agent HQ (Platform-Level Multi-Agent Governance & Orchestration)
+- [PRD: GitHub Agent HQ PMS Integration](experiments/32-PRD-GitHubAgentHQ-PMS-Integration.md) — Organization-level agent governance with AGENTS.md, cloud agent sessions, Mission Control dashboard, branch protection, audit trails, and GitHub Actions integration for healthcare-compliant AI-assisted development
+- [GitHub Agent HQ Setup Guide](experiments/32-GitHubAgentHQ-PMS-Developer-Setup-Guide.md) — Organization governance policies, AGENTS.md creation, branch protection rules, cloud agent task templates, and Mission Control configuration
+- [GitHub Agent HQ Developer Tutorial](experiments/32-GitHubAgentHQ-Developer-Tutorial.md) — Hands-on onboarding: run an agent-powered security audit, monitor via Mission Control, and practice the three-layer agent stack (Agent HQ, VS Code, Claude Code CLI) end-to-end
+
 ---
 
 ## Documentation Views
