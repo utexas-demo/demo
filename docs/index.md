@@ -227,6 +227,11 @@ _No bug fixes documented yet._
 - [n8n 2.0+ Setup Guide](experiments/34-n8nUpdates-PMS-Developer-Setup-Guide.md) — Docker Compose self-hosted deployment, AI Agent node with Claude, HITL Chat node, MCP Server and Client workflows, and PostgreSQL Memory configuration
 - [n8n 2.0+ Developer Tutorial](experiments/34-n8nUpdates-Developer-Tutorial.md) — Hands-on onboarding: build a prior authorization workflow with AI analysis, clinician HITL review, MCP tool exposure, and enterprise audit logging end-to-end
 
+### Kintsugi Open-Source (Privacy-Preserving Voice Biomarker Mental Health Screening)
+- [PRD: Kintsugi Open-Source PMS Integration](experiments/35-PRD-KintsugiOpenSource-PMS-Integration.md) — Self-hosted voice biomarker AI detecting depression and anxiety from 20-second speech acoustics (pitch, tone, rhythm) without recording speech content, with 71.3% sensitivity validated in Annals of Family Medicine
+- [Kintsugi Open-Source Setup Guide](experiments/35-KintsugiOpenSource-PMS-Developer-Setup-Guide.md) — Kintsugi model deployment, librosa audio feature extraction, biomarker inference engine, screening API endpoints, and React voice biomarker recording component
+- [Kintsugi Open-Source Developer Tutorial](experiments/35-KintsugiOpenSource-Developer-Tutorial.md) — Hands-on onboarding: build a longitudinal mood tracking pipeline with voice biomarker trend analysis, patient mood timeline visualization, and HIPAA-compliant screening audit logging end-to-end
+
 ---
 
 ## Documentation Views
