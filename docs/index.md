@@ -207,6 +207,11 @@ _No bug fixes documented yet._
 - [ElevenLabs Setup Guide](experiments/30-ElevenLabs-PMS-Developer-Setup-Guide.md) — Python SDK installation, TTS and Scribe client configuration, PHI de-identification, FastAPI router, and React audio player components
 - [ElevenLabs Developer Tutorial](experiments/30-ElevenLabs-Developer-Tutorial.md) — Hands-on onboarding: build a clinical readback pipeline with PHI-safe TTS, Scribe transcription, and streaming audio delivery end-to-end
 
+### VS Code 1.109 Multi-Agent (AI-Powered Multi-Agent Development Platform)
+- [PRD: VS Code Multi-Agent PMS Integration](experiments/31-PRD-VSCodeMultiAgent-PMS-Integration.md) — Standardized multi-agent IDE with Claude, Copilot, and Codex agents, PMS Agent Skills for HIPAA compliance, terminal sandboxing, and workspace priming for healthcare development
+- [VS Code Multi-Agent Setup Guide](experiments/31-VSCodeMultiAgent-PMS-Developer-Setup-Guide.md) — VS Code 1.109 configuration, Agent Skills creation, MCP server setup, terminal sandbox rules, and auto-approval configuration
+- [VS Code Multi-Agent Developer Tutorial](experiments/31-VSCodeMultiAgent-Developer-Tutorial.md) — Hands-on onboarding: orchestrate Claude, Copilot, and Codex agents to build a lab results endpoint with parallel test generation and HIPAA-compliant code end-to-end
+
 ---
 
 ## Documentation Views
