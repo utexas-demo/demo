@@ -232,6 +232,11 @@ _No bug fixes documented yet._
 - [Kintsugi Open-Source Setup Guide](experiments/35-KintsugiOpenSource-PMS-Developer-Setup-Guide.md) — Kintsugi model deployment, librosa audio feature extraction, biomarker inference engine, screening API endpoints, and React voice biomarker recording component
 - [Kintsugi Open-Source Developer Tutorial](experiments/35-KintsugiOpenSource-Developer-Tutorial.md) — Hands-on onboarding: build a longitudinal mood tracking pipeline with voice biomarker trend analysis, patient mood timeline visualization, and HIPAA-compliant screening audit logging end-to-end
 
+### Claude Context Mode (AI Session Context Optimization)
+- [PRD: Claude Context Mode PMS Integration](experiments/36-PRD-ClaudeContextMode-PMS-Integration.md) — MCP server plugin reducing Claude Code context window consumption by up to 98% via sandbox execution, SQLite FTS5 knowledge indexing, batch processing, and automatic subagent routing for extended AI-assisted development sessions
+- [Claude Context Mode Setup Guide](experiments/36-ClaudeContextMode-PMS-Developer-Setup-Guide.md) — Plugin installation, PreToolUse hook configuration, PMS documentation indexing, PHI-safe sandbox conventions, and session stats monitoring
+- [Claude Context Mode Developer Tutorial](experiments/36-ClaudeContextMode-Developer-Tutorial.md) — Hands-on onboarding: build a PMS development session optimizer with documentation indexing, PHI-safe patient data analysis, full-stack batch health checks, and medication reconciliation debugging end-to-end
+
 ---
 
 ## Documentation Views
