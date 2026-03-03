@@ -237,6 +237,11 @@ _No bug fixes documented yet._
 - [Claude Context Mode Setup Guide](experiments/36-ClaudeContextMode-PMS-Developer-Setup-Guide.md) — Plugin installation, PreToolUse hook configuration, PMS documentation indexing, PHI-safe sandbox conventions, and session stats monitoring
 - [Claude Context Mode Developer Tutorial](experiments/36-ClaudeContextMode-Developer-Tutorial.md) — Hands-on onboarding: build a PMS development session optimizer with documentation indexing, PHI-safe patient data analysis, full-stack batch health checks, and medication reconciliation debugging end-to-end
 
+### WebSocket (Real-Time Bidirectional Clinical Data Synchronization)
+- [PRD: WebSocket PMS Integration](experiments/37-PRD-WebSocket-PMS-Integration.md) — Full-duplex real-time communication layer using FastAPI/Starlette WebSocket, PostgreSQL LISTEN/NOTIFY, and Redis pub/sub for instant patient record synchronization, clinical alerts, encounter collaboration with presence indicators, and conflict detection across all connected clients
+- [WebSocket Setup Guide](experiments/37-WebSocket-PMS-Developer-Setup-Guide.md) — WebSocket endpoint implementation, PostgreSQL NOTIFY triggers, Redis pub/sub cross-instance broadcasting, Nginx WSS proxy configuration, React useWebSocket hook, and connection manager setup
+- [WebSocket Developer Tutorial](experiments/37-WebSocket-Developer-Tutorial.md) — Hands-on onboarding: build a real-time encounter collaboration panel with presence indicators, section focus tracking, edit conflict warnings, and clinical alert notifications end-to-end
+
 ---
 
 ## Documentation Views
