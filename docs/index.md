@@ -13,6 +13,10 @@ This directory is the single source of truth for all project context, decisions,
 - [ADR-0004: Frontend Tech Stack — Next.js with Tailwind CSS](architecture/0004-frontend-tech-stack.md)
 - [ADR-0005: Android Tech Stack — Kotlin with Jetpack Compose](architecture/0005-android-tech-stack.md)
 
+### Kintsugi Voice Biomarker Screening (Experiment 35)
+
+- [ADR-0023: Kintsugi Voice Biomarker Integration](architecture/0023-kintsugi-voice-biomarker-integration.md) — Self-hosted open-source voice biomarker models for passive mental health screening via acoustic features
+
 ### ISIC Dermatology CDS (SYS-REQ-0012)
 
 - [ADR-0008: CDS Microservice Architecture](architecture/0008-derm-cds-microservice-architecture.md) — Separate Docker service (`pms-derm-cds` :8090) for AI inference
