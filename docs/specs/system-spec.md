@@ -1,8 +1,8 @@
 # System Specification: Patient Management System (PMS)
 
 **Document ID:** PMS-SYS-SPEC-001
-**Version:** 1.5
-**Date:** 2026-02-21
+**Version:** 1.6
+**Date:** 2026-03-06
 **Status:** Approved
 
 ---
@@ -13,7 +13,7 @@ This document defines the system-level specification for the Patient Management 
 
 ## 2. Scope
 
-The PMS consists of three deployable components sharing a common backend API, plus an AI microservice for dermatology clinical decision support:
+The PMS consists of three deployable components sharing a common backend API, an AI microservice for dermatology clinical decision support, and an integrated voice biomarker engine for mental health screening:
 
 | Component | Repository | Technology |
 |---|---|---|
@@ -21,6 +21,7 @@ The PMS consists of three deployable components sharing a common backend API, pl
 | Web Frontend | `ammar-utexas/pms-frontend` | Next.js, React, TypeScript |
 | Android App | `ammar-utexas/pms-android` | Kotlin, Jetpack Compose |
 | Dermatology CDS | `ammar-utexas/pms-backend` (services/derm-cds) | Python, ONNX Runtime, pgvector |
+| Voice Biomarker Engine | `ammar-utexas/pms-backend` (integrations/kintsugi) | Python, PyTorch, librosa |
 
 All components share a documentation submodule (`ammar-utexas/demo`) containing specifications, requirements, and traceability evidence.
 
@@ -33,12 +34,14 @@ flowchart TB
         Android["Android App<br/>(Kotlin)<br/>+ TFLite on-device"]
         Backend["Backend API<br/>(FastAPI :8000)"]
         DermCDS["Dermatology CDS<br/>(ONNX Runtime :8090)"]
+        Kintsugi["Voice Biomarker Engine<br/>(Kintsugi / PyTorch)"]
         DB[("PostgreSQL<br/>+ pgvector")]
 
         WebUI --> Backend
         Android --> Backend
         Backend --> DB
         Backend --> DermCDS
+        Backend --> Kintsugi
         DermCDS --> DB
     end
 
@@ -55,6 +58,7 @@ flowchart TB
     style Android fill:#d4edda,stroke:#28a745
     style Backend fill:#cce5ff,stroke:#0066cc
     style DermCDS fill:#fff3cd,stroke:#cc8800
+    style Kintsugi fill:#fff3cd,stroke:#cc8800
     style DB fill:#e2d9f3,stroke:#6f42c1
     style EHR fill:#f8f9fa,stroke:#6c757d
     style Audit fill:#f8f9fa,stroke:#6c757d
@@ -66,7 +70,7 @@ flowchart TB
 | Code | Subsystem | Scope | Primary Actor |
 |---|---|---|---|
 | SUB-PR | Patient Records | Demographics, medical history, documents, consent, encrypted PHI, AI vision (wound assessment, patient ID verification, document OCR), dermatology CDS (EfficientNet-B4/MobileNetV3 skin lesion classification across 9 ISIC categories, pgvector similarity search against 50K reference embeddings, configurable threshold-based risk scoring, persistent lesion identity with longitudinal change detection via cosine distance), DermaCheck pipeline orchestration (parallel fan-out classification with graceful degradation, single-request lifecycle, per-stage timeout and audit) | All roles |
-| SUB-CW | Clinical Workflow | Scheduling, encounters, status tracking, clinical notes, referrals, dermatology encounter integration (lesion assessments linked to encounters), DermaCheck encounter workflow (camera capture → image upload → results review → save/discard within encounter context) | Physicians, Nurses |
+| SUB-CW | Clinical Workflow | Scheduling, encounters, status tracking, clinical notes, referrals, dermatology encounter integration (lesion assessments linked to encounters), DermaCheck encounter workflow (camera capture → image upload → results review → save/discard within encounter context), voice biomarker mental health screening (passive depression/anxiety detection from acoustic features during encounters, longitudinal mood tracking) | Physicians, Nurses |
 | SUB-MM | Medication Management | Prescriptions, drug interactions, formulary, dispensing | Physicians, Pharmacists |
 | SUB-RA | Reporting & Analytics | Clinical dashboards, compliance reports, audit log queries, dermatology classification analytics (classification volumes, risk distributions, referral trends, model confidence metrics) | Administrators, Compliance |
 | SUB-PM | Prompt Management | Centralized prompt CRUD, versioning, audit trail, LLM-powered version comparison | Administrators |

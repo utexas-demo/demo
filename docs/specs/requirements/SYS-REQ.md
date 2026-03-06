@@ -1,8 +1,8 @@
 # System-Level Requirements (SYS-REQ)
 
 **Document ID:** PMS-SYS-REQ-001
-**Version:** 1.8
-**Date:** 2026-02-21
+**Version:** 1.9
+**Date:** 2026-03-06
 **Parent:** [System Specification](../system-spec.md)
 
 ---
@@ -24,6 +24,7 @@
 | SYS-REQ-0011 | Provide centralized prompt management with versioning, CRUD operations, and LLM-powered comparison for all AI prompts used across the system | High | Test / Demo | Not Started |
 | SYS-REQ-0012 | Provide AI-assisted skin lesion classification and dermatology clinical decision support using ISIC Archive-trained models with on-premises inference, similarity search, and structured risk scoring | High | Test / Demo | Architecture Defined |
 | SYS-REQ-0013 | Orchestrate the DermaCheck capture-classify-review pipeline as a single-request parallel fan-out with graceful degradation, completing all AI stages within 5 seconds | High | Test / Demo | Architecture Defined |
+| SYS-REQ-0014 | Provide passive mental health screening via self-hosted open-source voice biomarker models that detect depression and anxiety from acoustic features without processing speech content | High | Test / Demo | Architecture Defined |
 
 ---
 
@@ -179,3 +180,25 @@
 - [ADR-0018](../../architecture/0018-inter-service-communication.md): Backend-to-CDS HTTP communication with circuit breaking
 
 **Decomposes To:** SUB-PR-0017 (→ BE, AI), SUB-CW-0009 (→ BE, WEB, AND)
+
+---
+
+### SYS-REQ-0014: Voice Biomarker Mental Health Screening
+
+**Rationale:** The US Preventive Services Task Force recommends universal depression screening in primary care, but PHQ-9 questionnaires are time-consuming (5-10 minutes), subject to self-report bias, and frequently skipped during busy encounters. HIPAA Security Rule §164.312(a)(2)(iv) requires encryption of ePHI — voice biomarker screening mitigates this by analyzing acoustic features (pitch, tone, rhythm) rather than speech content, so no audio recordings constitute PHI. Kintsugi's open-source voice biomarker models (released February 2026) provide a clinically validated (71.3% sensitivity, 73.5% specificity per Annals of Family Medicine) screening capability that can be self-hosted with zero data egress.
+
+**Acceptance Criteria:**
+1. Clinicians can initiate voice biomarker screening during any encounter, receiving depression and anxiety risk scores (0.0-1.0) from 20+ seconds of patient speech.
+2. Audio feature extraction processes only acoustic properties (MFCCs, pitch, energy, spectral features) — speech content is never recorded, transmitted, or stored.
+3. Screening results are linked to the patient and encounter records, with categories (normal/elevated/high-risk) based on configurable thresholds.
+4. Longitudinal mood tracking compares voice biomarker scores across multiple encounters per patient, detecting trends (improving/stable/worsening) and alerting clinicians to significant changes (score jump > 0.2).
+5. Patient consent must be documented before voice biomarker screening is activated for any patient.
+6. All screening events are recorded in the audit trail with patient ID hash, encounter ID, timestamp, and result category — raw audio is never stored.
+7. Screening results are displayed with "advisory only — clinical judgment required" disclaimer on all interfaces.
+
+**Current Implementation:** Architecture defined in ADR-0023 (Kintsugi Voice Biomarker Integration). PRD, developer setup guide, and developer tutorial completed (experiment 35). Implementation not started.
+
+**Architecture Decisions:**
+- [ADR-0023](../../architecture/0023-kintsugi-voice-biomarker-integration.md): Self-hosted open-source voice biomarker models for passive mental health screening
+
+**Decomposes To:** SUB-CW-0010 (→ BE, WEB), SUB-CW-0011 (→ BE, WEB)

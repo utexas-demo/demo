@@ -1,7 +1,7 @@
 # PMS Project Overview — Bird's Eye View
 
-**Date:** 2026-02-21
-**Version:** 1.2
+**Date:** 2026-03-06
+**Version:** 1.3
 **Organization:** utexas-demo (GitHub)
 
 ---
@@ -32,12 +32,14 @@ flowchart TB
         Android["Android App<br/>(Kotlin)<br/>+ TFLite on-device"]
         Backend["Backend API<br/>(FastAPI :8000)"]
         DermCDS["Dermatology CDS<br/>(ONNX Runtime :8090)"]
+        Kintsugi["Voice Biomarker Engine<br/>(Kintsugi / PyTorch)"]
         DB[("PostgreSQL<br/>+ pgvector")]
 
         WebUI --> Backend
         Android --> Backend
         Backend --> DB
         Backend --> DermCDS
+        Backend --> Kintsugi
         DermCDS --> DB
     end
 
@@ -54,6 +56,7 @@ flowchart TB
     style Android fill:#d4edda,stroke:#28a745
     style Backend fill:#cce5ff,stroke:#0066cc
     style DermCDS fill:#fff3cd,stroke:#cc8800
+    style Kintsugi fill:#fff3cd,stroke:#cc8800
     style DB fill:#e2d9f3,stroke:#6f42c1
     style EHR fill:#f8f9fa,stroke:#6c757d
     style Audit fill:#f8f9fa,stroke:#6c757d
@@ -65,7 +68,7 @@ flowchart TB
 | Code | Subsystem | Scope | Primary Actor |
 |---|---|---|---|
 | SUB-PR | Patient Records | Demographics, medical history, encrypted PHI, AI vision, dermatology CDS (skin lesion classification, similarity search, risk scoring, longitudinal tracking), DermaCheck pipeline orchestration (parallel fan-out, graceful degradation) | All roles |
-| SUB-CW | Clinical Workflow | Scheduling, encounters, status tracking, clinical notes, DermaCheck encounter workflow (capture → classify → review) | Physicians, Nurses |
+| SUB-CW | Clinical Workflow | Scheduling, encounters, status tracking, clinical notes, DermaCheck encounter workflow (capture → classify → review), voice biomarker mental health screening (passive depression/anxiety detection, longitudinal mood tracking) | Physicians, Nurses |
 | SUB-MM | Medication Management | Prescriptions, drug interactions, formulary, dispensing | Physicians, Pharmacists |
 | SUB-RA | Reporting & Analytics | Dashboards, compliance reports, audit log queries, dermatology classification analytics | Administrators, Compliance |
 | SUB-PM | Prompt Management | Centralized prompt CRUD, versioning, audit trail, LLM-powered version comparison | Administrators |
@@ -82,7 +85,7 @@ Central knowledge base shared as a git submodule across all other repos.
 - Development Pipeline Tutorial (.md / .docx)
 - PMS Developer Working Instructions (.md / .docx)
 - `docs/` directory with:
-  - 22 Architecture Decision Records (ADRs)
+  - 23 Architecture Decision Records (ADRs)
   - 7 configuration & setup guides
   - 2 feature implementation docs
   - System spec, testing strategy, requirements governance
@@ -205,6 +208,7 @@ app/src/main/java/com/utexas/pms/
 | SYS-REQ-0011 | Centralized Prompt Management | High | Not Started |
 | SYS-REQ-0012 | Dermatology Clinical Decision Support (ISIC Archive) | High | Architecture Defined |
 | SYS-REQ-0013 | DermaCheck Workflow Orchestration (parallel fan-out pipeline) | High | Architecture Defined |
+| SYS-REQ-0014 | Voice Biomarker Mental Health Screening (Kintsugi open-source) | High | Architecture Defined |
 
 ---
 
@@ -213,21 +217,21 @@ app/src/main/java/com/utexas/pms/
 | Subsystem | Version | Domain Reqs | Platform Reqs | Verified | Implemented | Scaffolded | Not Started | Coverage |
 |---|---|---|---|---|---|---|---|---|
 | Patient Records (SUB-PR) | v0.6 | 17 | 38 | 3 | 2 | 2 | 31 | 35.3% |
-| Clinical Workflow (SUB-CW) | v0.0 | 9 | 17 | 0 | 0 | 2 | 15 | 0.0% |
+| Clinical Workflow (SUB-CW) | v0.0 | 11 | 21 | 0 | 0 | 2 | 19 | 0.0% |
 | Medication Management (SUB-MM) | v0.0 | 9 | 13 | 0 | 0 | 2 | 11 | 0.0% |
 | Reporting & Analytics (SUB-RA) | v0.0 | 8 | 19 | 0 | 0 | 2 | 17 | 0.0% |
 | Prompt Management (SUB-PM) | v0.0 | 7 | 13 | 0 | 0 | 0 | 13 | 0.0% |
-| **Total** | — | **50** | **100** | **3** | **2** | **8** | **87** | **16.0%** |
+| **Total** | — | **52** | **104** | **3** | **2** | **8** | **91** | **15.2%** |
 
 ### Platform Coverage
 
 | Platform | Total Reqs | Verified | Implemented | Scaffolded | Placeholder | Not Started |
 |---|---|---|---|---|---|---|
-| Backend (BE) | 49 | 3 | 2 | 0 | 16 | 28 |
-| Web (WEB) | 25 | 0 | 0 | 5 | 0 | 20 |
+| Backend (BE) | 51 | 3 | 2 | 0 | 16 | 30 |
+| Web (WEB) | 27 | 0 | 0 | 5 | 0 | 22 |
 | Android (AND) | 19 | 0 | 0 | 4 | 0 | 15 |
 | AI | 7 | 0 | 0 | 0 | 0 | 7 |
-| **Total** | **100** | **3** | **2** | **9** | **16** | **70** |
+| **Total** | **104** | **3** | **2** | **9** | **16** | **74** |
 
 ---
 
@@ -244,12 +248,12 @@ app/src/main/java/com/utexas/pms/
 | Subsystem | Domain Reqs | With Tests | Passing | No Tests | Domain Coverage |
 |---|---|---|---|---|---|
 | Patient Records (PR) | 16 | 6 | 6 | 10 | 37.5% |
-| Clinical Workflow (CW) | 8 | 1 | 1 | 7 | 12.5% |
+| Clinical Workflow (CW) | 10 | 1 | 1 | 9 | 10.0% |
 | Medication Mgmt (MM) | 9 | 2 | 2 | 7 | 22.2% |
 | Reporting (RA) | 8 | 0 | 0 | 8 | 0.0% |
 | Prompt Mgmt (PM) | 7 | 0 | 0 | 7 | 0.0% |
-| System (SYS) | 13 | 1 | 1 | 12 | 7.7% |
-| **Total** | **63** | **10** | **10** | **53** | **15.9%** |
+| System (SYS) | 14 | 1 | 1 | 13 | 7.1% |
+| **Total** | **66** | **10** | **10** | **56** | **15.2%** |
 
 ---
 
@@ -314,7 +318,19 @@ app/src/main/java/com/utexas/pms/
 - Build Android on-device TFLite triage (SUB-PR-0013-AND) — ADR-0012
 - Configure granular feature flags for phased rollout (ADR-0020)
 
-### Priority 6 — Cross-Cutting Concerns
+### Priority 6 — Voice Biomarker Mental Health Screening
+> **Architecture: DEFINED** — ADR-0023 defines the integration decision. PRD, setup guide, and developer tutorial documented (experiment 35). Implementation phase ready to begin.
+
+- Deploy Kintsugi open-source models as self-hosted biomarker engine (SUB-CW-0010-BE) — ADR-0023
+- Build audio feature extraction pipeline with librosa (acoustic features only, no speech content)
+- Create screening API endpoints (`/api/screening/analyze`, `/api/screening/analyze-features`, `/api/screening/health`)
+- Implement `VoiceBiomarkerScreening` database model and Alembic migration
+- Build longitudinal mood tracking service with trend analysis (SUB-CW-0011-BE)
+- Build Web UI: VoiceBiomarkerScreen recording component and MoodTimeline visualization (SUB-CW-0010-WEB, SUB-CW-0011-WEB)
+- Add screening feature flags for phased rollout
+- Implement patient consent workflow and HIPAA-compliant audit logging
+
+### Priority 7 — Cross-Cutting Concerns
 - Implement TOTP/MFA to complete SYS-REQ-0001
 - Migrate encryption from Fernet to AES-256-GCM for SYS-REQ-0002
 - Implement FHIR R4 interoperability (SYS-REQ-0004)

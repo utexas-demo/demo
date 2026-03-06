@@ -1,8 +1,8 @@
 # Platform Requirements: Backend (SUB-BE)
 
-**Version:** 1.0
-**Date:** 2026-02-21
-**Platform:** Backend (BE) — 49 requirements across 5 domains
+**Version:** 1.1
+**Date:** 2026-03-06
+**Platform:** Backend (BE) — 51 requirements across 5 domains
 **Repository:** pms-backend
 **Technology:** FastAPI, Python 3.12, async SQLAlchemy, asyncpg, Pydantic v2, JWT auth, AES-256 encryption
 
@@ -13,11 +13,11 @@
 | Domain | Req Count | Status Breakdown |
 |--------|-----------|-----------------|
 | Patient Records (PR) | 16 | 3 Implemented, 2 Verified, 1 Verified (dev), 10 Not Started |
-| Clinical Workflow (CW) | 9 | 6 Placeholder, 3 Not Started |
+| Clinical Workflow (CW) | 11 | 6 Placeholder, 5 Not Started |
 | Medication Management (MM) | 9 | 7 Placeholder, 2 Not Started |
 | Reporting & Analytics (RA) | 8 | 5 Placeholder, 3 Not Started |
 | Prompt Management (PM) | 7 | 7 Not Started |
-| **Total** | **49** | |
+| **Total** | **51** | |
 
 ---
 
@@ -61,6 +61,8 @@
 | SUB-CW-0007-BE | SUB-CW-0007 | Validate encounter status transitions against the explicit state machine (see SUB-CW-0007). Enforce via `SELECT ... FOR UPDATE` to serialize concurrent transitions (RC-BE-02). | — | TST-CW-0007-BE | Not Started |
 | SUB-CW-0008-BE | SUB-CW-0008 | Enforce patient_id FK constraint on encounters | `models/encounter.py` (FK) | TST-CW-0008-BE | Placeholder |
 | SUB-CW-0009-BE | SUB-CW-0009 | Encounter-lesion association API: `GET /api/encounters/{encounter_id}/lesions` returns all DermaCheck assessments linked to an encounter. `POST /api/lesions/upload` must accept optional `encounter_id` and validate encounter-patient consistency (return 422 on mismatch, per SUB-PR-0013-BE DC-PR-07). Multiple lesion assessments may be linked to a single encounter. | `routers/encounters.py`, `routers/lesions.py`, `services/lesion_service.py` | TST-CW-0009-BE | Not Started |
+| SUB-CW-0010-BE | SUB-CW-0010 | Voice biomarker screening API: `POST /api/screening/analyze` accepts audio upload (PCM 16-bit 16kHz, minimum 20 seconds), extracts acoustic features via librosa, runs Kintsugi open-source depression and anxiety models, and returns screening result (depression_score, anxiety_score, confidence, categories). `POST /api/screening/analyze-features` accepts pre-extracted feature vectors for client-side feature extraction. `GET /api/screening/health` returns engine status. Must verify patient consent before storing results. Must call `audit_service.log_action` with action `VOICE_SCREENING` and resource_type `screening` (patient_id hashed in audit log, never cleartext). Raw audio must be discarded immediately after feature extraction — only numerical feature vectors and screening results are stored. | `routers/screening.py`, `integrations/kintsugi/engine.py`, `integrations/kintsugi/features.py`, `models/screening.py` | TST-CW-0010-BE | Not Started |
+| SUB-CW-0011-BE | SUB-CW-0011 | Longitudinal mood tracking API: `GET /api/screening/trend/{patient_id}` returns mood trend analysis (improving/stable/worsening) with full screening timeline across encounters. Trend calculated from the last 5 data points. Alert flag set when depression or anxiety score jumps > 0.2 between consecutive screenings. Must require at least 2 data points for trend calculation. | `routers/screening.py`, `services/mood_tracking.py` | TST-CW-0011-BE | Not Started |
 
 ---
 
