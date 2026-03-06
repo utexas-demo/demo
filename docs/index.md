@@ -227,10 +227,10 @@ _No bug fixes documented yet._
 - [n8n 2.0+ Setup Guide](experiments/34-n8nUpdates-PMS-Developer-Setup-Guide.md) — Docker Compose self-hosted deployment, AI Agent node with Claude, HITL Chat node, MCP Server and Client workflows, and PostgreSQL Memory configuration
 - [n8n 2.0+ Developer Tutorial](experiments/34-n8nUpdates-Developer-Tutorial.md) — Hands-on onboarding: build a prior authorization workflow with AI analysis, clinician HITL review, MCP tool exposure, and enterprise audit logging end-to-end
 
-### Kintsugi Open-Source (Privacy-Preserving Voice Biomarker Mental Health Screening)
-- [PRD: Kintsugi Open-Source PMS Integration](experiments/35-PRD-KintsugiOpenSource-PMS-Integration.md) — Self-hosted voice biomarker AI detecting depression and anxiety from 20-second speech acoustics (pitch, tone, rhythm) without recording speech content, with 71.3% sensitivity validated in Annals of Family Medicine
-- [Kintsugi Open-Source Setup Guide](experiments/35-KintsugiOpenSource-PMS-Developer-Setup-Guide.md) — Kintsugi model deployment, librosa audio feature extraction, biomarker inference engine, screening API endpoints, and React voice biomarker recording component
-- [Kintsugi Open-Source Developer Tutorial](experiments/35-KintsugiOpenSource-Developer-Tutorial.md) — Hands-on onboarding: build a longitudinal mood tracking pipeline with voice biomarker trend analysis, patient mood timeline visualization, and HIPAA-compliant screening audit logging end-to-end
+### Kintsugi Voice Biomarker (Privacy-Preserving Mental Health Screening)
+- [PRD: Kintsugi Voice Biomarker PMS Integration](experiments/35-PRD-KintsugiOpenSource-PMS-Integration.md) — Three integration paths: self-hosted DAM model from Hugging Face (fine-tuned Whisper-Small EN, Apache 2.0), `kintsugi-python` PyPI SDK (cloud API fallback), and direct REST API; depression/anxiety severity mapped to PHQ-9 and GAD-7 clinical scales with 71.3% sensitivity
+- [Kintsugi Setup Guide](experiments/35-KintsugiOpenSource-PMS-Developer-Setup-Guide.md) — DAM model deployment from Hugging Face, `kintsugi-python` PyPI SDK configuration, dual-path screening engine (local + cloud fallback), API endpoints, and React voice biomarker recording component
+- [Kintsugi Developer Tutorial](experiments/35-KintsugiOpenSource-Developer-Tutorial.md) — Hands-on onboarding: build a longitudinal mood tracking pipeline with DAM model inference, severity-based trend analysis, threshold tuning with dam-dataset, and HIPAA-compliant screening audit logging
 
 ### Claude Context Mode (AI Session Context Optimization)
 - [PRD: Claude Context Mode PMS Integration](experiments/36-PRD-ClaudeContextMode-PMS-Integration.md) — MCP server plugin reducing Claude Code context window consumption by up to 98% via sandbox execution, SQLite FTS5 knowledge indexing, batch processing, and automatic subagent routing for extended AI-assisted development sessions

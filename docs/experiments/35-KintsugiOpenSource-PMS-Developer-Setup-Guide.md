@@ -1,8 +1,8 @@
-# Kintsugi Open-Source Voice Biomarker Setup Guide for PMS Integration
+# Kintsugi Voice Biomarker Setup Guide for PMS Integration
 
 **Document ID:** PMS-EXP-KINTSUGI-001
-**Version:** 1.0
-**Date:** March 3, 2026
+**Version:** 2.0
+**Date:** March 6, 2026
 **Applies To:** PMS project (all platforms)
 **Prerequisites Level:** Intermediate
 
@@ -12,21 +12,27 @@
 
 1. [Overview](#1-overview)
 2. [Prerequisites](#2-prerequisites)
-3. [Part A: Deploy Kintsugi Voice Biomarker Engine](#3-part-a-deploy-kintsugi-voice-biomarker-engine)
-4. [Part B: Integrate with PMS Backend](#4-part-b-integrate-with-pms-backend)
-5. [Part C: Integrate with PMS Frontend](#5-part-c-integrate-with-pms-frontend)
-6. [Part D: Testing and Verification](#6-part-d-testing-and-verification)
-7. [Troubleshooting](#7-troubleshooting)
-8. [Reference Commands](#8-reference-commands)
+3. [Part A: Deploy the DAM Model from Hugging Face](#3-part-a-deploy-the-dam-model-from-hugging-face)
+4. [Part B: Set Up the PyPI SDK (Cloud API Fallback)](#4-part-b-set-up-the-pypi-sdk-cloud-api-fallback)
+5. [Part C: Integrate with PMS Backend](#5-part-c-integrate-with-pms-backend)
+6. [Part D: Integrate with PMS Frontend](#6-part-d-integrate-with-pms-frontend)
+7. [Part E: Testing and Verification](#7-part-e-testing-and-verification)
+8. [Troubleshooting](#8-troubleshooting)
+9. [Reference Commands](#9-reference-commands)
 
 ---
 
 ## 1. Overview
 
-This guide walks you through deploying **Kintsugi's open-source voice biomarker models** for mental health screening in the PMS. By the end you will have:
+This guide walks you through deploying **Kintsugi's voice biomarker models** for mental health screening in the PMS using three available integration paths:
 
-- Kintsugi depression and anxiety detection models running self-hosted
-- Client-side audio feature extraction (privacy-preserving — no speech content transmitted)
+- **Path A (recommended):** Self-hosted DAM model from Hugging Face -- runs locally, no cloud dependency, Apache 2.0 license
+- **Path B (optional fallback):** Cloud API via `kintsugi-python` PyPI SDK -- calls `api.kintsugihealth.com/v2`
+
+By the end you will have:
+
+- The DAM model (fine-tuned Whisper-Small EN) running self-hosted for depression/anxiety screening
+- Optionally, the `kintsugi-python` SDK configured as a cloud API fallback
 - A Screening Service in the PMS backend with clinical decision support
 - Screening results linked to patient encounters
 - A clinician screening dashboard in the Next.js frontend
@@ -38,25 +44,39 @@ This guide walks you through deploying **Kintsugi's open-source voice biomarker 
 flowchart LR
     subgraph Frontend["Next.js :3000"]
         UI["Screening<br/>Dashboard"]
-        FE["Audio Feature<br/>Extractor"]
+        REC["Audio<br/>Recorder"]
     end
 
     subgraph Backend["FastAPI :8000"]
-        ENGINE["Kintsugi<br/>Biomarker Engine"]
+        DAM_ENG["DAM Inference<br/>Engine"]
+        SDK["kintsugi-python<br/>(Cloud Fallback)"]
         SCREEN["Screening<br/>Service"]
+    end
+
+    subgraph HF["Hugging Face Model"]
+        DAM["KintsugiHealth/dam<br/>(Whisper-Small EN)"]
+    end
+
+    subgraph Cloud["Kintsugi Cloud"]
+        API["api.kintsugihealth.com"]
     end
 
     subgraph Data["PostgreSQL :5432"]
         DB["Screening Results<br/>+ Audit Logs"]
     end
 
-    FE -->|feature vectors| ENGINE
-    ENGINE --> SCREEN
+    REC -->|"WAV audio"| DAM_ENG
+    DAM_ENG --> DAM
+    DAM_ENG -.->|"fallback"| SDK
+    SDK -.-> API
+    DAM_ENG --> SCREEN
     SCREEN --> DB
     UI --> SCREEN
 
     style Frontend fill:#fef3c7,stroke:#d97706
     style Backend fill:#dcfce7,stroke:#16a34a
+    style HF fill:#dbeafe,stroke:#2563eb
+    style Cloud fill:#f3e8ff,stroke:#7c3aed
     style Data fill:#fce7f3,stroke:#db2777
 ```
 
@@ -68,12 +88,28 @@ flowchart LR
 
 | Software | Minimum Version | Check Command |
 |----------|----------------|---------------|
-| Python | 3.11+ | `python --version` |
+| Python | 3.8+ | `python --version` |
+| Git | Any | `git --version` |
+| Git LFS | Any | `git lfs --version` |
 | Node.js | 20+ | `node --version` |
 | PostgreSQL | 15+ | `psql --version` |
-| Git | Any | `git --version` |
 
-### 2.2 Verify PMS Services
+### 2.2 Install Git LFS
+
+The DAM model on Hugging Face uses Git LFS for large model files:
+
+```bash
+# macOS
+brew install git-lfs
+
+# Ubuntu/Debian
+sudo apt install git-lfs
+
+# Initialize
+git lfs install
+```
+
+### 2.3 Verify PMS Services
 
 ```bash
 # Backend running
@@ -88,24 +124,171 @@ psql -h localhost -p 5432 -U pms -d pms_dev -c "SELECT 1"
 
 ---
 
-## 3. Part A: Deploy Kintsugi Voice Biomarker Engine
+## 3. Part A: Deploy the DAM Model from Hugging Face
 
-### Step 1: Clone the Kintsugi open-source repository
+### Step 1: Clone the DAM model repository
 
 ```bash
 cd pms-backend
-git clone https://github.com/KintsugiMindfulWellness/kintsugi-voice.git \
-  app/integrations/kintsugi_models
+
+# Clone the model (includes Pipeline class, weights, and requirements)
+git clone https://huggingface.co/KintsugiHealth/dam \
+  app/integrations/kintsugi_dam
+
+# Verify model files are present (Git LFS should download them)
+ls -la app/integrations/kintsugi_dam/
 ```
 
-### Step 2: Install Python dependencies
+You should see: `pipeline.py`, `requirements.txt`, model weight files, and the `tuning/` directory.
+
+### Step 2: Install model dependencies
 
 ```bash
-pip install torch>=2.0 librosa>=0.10 numpy>=1.24 scipy>=1.11
-pip freeze | grep -E "torch|librosa|numpy|scipy"
+cd app/integrations/kintsugi_dam
+pip install -r requirements.txt
+cd ../../..
+
+# Verify key dependencies
+python -c "import torch; import whisper; print('Dependencies OK')"
 ```
 
-### Step 3: Create the biomarker engine configuration
+### Step 3: Verify the model loads and runs
+
+```bash
+python -c "
+import sys
+sys.path.insert(0, 'app/integrations/kintsugi_dam')
+from pipeline import Pipeline
+
+pipeline = Pipeline()
+print('DAM model loaded successfully')
+print('Model ready for inference')
+"
+```
+
+### Step 4: Test with a sample audio file
+
+```bash
+# Generate a 35-second test WAV file
+python -c "
+import numpy as np
+import wave
+
+sample_rate = 16000
+duration = 35
+t = np.linspace(0, duration, sample_rate * duration)
+# Simulate speech-like audio with varying frequency
+audio = np.sin(2 * np.pi * (200 + 50 * np.sin(2 * np.pi * 0.5 * t)) * t)
+audio = (audio * 16000).astype(np.int16)
+
+with wave.open('/tmp/test_dam.wav', 'w') as wf:
+    wf.setnchannels(1)
+    wf.setsampwidth(2)
+    wf.setframerate(sample_rate)
+    wf.writeframes(audio.tobytes())
+
+print(f'Generated {duration}s test WAV at /tmp/test_dam.wav')
+"
+
+# Run inference
+python -c "
+import sys
+sys.path.insert(0, 'app/integrations/kintsugi_dam')
+from pipeline import Pipeline
+
+pipeline = Pipeline()
+
+# Quantized output: severity categories
+result_q = pipeline.run_on_file('/tmp/test_dam.wav', quantized=True)
+print(f'Quantized: {result_q}')
+
+# Raw output: float scores
+result_r = pipeline.run_on_file('/tmp/test_dam.wav', quantized=False)
+print(f'Raw scores: {result_r}')
+"
+```
+
+Expected output format:
+```
+Quantized: {'depression': 0, 'anxiety': 0}
+Raw scores: {'depression': 0.123, 'anxiety': 0.087}
+```
+
+**Checkpoint:** DAM model cloned from Hugging Face, dependencies installed, model loads successfully, and inference produces depression/anxiety scores from audio.
+
+---
+
+## 4. Part B: Set Up the PyPI SDK (Cloud API Fallback)
+
+> **Note:** This step is optional. The DAM model (Part A) is the primary integration path. The PyPI SDK provides a cloud API fallback for validation or when local inference is unavailable. Be aware that Kintsugi Health shut down in February 2026 -- the cloud API may become unavailable.
+
+### Step 1: Install the kintsugi-python package
+
+```bash
+pip install kintsugi-python==0.1.8
+```
+
+### Step 2: Configure API key
+
+Obtain an API key from [Kintsugi's developer portal](https://www.kintsugihealth.com/api/get-started) (if still available).
+
+Add to `pms-backend/.env`:
+
+```bash
+KINTSUGI_API_KEY=your_api_key_here
+```
+
+### Step 3: Verify SDK connectivity
+
+```bash
+python -c "
+from kintsugi.api import Api
+import os
+
+api_key = os.environ.get('KINTSUGI_API_KEY', 'test-key')
+api = Api(x_api_key=api_key)
+print(f'Kintsugi SDK initialized (API key: {api_key[:8]}...)')
+print('Note: Actual API calls require a valid key')
+"
+```
+
+### Step 4: Understand the SDK workflow
+
+The `kintsugi-python` SDK follows a three-step async workflow:
+
+```python
+from kintsugi.api import Api
+
+api = Api(x_api_key="YOUR_API_KEY")
+
+# Step 1: Initiate a session
+session = api.prediction().initiate(user_id="hashed-patient-id")
+session_id = session["session_id"]
+
+# Step 2: Submit audio for prediction
+prediction = api.prediction().predict(
+    session_id=session_id,
+    user_id="hashed-patient-id",
+    audio_file=open("patient_audio.wav", "rb"),
+)
+
+# Step 3: Retrieve results (async -- may need polling)
+result = api.prediction().get_prediction_by_session(session_id)
+score = result.get_score()
+```
+
+**Cloud API response fields include:**
+- `predicted_score_depression`: `no_to_mild` / `mild_to_moderate` / `moderate_to_severe`
+- `predicted_score_anxiety`: `no_to_minimal` / `mild` / `moderate` / `moderate_severe`
+- Clinical inventory estimates: PHQ-2, PHQ-9, GAD-7
+
+**Checkpoint:** `kintsugi-python` SDK installed and configured. Cloud API workflow understood.
+
+---
+
+## 5. Part C: Integrate with PMS Backend
+
+### Step 1: Create the screening configuration
 
 Create `app/integrations/kintsugi/config.py`:
 
@@ -119,22 +302,31 @@ from typing import Optional
 from pydantic_settings import BaseSettings
 
 
-class ScreeningCategory(str, Enum):
-    """Screening result categories."""
-    NORMAL = "normal"
-    ELEVATED = "elevated"
-    HIGH_RISK = "high_risk"
+class DepressionSeverity(int, Enum):
+    """DAM depression severity levels (mapped to PHQ-9)."""
+    NONE = 0          # PHQ-9 <= 9
+    MILD_MODERATE = 1  # PHQ-9 10-14
+    SEVERE = 2         # PHQ-9 >= 15
+
+
+class AnxietySeverity(int, Enum):
+    """DAM anxiety severity levels (mapped to GAD-7)."""
+    NONE = 0       # GAD-7 <= 4
+    MILD = 1       # GAD-7 5-9
+    MODERATE = 2   # GAD-7 10-14
+    SEVERE = 3     # GAD-7 >= 15
 
 
 class KintsugiSettings(BaseSettings):
     """Kintsugi voice biomarker settings."""
 
-    kintsugi_model_path: str = "app/integrations/kintsugi_models"
-    kintsugi_depression_threshold: float = 0.5
-    kintsugi_anxiety_threshold: float = 0.5
-    kintsugi_high_risk_threshold: float = 0.75
-    kintsugi_min_audio_seconds: int = 20
-    kintsugi_sample_rate: int = 16000
+    # DAM model (primary)
+    kintsugi_dam_model_path: str = "app/integrations/kintsugi_dam"
+    kintsugi_min_audio_seconds: int = 30
+
+    # Cloud API fallback (optional)
+    kintsugi_api_key: Optional[str] = None
+    kintsugi_use_cloud_fallback: bool = False
 
     class Config:
         env_file = ".env"
@@ -144,310 +336,237 @@ class KintsugiSettings(BaseSettings):
 class ScreeningResult:
     """Result from a voice biomarker screening."""
 
-    depression_score: float  # 0.0 to 1.0
-    anxiety_score: float     # 0.0 to 1.0
-    confidence: float        # 0.0 to 1.0
-    depression_category: ScreeningCategory
-    anxiety_category: ScreeningCategory
+    depression_severity: int       # 0, 1, or 2
+    anxiety_severity: int          # 0, 1, 2, or 3
+    depression_raw: float          # raw model score
+    anxiety_raw: float             # raw model score
     audio_duration_seconds: float
-    feature_count: int
+    source: str                    # "dam_local" or "cloud_api"
+
+    @property
+    def depression_label(self) -> str:
+        labels = {0: "none", 1: "mild_to_moderate", 2: "severe"}
+        return labels.get(self.depression_severity, "unknown")
+
+    @property
+    def anxiety_label(self) -> str:
+        labels = {0: "none", 1: "mild", 2: "moderate", 3: "severe"}
+        return labels.get(self.anxiety_severity, "unknown")
 
     def to_dict(self) -> dict:
         return {
-            "depression_score": round(self.depression_score, 3),
-            "anxiety_score": round(self.anxiety_score, 3),
-            "confidence": round(self.confidence, 3),
-            "depression_category": self.depression_category.value,
-            "anxiety_category": self.anxiety_category.value,
+            "depression_severity": self.depression_severity,
+            "depression_label": self.depression_label,
+            "anxiety_severity": self.anxiety_severity,
+            "anxiety_label": self.anxiety_label,
+            "depression_raw": round(self.depression_raw, 4),
+            "anxiety_raw": round(self.anxiety_raw, 4),
             "audio_duration_seconds": round(self.audio_duration_seconds, 1),
-            "feature_count": self.feature_count,
+            "source": self.source,
         }
 ```
 
-### Step 4: Create the audio feature extractor
-
-Create `app/integrations/kintsugi/features.py`:
-
-```python
-"""Audio feature extraction for voice biomarker analysis.
-
-Privacy guarantee: This module extracts ONLY acoustic features
-(pitch, tone, rhythm, energy) from audio. Speech content is never
-processed, stored, or transmitted. The output is a numerical
-feature vector that contains no speech content information.
-"""
-
-import logging
-from typing import Optional
-
-import librosa
-import numpy as np
-
-from .config import KintsugiSettings
-
-logger = logging.getLogger(__name__)
-
-settings = KintsugiSettings()
-
-
-class AudioFeatureExtractor:
-    """Extracts acoustic features from audio for biomarker analysis."""
-
-    def __init__(self, sample_rate: int = 16000):
-        self.sample_rate = sample_rate
-
-    def extract_features(self, audio_bytes: bytes) -> Optional[np.ndarray]:
-        """
-        Extract acoustic feature vector from raw audio bytes.
-
-        The extracted features include:
-        - MFCCs (mel-frequency cepstral coefficients): vocal tract shape
-        - Pitch (F0): fundamental frequency and variation
-        - Energy: loudness patterns and variation
-        - Spectral features: tone quality and brightness
-        - Temporal features: speech rate, pause patterns
-
-        Returns a 1D numpy array of features, or None if audio is too short.
-        """
-        # Convert bytes to numpy array
-        audio = np.frombuffer(audio_bytes, dtype=np.int16).astype(np.float32)
-        audio = audio / 32768.0  # Normalize to [-1, 1]
-
-        # Check minimum duration
-        duration = len(audio) / self.sample_rate
-        if duration < settings.kintsugi_min_audio_seconds:
-            logger.warning(
-                "Audio too short: %.1fs (minimum %ds)",
-                duration, settings.kintsugi_min_audio_seconds,
-            )
-            return None
-
-        # Extract MFCCs (13 coefficients + deltas + delta-deltas = 39 features)
-        mfccs = librosa.feature.mfcc(
-            y=audio, sr=self.sample_rate, n_mfcc=13
-        )
-        mfcc_mean = np.mean(mfccs, axis=1)
-        mfcc_std = np.std(mfccs, axis=1)
-
-        # Extract pitch (F0)
-        f0, voiced_flag, _ = librosa.pyin(
-            audio, fmin=50, fmax=500, sr=self.sample_rate
-        )
-        f0_clean = f0[~np.isnan(f0)] if f0 is not None else np.array([0])
-        pitch_features = np.array([
-            np.mean(f0_clean) if len(f0_clean) > 0 else 0,
-            np.std(f0_clean) if len(f0_clean) > 0 else 0,
-            np.median(f0_clean) if len(f0_clean) > 0 else 0,
-        ])
-
-        # Extract energy (RMS)
-        rms = librosa.feature.rms(y=audio)[0]
-        energy_features = np.array([
-            np.mean(rms),
-            np.std(rms),
-            np.max(rms),
-        ])
-
-        # Extract spectral features
-        spectral_centroid = np.mean(
-            librosa.feature.spectral_centroid(y=audio, sr=self.sample_rate)
-        )
-        spectral_rolloff = np.mean(
-            librosa.feature.spectral_rolloff(y=audio, sr=self.sample_rate)
-        )
-        zero_crossing = np.mean(
-            librosa.feature.zero_crossing_rate(audio)
-        )
-
-        spectral_features = np.array([
-            spectral_centroid,
-            spectral_rolloff,
-            zero_crossing,
-        ])
-
-        # Combine all features into a single vector
-        feature_vector = np.concatenate([
-            mfcc_mean,      # 13 features
-            mfcc_std,       # 13 features
-            pitch_features,  # 3 features
-            energy_features, # 3 features
-            spectral_features, # 3 features
-        ])
-
-        logger.info(
-            "Extracted %d features from %.1fs audio",
-            len(feature_vector), duration,
-        )
-
-        return feature_vector
-
-    def extract_from_file(self, file_path: str) -> Optional[np.ndarray]:
-        """Extract features from an audio file."""
-        audio, sr = librosa.load(file_path, sr=self.sample_rate, mono=True)
-        audio_bytes = (audio * 32768).astype(np.int16).tobytes()
-        return self.extract_features(audio_bytes)
-```
-
-### Step 5: Create the biomarker inference engine
+### Step 2: Create the DAM inference engine
 
 Create `app/integrations/kintsugi/engine.py`:
 
 ```python
-"""Kintsugi voice biomarker inference engine.
+"""Kintsugi DAM inference engine.
 
-Runs open-source depression and anxiety detection models
-on acoustic feature vectors.
+Primary path: self-hosted DAM model from Hugging Face.
+Fallback: kintsugi-python SDK (cloud API).
 """
 
 import logging
+import sys
+import wave
+from io import BytesIO
 from pathlib import Path
 from typing import Optional
 
-import numpy as np
-import torch
-
-from .config import KintsugiSettings, ScreeningCategory, ScreeningResult
-from .features import AudioFeatureExtractor
+from .config import KintsugiSettings, ScreeningResult
 
 logger = logging.getLogger(__name__)
 
 
-class KintsugiBiomarkerEngine:
-    """Self-hosted inference engine for Kintsugi voice biomarker models."""
+class KintsugiEngine:
+    """Voice biomarker screening engine with local DAM model and cloud fallback."""
 
     def __init__(self, settings: Optional[KintsugiSettings] = None):
         self.settings = settings or KintsugiSettings()
-        self.feature_extractor = AudioFeatureExtractor(
-            sample_rate=self.settings.kintsugi_sample_rate
-        )
-        self._depression_model = None
-        self._anxiety_model = None
+        self._pipeline = None
+        self._cloud_api = None
         self._loaded = False
 
     def load_models(self) -> None:
-        """Load pre-trained Kintsugi models from disk."""
-        model_dir = Path(self.settings.kintsugi_model_path)
+        """Load the DAM model from the local Hugging Face clone."""
+        model_dir = Path(self.settings.kintsugi_dam_model_path)
 
-        depression_path = model_dir / "depression_model.pt"
-        anxiety_path = model_dir / "anxiety_model.pt"
+        if not model_dir.exists():
+            logger.warning("DAM model directory not found: %s", model_dir)
+            self._loaded = False
+            return
 
-        if depression_path.exists():
-            self._depression_model = torch.jit.load(str(depression_path))
-            self._depression_model.eval()
-            logger.info("Loaded depression model from %s", depression_path)
+        # Add model directory to Python path for pipeline import
+        model_path_str = str(model_dir.resolve())
+        if model_path_str not in sys.path:
+            sys.path.insert(0, model_path_str)
 
-        if anxiety_path.exists():
-            self._anxiety_model = torch.jit.load(str(anxiety_path))
-            self._anxiety_model.eval()
-            logger.info("Loaded anxiety model from %s", anxiety_path)
+        try:
+            from pipeline import Pipeline
+            self._pipeline = Pipeline()
+            self._loaded = True
+            logger.info("DAM model loaded from %s", model_dir)
+        except Exception as e:
+            logger.error("Failed to load DAM model: %s", e)
+            self._loaded = False
 
-        self._loaded = True
+    def _init_cloud_api(self):
+        """Initialize cloud API fallback if configured."""
+        if self._cloud_api is not None:
+            return
+
+        if not self.settings.kintsugi_api_key:
+            logger.warning("No Kintsugi API key configured for cloud fallback")
+            return
+
+        try:
+            from kintsugi.api import Api
+            self._cloud_api = Api(x_api_key=self.settings.kintsugi_api_key)
+            logger.info("Kintsugi cloud API initialized")
+        except ImportError:
+            logger.warning("kintsugi-python not installed; cloud fallback unavailable")
+        except Exception as e:
+            logger.error("Failed to initialize cloud API: %s", e)
 
     def analyze(self, audio_bytes: bytes) -> Optional[ScreeningResult]:
         """
         Analyze audio for depression and anxiety biomarkers.
 
+        Tries local DAM model first, falls back to cloud API if configured.
+
         Args:
-            audio_bytes: Raw PCM audio (16-bit, 16kHz, mono)
+            audio_bytes: Raw audio file bytes (WAV format)
 
         Returns:
-            ScreeningResult with depression and anxiety scores,
-            or None if audio is too short.
+            ScreeningResult with severity scores, or None on failure.
         """
+        # Get audio duration
+        duration = self._get_wav_duration(audio_bytes)
+        if duration is not None and duration < self.settings.kintsugi_min_audio_seconds:
+            logger.warning(
+                "Audio too short: %.1fs (minimum %ds)",
+                duration, self.settings.kintsugi_min_audio_seconds,
+            )
+            return None
+
+        # Try local DAM model first
+        result = self._analyze_local(audio_bytes, duration or 0.0)
+        if result is not None:
+            return result
+
+        # Fall back to cloud API
+        if self.settings.kintsugi_use_cloud_fallback:
+            return self._analyze_cloud(audio_bytes, duration or 0.0)
+
+        logger.error("No inference method available")
+        return None
+
+    def _analyze_local(
+        self, audio_bytes: bytes, duration: float
+    ) -> Optional[ScreeningResult]:
+        """Run inference using the local DAM model."""
         if not self._loaded:
             self.load_models()
 
-        # Extract acoustic features (no speech content)
-        features = self.feature_extractor.extract_features(audio_bytes)
-        if features is None:
+        if self._pipeline is None:
             return None
 
-        # Run inference
-        feature_tensor = torch.FloatTensor(features).unsqueeze(0)
+        # Write audio to temp file (DAM Pipeline expects a file path)
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+            tmp.write(audio_bytes)
+            tmp_path = tmp.name
 
-        with torch.no_grad():
-            if self._depression_model:
-                dep_output = self._depression_model(feature_tensor)
-                dep_score = torch.sigmoid(dep_output).item()
-            else:
-                # Fallback: use feature-based heuristic for demo
-                dep_score = self._heuristic_score(features, "depression")
+        try:
+            # Get quantized severity categories
+            result_q = self._pipeline.run_on_file(tmp_path, quantized=True)
+            # Get raw float scores for longitudinal tracking
+            result_r = self._pipeline.run_on_file(tmp_path, quantized=False)
 
-            if self._anxiety_model:
-                anx_output = self._anxiety_model(feature_tensor)
-                anx_score = torch.sigmoid(anx_output).item()
-            else:
-                anx_score = self._heuristic_score(features, "anxiety")
+            return ScreeningResult(
+                depression_severity=result_q["depression"],
+                anxiety_severity=result_q["anxiety"],
+                depression_raw=result_r["depression"],
+                anxiety_raw=result_r["anxiety"],
+                audio_duration_seconds=duration,
+                source="dam_local",
+            )
+        except Exception as e:
+            logger.error("DAM model inference failed: %s", e)
+            return None
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)
 
-        # Calculate confidence based on audio quality
-        audio_duration = len(audio_bytes) / (2 * self.settings.kintsugi_sample_rate)
-        confidence = min(1.0, audio_duration / 30.0)  # Full confidence at 30s
+    def _analyze_cloud(
+        self, audio_bytes: bytes, duration: float
+    ) -> Optional[ScreeningResult]:
+        """Run inference using the Kintsugi cloud API via PyPI SDK."""
+        self._init_cloud_api()
 
-        # Categorize results
-        dep_category = self._categorize(
-            dep_score, self.settings.kintsugi_depression_threshold
-        )
-        anx_category = self._categorize(
-            anx_score, self.settings.kintsugi_anxiety_threshold
-        )
+        if self._cloud_api is None:
+            return None
 
-        return ScreeningResult(
-            depression_score=dep_score,
-            anxiety_score=anx_score,
-            confidence=confidence,
-            depression_category=dep_category,
-            anxiety_category=anx_category,
-            audio_duration_seconds=audio_duration,
-            feature_count=len(features),
-        )
+        try:
+            import hashlib
+            user_id = hashlib.sha256(b"pms-screening").hexdigest()[:16]
 
-    def _categorize(self, score: float, threshold: float) -> ScreeningCategory:
-        """Categorize a score into screening categories."""
-        if score >= self.settings.kintsugi_high_risk_threshold:
-            return ScreeningCategory.HIGH_RISK
-        elif score >= threshold:
-            return ScreeningCategory.ELEVATED
-        return ScreeningCategory.NORMAL
+            prediction_api = self._cloud_api.prediction()
+            session = prediction_api.initiate(user_id=user_id)
+            session_id = session["session_id"]
 
-    def _heuristic_score(self, features: np.ndarray, condition: str) -> float:
-        """
-        Fallback heuristic when pre-trained model is not available.
-        Uses published acoustic correlates of depression/anxiety.
-        This is for development/demo only -- not clinically validated.
-        """
-        # Pitch features (indices 26-28)
-        pitch_mean = features[26] if len(features) > 26 else 0
-        pitch_std = features[27] if len(features) > 27 else 0
+            audio_file = BytesIO(audio_bytes)
+            audio_file.name = "screening.wav"
+            prediction_api.predict(
+                session_id=session_id,
+                user_id=user_id,
+                audio_file=audio_file,
+            )
 
-        # Energy features (indices 29-31)
-        energy_mean = features[29] if len(features) > 29 else 0
-        energy_std = features[30] if len(features) > 30 else 0
+            result = prediction_api.get_prediction_by_session(session_id)
 
-        if condition == "depression":
-            # Lower pitch variation and energy correlate with depression
-            score = 0.5
-            if pitch_std < 20:
-                score += 0.15
-            if energy_std < 0.02:
-                score += 0.1
-            return min(1.0, max(0.0, score))
-        else:
-            # Higher pitch and energy variation correlate with anxiety
-            score = 0.5
-            if pitch_std > 40:
-                score += 0.15
-            if energy_mean > 0.1:
-                score += 0.1
-            return min(1.0, max(0.0, score))
+            # Map cloud API severity strings to DAM integer levels
+            dep_map = {"no_to_mild": 0, "mild_to_moderate": 1, "moderate_to_severe": 2}
+            anx_map = {"no_to_minimal": 0, "mild": 1, "moderate": 2, "moderate_severe": 3}
+
+            dep_label = result.get("predicted_score_depression", "no_to_mild")
+            anx_label = result.get("predicted_score_anxiety", "no_to_minimal")
+
+            return ScreeningResult(
+                depression_severity=dep_map.get(dep_label, 0),
+                anxiety_severity=anx_map.get(anx_label, 0),
+                depression_raw=0.0,  # cloud API doesn't return raw floats
+                anxiety_raw=0.0,
+                audio_duration_seconds=duration,
+                source="cloud_api",
+            )
+        except Exception as e:
+            logger.error("Cloud API analysis failed: %s", e)
+            return None
+
+    @staticmethod
+    def _get_wav_duration(audio_bytes: bytes) -> Optional[float]:
+        """Get duration of a WAV file in seconds."""
+        try:
+            with wave.open(BytesIO(audio_bytes), "rb") as wf:
+                frames = wf.getnframes()
+                rate = wf.getframerate()
+                return frames / rate if rate > 0 else None
+        except Exception:
+            return None
 ```
 
-**Checkpoint:** Kintsugi open-source models downloaded, audio feature extraction implemented, and biomarker inference engine created with privacy-preserving design.
-
----
-
-## 4. Part B: Integrate with PMS Backend
-
-### Step 1: Create the screening API router
+### Step 3: Create the screening API router
 
 Create `app/api/routes/screening.py`:
 
@@ -461,7 +580,7 @@ from typing import Optional
 
 from fastapi import APIRouter, File, UploadFile, HTTPException, Query
 
-from app.integrations.kintsugi.engine import KintsugiBiomarkerEngine
+from app.integrations.kintsugi.engine import KintsugiEngine
 from app.integrations.kintsugi.config import KintsugiSettings
 
 logger = logging.getLogger(__name__)
@@ -469,7 +588,7 @@ router = APIRouter(prefix="/api/screening", tags=["screening"])
 
 # Singleton engine
 settings = KintsugiSettings()
-engine = KintsugiBiomarkerEngine(settings)
+engine = KintsugiEngine(settings)
 
 
 @router.post("/analyze")
@@ -481,23 +600,23 @@ async def analyze_voice(
     """
     Analyze voice audio for depression and anxiety biomarkers.
 
-    Accepts audio file (WAV, PCM 16-bit 16kHz preferred).
-    Returns screening scores and categories.
+    Accepts WAV audio file (single-channel, 30+ seconds of speech).
+    Returns depression and anxiety severity scores mapped to PHQ-9 and GAD-7.
 
-    Privacy: Only acoustic features are analyzed -- speech content
-    is never processed, stored, or logged.
+    Uses self-hosted DAM model (primary) or cloud API (fallback).
     """
     audio_bytes = await audio.read()
 
-    if len(audio_bytes) < settings.kintsugi_min_audio_seconds * 32000:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Audio must be at least {settings.kintsugi_min_audio_seconds} seconds",
-        )
+    if len(audio_bytes) < 1000:
+        raise HTTPException(status_code=400, detail="Audio file too small")
 
     result = engine.analyze(audio_bytes)
     if result is None:
-        raise HTTPException(status_code=400, detail="Could not analyze audio")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Could not analyze audio. Ensure WAV format, single-channel, "
+                   f"and at least {settings.kintsugi_min_audio_seconds}s of speech.",
+        )
 
     response = result.to_dict()
 
@@ -511,64 +630,28 @@ async def analyze_voice(
         response["encounter_id"] = encounter_id
 
     logger.info(
-        "Screening completed: dep=%.2f anx=%.2f conf=%.2f",
-        result.depression_score,
-        result.anxiety_score,
-        result.confidence,
+        "Screening completed: dep=%d(%s) anx=%d(%s) source=%s",
+        result.depression_severity, result.depression_label,
+        result.anxiety_severity, result.anxiety_label,
+        result.source,
     )
 
     return response
 
 
-@router.post("/analyze-features")
-async def analyze_features(features: list[float]):
-    """
-    Analyze pre-extracted acoustic features for biomarkers.
-
-    Use this endpoint when audio feature extraction is done client-side
-    (browser or Android) for maximum privacy -- no audio is transmitted.
-    """
-    import numpy as np
-
-    feature_array = np.array(features, dtype=np.float32)
-
-    if len(feature_array) < 30:
-        raise HTTPException(
-            status_code=400,
-            detail="Feature vector too short (minimum 35 features expected)",
-        )
-
-    dep_score = engine._heuristic_score(feature_array, "depression")
-    anx_score = engine._heuristic_score(feature_array, "anxiety")
-    confidence = 0.7  # Lower confidence for feature-only analysis
-
-    return {
-        "depression_score": round(dep_score, 3),
-        "anxiety_score": round(anx_score, 3),
-        "confidence": round(confidence, 3),
-        "depression_category": engine._categorize(
-            dep_score, settings.kintsugi_depression_threshold
-        ).value,
-        "anxiety_category": engine._categorize(
-            anx_score, settings.kintsugi_anxiety_threshold
-        ).value,
-        "feature_count": len(feature_array),
-        "screened_at": datetime.now(timezone.utc).isoformat(),
-    }
-
-
 @router.get("/health")
 async def health_check():
-    """Check Kintsugi biomarker engine status."""
+    """Check Kintsugi screening engine status."""
     return {
         "status": "ok",
         "service": "kintsugi-voice-biomarker",
-        "models_loaded": engine._loaded,
+        "dam_model_loaded": engine._loaded,
+        "cloud_fallback_configured": settings.kintsugi_use_cloud_fallback,
         "min_audio_seconds": settings.kintsugi_min_audio_seconds,
     }
 ```
 
-### Step 2: Register the router
+### Step 4: Register the router
 
 Add to `app/main.py`:
 
@@ -578,7 +661,7 @@ from app.api.routes.screening import router as screening_router
 app.include_router(screening_router)
 ```
 
-### Step 3: Create the screening result model
+### Step 5: Create the screening result model
 
 Add to `app/models/screening.py`:
 
@@ -599,23 +682,23 @@ class VoiceBiomarkerScreening(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     patient_id_hash = Column(String(64), nullable=True, index=True)
     encounter_id = Column(String(36), nullable=True, index=True)
-    depression_score = Column(Float, nullable=False)
-    anxiety_score = Column(Float, nullable=False)
-    confidence = Column(Float, nullable=False)
-    depression_category = Column(String(20), nullable=False)
-    anxiety_category = Column(String(20), nullable=False)
+    depression_severity = Column(Integer, nullable=False)
+    anxiety_severity = Column(Integer, nullable=False)
+    depression_raw = Column(Float, nullable=True)
+    anxiety_raw = Column(Float, nullable=True)
     audio_duration_seconds = Column(Float, nullable=False)
+    source = Column(String(20), nullable=False)  # "dam_local" or "cloud_api"
     consent_documented = Column(String(10), default="pending")
     created_at = Column(
         DateTime(timezone=True), server_default=func.now()
     )
 ```
 
-**Checkpoint:** PMS backend has screening API endpoints, database model for screening results, and HIPAA-compliant audit logging.
+**Checkpoint:** PMS backend has a dual-path screening engine (DAM local + cloud fallback), API endpoints, and database model for screening results.
 
 ---
 
-## 5. Part C: Integrate with PMS Frontend
+## 6. Part D: Integrate with PMS Frontend
 
 ### Step 1: Create the screening dashboard component
 
@@ -627,12 +710,14 @@ Create `src/components/screening/VoiceBiomarkerScreen.tsx`:
 import { useState, useRef } from "react";
 
 interface ScreeningResult {
-  depression_score: number;
-  anxiety_score: number;
-  confidence: number;
-  depression_category: string;
-  anxiety_category: string;
+  depression_severity: number;
+  depression_label: string;
+  anxiety_severity: number;
+  anxiety_label: string;
+  depression_raw: number;
+  anxiety_raw: number;
   audio_duration_seconds: number;
+  source: string;
   screened_at: string;
 }
 
@@ -640,6 +725,14 @@ interface VoiceBiomarkerScreenProps {
   patientId?: string;
   encounterId?: string;
 }
+
+const SEVERITY_COLORS: Record<string, string> = {
+  none: "text-green-600 bg-green-50 border-green-200",
+  mild: "text-yellow-600 bg-yellow-50 border-yellow-200",
+  mild_to_moderate: "text-orange-600 bg-orange-50 border-orange-200",
+  moderate: "text-orange-600 bg-orange-50 border-orange-200",
+  severe: "text-red-600 bg-red-50 border-red-200",
+};
 
 export function VoiceBiomarkerScreen({
   patientId,
@@ -690,7 +783,6 @@ export function VoiceBiomarkerScreen({
 
     if (timerRef.current) clearInterval(timerRef.current);
 
-    // Wait for final data
     await new Promise((r) => setTimeout(r, 200));
 
     setIsAnalyzing(true);
@@ -717,16 +809,8 @@ export function VoiceBiomarkerScreen({
     }
   };
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "high_risk":
-        return "text-red-600 bg-red-50 border-red-200";
-      case "elevated":
-        return "text-yellow-600 bg-yellow-50 border-yellow-200";
-      default:
-        return "text-green-600 bg-green-50 border-green-200";
-    }
-  };
+  const formatLabel = (label: string) =>
+    label.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
@@ -734,7 +818,7 @@ export function VoiceBiomarkerScreen({
         Voice Biomarker Screening
       </h2>
       <p className="mb-4 text-xs text-gray-500">
-        Analyzes acoustic features only -- speech content is not recorded
+        Analyzes acoustic features only -- speech content is not transcribed
       </p>
 
       {/* Recording Controls */}
@@ -751,11 +835,11 @@ export function VoiceBiomarkerScreen({
           <div className="flex items-center gap-3">
             <button
               onClick={stopAndAnalyze}
-              disabled={recordingTime < 20}
+              disabled={recordingTime < 30}
               className="rounded bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
             >
-              {recordingTime < 20
-                ? `Recording... (${20 - recordingTime}s remaining)`
+              {recordingTime < 30
+                ? `Recording... (${30 - recordingTime}s remaining)`
                 : "Stop & Analyze"}
             </button>
             <span className="flex items-center gap-1 text-sm text-gray-600">
@@ -770,38 +854,34 @@ export function VoiceBiomarkerScreen({
       {result && (
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            {/* Depression Score */}
+            {/* Depression */}
             <div
-              className={`rounded-lg border p-4 ${getCategoryColor(result.depression_category)}`}
+              className={`rounded-lg border p-4 ${SEVERITY_COLORS[result.depression_label] || SEVERITY_COLORS.none}`}
             >
               <div className="text-xs font-medium uppercase">Depression</div>
-              <div className="mt-1 text-2xl font-bold">
-                {(result.depression_score * 100).toFixed(0)}%
+              <div className="mt-1 text-xl font-bold">
+                {formatLabel(result.depression_label)}
               </div>
-              <div className="text-xs capitalize">
-                {result.depression_category.replace("_", " ")}
-              </div>
+              <div className="text-xs">PHQ-9 mapped severity {result.depression_severity}/2</div>
             </div>
 
-            {/* Anxiety Score */}
+            {/* Anxiety */}
             <div
-              className={`rounded-lg border p-4 ${getCategoryColor(result.anxiety_category)}`}
+              className={`rounded-lg border p-4 ${SEVERITY_COLORS[result.anxiety_label] || SEVERITY_COLORS.none}`}
             >
               <div className="text-xs font-medium uppercase">Anxiety</div>
-              <div className="mt-1 text-2xl font-bold">
-                {(result.anxiety_score * 100).toFixed(0)}%
+              <div className="mt-1 text-xl font-bold">
+                {formatLabel(result.anxiety_label)}
               </div>
-              <div className="text-xs capitalize">
-                {result.anxiety_category.replace("_", " ")}
-              </div>
+              <div className="text-xs">GAD-7 mapped severity {result.anxiety_severity}/3</div>
             </div>
           </div>
 
           {/* Metadata */}
           <div className="rounded bg-gray-50 p-3 text-xs text-gray-600">
             <div>
-              Confidence: {(result.confidence * 100).toFixed(0)}% | Duration:{" "}
-              {result.audio_duration_seconds.toFixed(1)}s
+              Duration: {result.audio_duration_seconds.toFixed(1)}s | Source:{" "}
+              {result.source === "dam_local" ? "Self-hosted DAM" : "Cloud API"}
             </div>
             <div className="mt-1 text-gray-400">
               Advisory only -- clinical judgment required for all decisions
@@ -814,11 +894,11 @@ export function VoiceBiomarkerScreen({
 }
 ```
 
-**Checkpoint:** Next.js frontend has a VoiceBiomarkerScreen component with recording controls, minimum-duration enforcement, and color-coded screening results display.
+**Checkpoint:** Next.js frontend has a VoiceBiomarkerScreen component with recording controls, 30-second minimum enforcement, severity-labeled results, and source indication (local vs cloud).
 
 ---
 
-## 6. Part D: Testing and Verification
+## 7. Part E: Testing and Verification
 
 ### Step 1: Verify screening engine health
 
@@ -831,86 +911,90 @@ Expected:
 {
   "status": "ok",
   "service": "kintsugi-voice-biomarker",
-  "models_loaded": true,
-  "min_audio_seconds": 20
+  "dam_model_loaded": true,
+  "cloud_fallback_configured": false,
+  "min_audio_seconds": 30
 }
 ```
 
-### Step 2: Test with audio file
+### Step 2: Test with audio file (DAM model)
 
 ```bash
-# Generate a 25-second test tone (no speech content needed)
+# Generate a 35-second test WAV
 python -c "
-import numpy as np
-sample_rate = 16000
-duration = 25
-t = np.linspace(0, duration, sample_rate * duration)
+import numpy as np, wave
+sr = 16000; dur = 35
+t = np.linspace(0, dur, sr * dur)
 audio = (np.sin(2 * np.pi * 200 * t) * 16000).astype(np.int16)
-audio.tofile('test_audio.raw')
-print(f'Generated {duration}s test audio ({len(audio)} samples)')
+with wave.open('/tmp/test_screening.wav', 'w') as wf:
+    wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(sr)
+    wf.writeframes(audio.tobytes())
+print('Test WAV generated')
 "
 
 # Analyze via API
 curl -X POST http://localhost:8000/api/screening/analyze \
-  -F "audio=@test_audio.raw" \
+  -F "audio=@/tmp/test_screening.wav" \
   -F "patient_id=test-001"
 ```
 
-Expected: JSON response with depression_score, anxiety_score, and categories.
+Expected: JSON with `depression_severity`, `anxiety_severity`, `depression_label`, `anxiety_label`, and `source: "dam_local"`.
 
-### Step 3: Test feature-only endpoint
-
-```bash
-# Send pre-extracted features (35 numeric values)
-curl -X POST http://localhost:8000/api/screening/analyze-features \
-  -H "Content-Type: application/json" \
-  -d '[0.1, -0.2, 0.3, 0.1, -0.1, 0.2, 0.0, -0.3, 0.1, 0.2,
-       0.05, 0.08, 0.12, 0.03, 0.06, 0.09, 0.02, 0.07, 0.11, 0.04,
-       0.15, 0.18, 0.22, 0.13, 0.16, 0.19,
-       180.5, 25.3, 175.0,
-       0.045, 0.012, 0.08,
-       1500.0, 3200.0, 0.065]'
-```
-
-### Step 4: Test frontend component
+### Step 3: Test frontend component
 
 1. Open http://localhost:3000 in Chrome
 2. Navigate to a patient encounter view
 3. Open the Voice Biomarker Screening panel
 4. Click **Start Screening**
-5. Speak naturally for 20+ seconds
+5. Speak naturally for 30+ seconds
 6. Click **Stop & Analyze**
-7. Verify screening results appear with scores and categories
+7. Verify screening results appear with severity labels and source indicator
 
-**Checkpoint:** All four verification steps pass -- health check, audio file analysis, feature-only analysis, and frontend interaction.
+**Checkpoint:** All verification steps pass -- health check, DAM model inference via API, and frontend interaction.
 
 ---
 
-## 7. Troubleshooting
+## 8. Troubleshooting
 
-### Model Loading Fails
+### DAM Model Loading Fails
 
-**Symptom:** `FileNotFoundError` when loading Kintsugi models.
-**Cause:** Models not downloaded or wrong path.
-**Fix:** Verify `kintsugi_model_path` in settings. Check that model files (`.pt`) exist in the directory. If models are not yet available, the engine uses the heuristic fallback.
+**Symptom:** `ModuleNotFoundError: No module named 'pipeline'` or model files missing.
+**Cause:** Git LFS didn't download model weights, or model path is incorrect.
+**Fix:**
+```bash
+cd app/integrations/kintsugi_dam
+git lfs pull  # Download large files
+ls -la *.pt *.bin  # Verify model weights exist
+```
+Also verify `kintsugi_dam_model_path` in `.env` or `KintsugiSettings`.
 
 ### Audio Too Short Error
 
-**Symptom:** API returns 400 with "Audio must be at least 20 seconds."
-**Cause:** Recording is shorter than the minimum required duration.
-**Fix:** Ensure at least 20 seconds of audio. The frontend enforces this with a countdown timer.
+**Symptom:** API returns 400 with "Audio must be at least 30 seconds."
+**Cause:** Recording is shorter than the minimum required duration for DAM model.
+**Fix:** Ensure at least 30 seconds of speech. The frontend enforces this with a countdown timer. Note: DAM requires 30s (not 20s like the old Kintsugi API).
 
-### Feature Extraction Returns None
+### Cloud API Returns 401/403
 
-**Symptom:** `extract_features()` returns None.
-**Cause:** Audio duration below threshold, or audio data is corrupt.
-**Fix:** Verify audio format (PCM 16-bit, 16kHz, mono). Check `librosa` can load the audio. Try with a known-good WAV file first.
+**Symptom:** Cloud fallback fails with authentication error.
+**Cause:** Invalid or expired API key, or API shut down.
+**Fix:** Verify `KINTSUGI_API_KEY` in `.env`. Check if `api.kintsugihealth.com` is still operational. If not, rely on the self-hosted DAM model (primary path).
 
-### High False Positive Rate
+### PyTorch Version Mismatch
 
-**Symptom:** Many patients flagged as elevated/high-risk who are not clinically depressed.
-**Cause:** Threshold too low, or heuristic fallback in use instead of trained model.
-**Fix:** Adjust `kintsugi_depression_threshold` and `kintsugi_anxiety_threshold` in settings. Use trained models (not heuristic) for clinical settings. Remember published specificity is 73.5% -- some false positives are expected.
+**Symptom:** `RuntimeError` when loading DAM model weights.
+**Cause:** PyTorch version doesn't match the version used to save the model.
+**Fix:** Install the PyTorch version specified in the DAM model's `requirements.txt`:
+```bash
+cd app/integrations/kintsugi_dam
+pip install -r requirements.txt
+```
+
+### High Memory Usage
+
+**Symptom:** DAM model uses more RAM than expected.
+**Cause:** Whisper-Small EN backbone loads into memory (~500MB).
+**Fix:** This is expected. For lower memory, ensure only one model instance (singleton pattern in engine). Consider running inference in a separate process with memory limits.
 
 ### Browser Microphone Permission Denied
 
@@ -920,7 +1004,7 @@ curl -X POST http://localhost:8000/api/screening/analyze-features \
 
 ---
 
-## 8. Reference Commands
+## 9. Reference Commands
 
 ### Daily Development
 
@@ -937,39 +1021,46 @@ curl -X POST http://localhost:8000/api/screening/analyze \
 ### Model Management
 
 ```bash
-# Check model files
-ls -la app/integrations/kintsugi_models/
+# Check DAM model files
+ls -la app/integrations/kintsugi_dam/
 
-# Update models from open-source repository
-cd app/integrations/kintsugi_models && git pull
+# Update model from Hugging Face
+cd app/integrations/kintsugi_dam && git pull
 
-# Benchmark model accuracy
-python scripts/benchmark_kintsugi.py --test-set data/screening_benchmark/
+# Run threshold tuning with dam-dataset
+python -c "
+from datasets import load_dataset
+val = load_dataset('KintsugiHealth/dam-dataset', split='validation')
+print(f'Validation samples: {len(val)}')
+"
 ```
 
 ### Useful URLs
 
 | Resource | URL |
 |----------|-----|
-| Kintsugi GitHub | github.com/KintsugiMindfulWellness |
-| Kintsugi Hugging Face | huggingface.co/KintsugiHealth |
+| DAM Model (Hugging Face) | https://huggingface.co/KintsugiHealth/dam |
+| DAM Dataset (Hugging Face) | https://huggingface.co/datasets/KintsugiHealth/dam-dataset |
+| kintsugi-python (PyPI) | https://pypi.org/project/kintsugi-python/ |
+| Kintsugi Voice API Docs | https://www.kintsugihealth.com/api/voice-api |
 | Screening API Health | http://localhost:8000/api/screening/health |
-| Clinical Validation Paper | pubmed.ncbi.nlm.nih.gov/39805690 |
+| Clinical Validation Paper | https://pubmed.ncbi.nlm.nih.gov/39805690/ |
 
 ---
 
 ## Next Steps
 
 1. Work through the [Kintsugi Developer Tutorial](35-KintsugiOpenSource-Developer-Tutorial.md) to build a longitudinal screening pipeline
-2. Integrate with [Speechmatics Flow API (Exp 33)](33-SpeechmaticsFlow-PMS-Developer-Setup-Guide.md) for combined voice agents + mental health screening
-3. Review [ElevenLabs (Exp 30)](30-ElevenLabs-PMS-Developer-Setup-Guide.md) for voice AI that can be paired with Kintsugi screening
+2. Download the [dam-dataset](https://huggingface.co/datasets/KintsugiHealth/dam-dataset) and tune severity thresholds for your patient population
+3. Integrate with [Speechmatics Flow API (Exp 33)](33-SpeechmaticsFlow-PMS-Developer-Setup-Guide.md) for combined voice agents + mental health screening
 
 ---
 
 ## Resources
 
-- **Kintsugi Open-Source Blog:** [kintsugihealth.com/blog/open-source](https://www.kintsugihealth.com/blog/open-source)
-- **Clinical Validation Study:** [PubMed 39805690](https://pubmed.ncbi.nlm.nih.gov/39805690/)
-- **GitHub Repository:** [github.com/KintsugiMindfulWellness](https://github.com/KintsugiMindfulWellness)
-- **Hugging Face Models:** [huggingface.co/KintsugiHealth](https://huggingface.co/KintsugiHealth)
+- **DAM Model:** [huggingface.co/KintsugiHealth/dam](https://huggingface.co/KintsugiHealth/dam) -- Apache 2.0, fine-tuned Whisper-Small EN
+- **DAM Dataset:** [huggingface.co/datasets/KintsugiHealth/dam-dataset](https://huggingface.co/datasets/KintsugiHealth/dam-dataset) -- ~863 hours, ~35K individuals
+- **PyPI SDK:** [pypi.org/project/kintsugi-python](https://pypi.org/project/kintsugi-python/) -- v0.1.8, MIT license
+- **Clinical Validation:** [PubMed 39805690](https://pubmed.ncbi.nlm.nih.gov/39805690/) -- 71.3% sensitivity, 73.5% specificity
+- **Annals of Family Medicine:** [Full paper](https://www.annfammed.org/content/early/2025/01/07/afm.240091)
 - **FDA Submission Materials:** [fda.gov/media/189837](https://www.fda.gov/media/189837/download)

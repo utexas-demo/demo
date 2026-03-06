@@ -1,14 +1,14 @@
-# Kintsugi Open-Source Voice Biomarker Developer Onboarding Tutorial
+# Kintsugi Voice Biomarker Developer Onboarding Tutorial
 
 **Welcome to the MPS PMS Kintsugi Voice Biomarker Integration Team**
 
-This tutorial will take you from zero to building your first mental health voice biomarker screening integration with the PMS. By the end, you will understand how Kintsugi's open-source models detect depression and anxiety from acoustic features, have a running local environment, and have built and tested a longitudinal screening pipeline end-to-end.
+This tutorial will take you from zero to building your first mental health voice biomarker screening integration with the PMS. By the end, you will understand how the Kintsugi DAM model detects depression and anxiety from acoustic features, have a running local environment, and have built and tested a longitudinal screening pipeline end-to-end.
 
 **Document ID:** PMS-EXP-KINTSUGI-002
-**Version:** 1.0
-**Date:** March 3, 2026
+**Version:** 2.0
+**Date:** March 6, 2026
 **Applies To:** PMS project (all platforms)
-**Prerequisite:** [Kintsugi Open-Source Setup Guide](35-KintsugiOpenSource-PMS-Developer-Setup-Guide.md)
+**Prerequisite:** [Kintsugi Setup Guide](35-KintsugiOpenSource-PMS-Developer-Setup-Guide.md)
 **Estimated time:** 2-3 hours
 **Difficulty:** Beginner-friendly
 
@@ -16,16 +16,16 @@ This tutorial will take you from zero to building your first mental health voice
 
 ## What You Will Learn
 
-1. What Kintsugi voice biomarkers are and why they were open-sourced
-2. How acoustic features (not speech content) reveal mental health signals
-3. How the 20-second analysis pipeline works (audio to feature vector to score)
-4. How to build privacy-preserving screening that never records speech content
-5. How to integrate screening results with PMS patient encounters
-6. How to build longitudinal mood tracking across multiple encounters
-7. How clinical validation metrics (71.3% sensitivity, 73.5% specificity) guide threshold tuning
-8. How to implement HIPAA-compliant consent and audit workflows for voice screening
-9. How Kintsugi compares to questionnaire-based screening (PHQ-9, GAD-7)
-10. How to combine voice biomarker screening with other PMS voice technologies
+1. What Kintsugi voice biomarkers are and why the technology was open-sourced
+2. How the DAM model (fine-tuned Whisper-Small EN) detects depression and anxiety from audio
+3. How severity scores map to PHQ-9 and GAD-7 clinical scales
+4. How to run the self-hosted DAM model for privacy-preserving screening
+5. How to use the `kintsugi-python` PyPI SDK as a cloud API fallback
+6. How to integrate screening results with PMS patient encounters
+7. How to build longitudinal mood tracking across multiple encounters
+8. How to tune severity thresholds using the dam-dataset from Hugging Face
+9. How to implement HIPAA-compliant consent and audit workflows for voice screening
+10. How Kintsugi compares to questionnaire-based screening (PHQ-9, GAD-7)
 
 ---
 
@@ -37,87 +37,88 @@ The US Preventive Services Task Force recommends universal depression screening 
 
 > *The intake coordinator sees 30 patients daily. Administering PHQ-9 to every patient adds 2.5-5 hours to the workday. Most days, screening gets skipped for "less concerning" patients -- precisely the ones who might benefit most.*
 
-Kintsugi solves this by detecting depression and anxiety biomarkers from **20 seconds of any speech** -- no questionnaire needed. The key insight is that depression and anxiety produce measurable changes in vocal acoustics: reduced pitch variation, lower energy, altered speech rhythm, and changed pause patterns. These changes are detectable by machine learning models even when the patient is talking about the weather.
+Kintsugi solves this by detecting depression and anxiety biomarkers from **30 seconds of any speech** -- no questionnaire needed. The key insight is that depression and anxiety produce measurable changes in vocal acoustics: reduced pitch variation, lower energy, altered speech rhythm, and changed pause patterns. These changes are detectable by machine learning models even when the patient is talking about the weather.
 
-Critically, Kintsugi analyzes **acoustic properties only** -- it does not process, record, or store what the patient says. This privacy-by-design approach means screening can happen during routine interactions (phone calls, telehealth visits, intake conversations) without the HIPAA burden of recording patient speech.
+### 1.2 How the DAM Model Works -- The Key Pieces
 
-### 1.2 How Kintsugi Works -- The Key Pieces
+The **DAM (Depression-Anxiety Model)** is a fine-tuned version of OpenAI's Whisper-Small EN model, adapted for audio classification rather than transcription. It was trained on ~863 hours of speech from ~35,000 individuals with clinician-administered PHQ-9 and GAD-7 ground truth labels.
 
 ```mermaid
 flowchart LR
-    subgraph Input["20s Audio Input"]
-        SPEECH["Patient Speech<br/>(Any Content)"]
+    subgraph Input["Audio Input"]
+        SPEECH["Patient Speech<br/>(30+ seconds, English)"]
     end
 
-    subgraph Features["Feature Extraction"]
-        PITCH["Pitch (F0)<br/>Mean, Variation"]
-        ENERGY["Energy (RMS)<br/>Loudness Patterns"]
-        MFCC["MFCCs<br/>Vocal Tract Shape"]
-        SPECTRAL["Spectral<br/>Tone Quality"]
+    subgraph Model["DAM Model"]
+        WHISPER["Whisper-Small EN<br/>(Backbone)"]
+        MULTI["Multi-Task Head<br/>(Depression + Anxiety)"]
     end
 
-    subgraph Models["Kintsugi Models"]
-        DEP["Depression<br/>Model"]
-        ANX["Anxiety<br/>Model"]
+    subgraph Output["Screening Output"]
+        DEP["Depression Severity<br/>0: None (PHQ-9 <= 9)<br/>1: Mild-Moderate (10-14)<br/>2: Severe (>= 15)"]
+        ANX["Anxiety Severity<br/>0: None (GAD-7 <= 4)<br/>1: Mild (5-9)<br/>2: Moderate (10-14)<br/>3: Severe (>= 15)"]
     end
 
-    subgraph Output["Screening Result"]
-        SCORES["Risk Scores<br/>0.0 - 1.0"]
-        CATEGORY["Categories<br/>Normal / Elevated /<br/>High Risk"]
-    end
-
-    SPEECH -->|"acoustic only<br/>(no content)"| Features
-    Features --> DEP
-    Features --> ANX
-    DEP --> SCORES
-    ANX --> SCORES
-    SCORES --> CATEGORY
+    SPEECH --> WHISPER
+    WHISPER --> MULTI
+    MULTI --> DEP
+    MULTI --> ANX
 
     style Input fill:#fef3c7,stroke:#d97706
-    style Features fill:#dbeafe,stroke:#2563eb
-    style Models fill:#dcfce7,stroke:#16a34a
-    style Output fill:#f3e8ff,stroke:#7c3aed
+    style Model fill:#dbeafe,stroke:#2563eb
+    style Output fill:#dcfce7,stroke:#16a34a
 ```
 
 **Three key concepts:**
 
-1. **Acoustic features, not speech content:** The extractor computes numerical properties of the sound wave (pitch frequency, energy levels, spectral shape) without any speech-to-text processing. The output is a vector of 35 numbers -- not words.
+1. **Whisper backbone extracts voice biomarkers:** The pre-trained Whisper encoder converts audio into rich acoustic representations. The multi-task head then maps these to depression and anxiety severity predictions -- trained jointly to leverage shared representations between the conditions.
 
-2. **20-second minimum analysis window:** Clinical validation showed that 20 seconds of speech provides sufficient acoustic information for reliable screening. Longer samples increase confidence but 20 seconds is the minimum.
+2. **30-second minimum speech window:** The DAM model requires at least 30 seconds of speech (after voice activity detection). Longer samples increase accuracy but 30 seconds is the validated minimum.
 
-3. **Screening, not diagnosis:** Kintsugi provides risk scores (0.0-1.0) and categories (normal/elevated/high-risk) as clinical decision support. It does not diagnose depression or anxiety -- that requires clinician evaluation.
+3. **Screening, not diagnosis:** DAM provides severity categories mapped to clinical scales (PHQ-9 for depression, GAD-7 for anxiety) as clinical decision support. It does not diagnose -- that requires clinician evaluation.
 
-### 1.3 How Kintsugi Fits with Other PMS Technologies
+### 1.3 Three Integration Paths
 
-| Feature | Kintsugi (Exp 35) | Speechmatics (Exp 10/33) | ElevenLabs (Exp 30) | MedASR (Exp 7) |
-|---------|-------------------|--------------------------|---------------------|----------------|
+| Feature | DAM Model (Hugging Face) | PyPI SDK (`kintsugi-python`) | Cloud REST API |
+|---------|--------------------------|------------------------------|----------------|
+| Source | [KintsugiHealth/dam](https://huggingface.co/KintsugiHealth/dam) | [PyPI](https://pypi.org/project/kintsugi-python/) | api.kintsugihealth.com/v2 |
+| License | Apache 2.0 | MIT | N/A (service) |
+| Runs where | Self-hosted (CPU or GPU) | Calls cloud API | Cloud |
+| Audio leaves network | No | Yes | Yes |
+| HIPAA advantage | Maximum -- no data egress | Requires PHI gateway | Requires PHI gateway |
+| Continuity risk | None -- model is downloaded | High -- company shut down | High -- company shut down |
+| Output format | `{depression: int, anxiety: int}` | Severity strings + PHQ/GAD | Severity strings + PHQ/GAD |
+| Threshold tuning | Yes (dam-dataset provided) | No | No |
+| **Recommended for PMS** | **Yes (primary)** | Optional fallback | Not recommended |
+
+### 1.4 How Kintsugi Fits with Other PMS Technologies
+
+| Feature | Kintsugi DAM (Exp 35) | Speechmatics (Exp 10/33) | ElevenLabs (Exp 30) | MedASR (Exp 7) |
+|---------|----------------------|--------------------------|---------------------|----------------|
 | What it analyzes | Acoustic features | Speech content | Speech content | Speech content |
-| Privacy model | Content-free | Content-based | Content-based | Content-based |
-| Output | Risk scores | Transcription | Text/audio | Transcription |
+| Privacy model | Self-hosted, no transcription | Cloud or on-prem | Cloud only | Self-hosted |
+| Output | Depression/anxiety severity | Transcription text | Text/audio | Transcription |
 | Clinical purpose | Mental health screening | Clinical dictation | Voice agents | Dictation |
-| Requires transcription | No | Yes (core function) | Yes | Yes |
-| Self-hosted | Yes (open-source) | Optional | No | Yes |
-| Cost | Free | Per-minute API | Per-minute API | Self-hosted |
-| Clinical validation | Published (Annals of Family Med) | Accuracy benchmarked | General purpose | Medical vocabulary |
+| Self-hosted | Yes (HF model) | Optional | No | Yes |
+| Complementary use | Screen audio that Speechmatics transcribes | Transcribe audio that Kintsugi screens | Kintsugi screens patient voice in ElevenLabs conversations | N/A |
 
-### 1.4 Key Vocabulary
+### 1.5 Key Vocabulary
 
 | Term | Meaning |
 |------|---------|
+| DAM | Depression-Anxiety Model -- Kintsugi's fine-tuned Whisper model for mental health screening |
+| PHQ-9 | Patient Health Questionnaire-9 -- standard depression screening tool (9 questions, score 0-27) |
+| GAD-7 | Generalized Anxiety Disorder-7 -- standard anxiety screening tool (7 questions, score 0-21) |
+| Whisper-Small EN | OpenAI's small English speech model -- the backbone of DAM |
 | Voice Biomarker | Measurable acoustic property of speech that correlates with a health condition |
-| MFCC | Mel-Frequency Cepstral Coefficients -- features representing vocal tract shape |
-| F0 (Fundamental Frequency) | The base pitch of a speaker's voice |
-| PHQ-9 | Patient Health Questionnaire-9 -- standard depression screening tool (9 questions) |
-| GAD-7 | Generalized Anxiety Disorder-7 -- standard anxiety screening tool (7 questions) |
-| Sensitivity | Proportion of true positive cases correctly identified (71.3% for Kintsugi) |
-| Specificity | Proportion of true negative cases correctly identified (73.5% for Kintsugi) |
-| Feature Vector | Numerical array of acoustic measurements extracted from audio |
-| Screening Category | Risk classification: normal, elevated, or high-risk |
-| Longitudinal Tracking | Monitoring biomarker changes across multiple encounters over time |
-| Content-Free Analysis | Processing that examines acoustic properties without recognizing speech words |
-| SCID-5 | Structured Clinical Interview for DSM-5 -- gold-standard diagnostic assessment |
+| Severity Category | DAM output: depression (0-2) and anxiety (0-3) mapped to clinical severity |
+| Quantized Output | DAM integer categories (e.g., depression=2 means severe) |
+| Raw Output | DAM float scores correlating monotonically with PHQ-9/GAD-7 |
+| dam-dataset | Hugging Face dataset with ~863 hours of labeled audio metadata for threshold tuning |
+| Indeterminate Region | Scores between severity thresholds where the model is uncertain |
+| kintsugi-python | PyPI SDK (v0.1.8) for calling Kintsugi's cloud API V2 |
 
-### 1.5 Our Architecture
+### 1.6 Our Architecture
 
 ```mermaid
 flowchart TB
@@ -129,8 +130,7 @@ flowchart TB
 
     subgraph Backend["PMS Backend (FastAPI :8000)"]
         ANALYZE["/api/screening/analyze<br/>(Audio Upload)"]
-        FEATURES["/api/screening/analyze-features<br/>(Pre-Extracted)"]
-        ENGINE["Kintsugi Biomarker<br/>Engine"]
+        ENGINE["Kintsugi Engine<br/>(DAM Primary +<br/>Cloud Fallback)"]
         SCREEN_SVC["Screening Service<br/>(Decision Support)"]
         TREND_SVC["Longitudinal Trend<br/>Analyzer"]
         AUDIT["Screening Audit<br/>Logger"]
@@ -142,23 +142,20 @@ flowchart TB
         end
     end
 
-    subgraph Models["Open-Source Models"]
-        DEP["Depression Model<br/>(PyTorch)"]
-        ANX["Anxiety Model<br/>(PyTorch)"]
+    subgraph Models["Self-Hosted Models"]
+        DAM["KintsugiHealth/dam<br/>(Whisper-Small EN<br/>Apache 2.0)"]
+        DS["dam-dataset<br/>(Threshold Tuning)"]
     end
 
     subgraph Data["Data Layer"]
         PG["PostgreSQL :5432<br/>(Screening Results<br/>+ Audit Logs)"]
     end
 
-    BROWSER -->|"feature vectors<br/>(no audio)"| FEATURES
-    BROWSER -->|"audio upload"| ANALYZE
-    ANDROID -->|"feature vectors"| FEATURES
-    TELE -->|"audio upload"| ANALYZE
+    BROWSER -->|"WAV audio"| ANALYZE
+    ANDROID -->|"WAV audio"| ANALYZE
+    TELE -->|"WAV audio"| ANALYZE
     ANALYZE --> ENGINE
-    FEATURES --> ENGINE
-    ENGINE --> DEP
-    ENGINE --> ANX
+    ENGINE --> DAM
     ENGINE --> SCREEN_SVC
     SCREEN_SVC --> APIs
     SCREEN_SVC --> TREND_SVC
@@ -187,7 +184,7 @@ flowchart TB
    ```bash
    curl http://localhost:8000/api/screening/health
    ```
-   Expected: `{"status": "ok", "service": "kintsugi-voice-biomarker", ...}`
+   Expected: `{"status": "ok", "service": "kintsugi-voice-biomarker", "dam_model_loaded": true, ...}`
 
 3. **PostgreSQL running:**
    ```bash
@@ -201,29 +198,38 @@ flowchart TB
    ```
    Expected: HTML response
 
-5. **Python dependencies installed:**
+5. **DAM model loaded:**
    ```bash
-   python -c "import torch, librosa, numpy; print('All dependencies OK')"
+   python -c "
+   import sys
+   sys.path.insert(0, 'pms-backend/app/integrations/kintsugi_dam')
+   from pipeline import Pipeline
+   p = Pipeline()
+   print('DAM model loaded successfully')
+   "
    ```
-   Expected: `All dependencies OK`
+   Expected: `DAM model loaded successfully`
 
 ### 2.2 Quick Test
 
 ```bash
-# Generate test audio and run screening
+# Generate test WAV and run screening
 python -c "
-import numpy as np
-sr = 16000
-audio = (np.sin(2 * np.pi * 200 * np.linspace(0, 25, sr * 25)) * 16000).astype(np.int16)
-audio.tofile('/tmp/test_screening.raw')
-print('Test audio generated')
+import numpy as np, wave
+sr = 16000; dur = 35
+t = np.linspace(0, dur, sr * dur)
+audio = (np.sin(2 * np.pi * 200 * t) * 16000).astype(np.int16)
+with wave.open('/tmp/test_screening.wav', 'w') as wf:
+    wf.setnchannels(1); wf.setsampwidth(2); wf.setframerate(sr)
+    wf.writeframes(audio.tobytes())
+print('Test WAV generated')
 "
 
 curl -X POST http://localhost:8000/api/screening/analyze \
-  -F "audio=@/tmp/test_screening.raw"
+  -F "audio=@/tmp/test_screening.wav"
 ```
 
-Expected: JSON with depression_score, anxiety_score, and categories.
+Expected: JSON with `depression_severity`, `anxiety_severity`, `depression_label`, `anxiety_label`, and `source`.
 
 ---
 
@@ -232,9 +238,9 @@ Expected: JSON with depression_score, anxiety_score, and categories.
 ### 3.1 What We Are Building
 
 A **Longitudinal Mood Tracking Pipeline** that:
-1. Screens a patient's voice during each encounter
+1. Screens a patient's voice during each encounter using the DAM model
 2. Stores screening results linked to the patient and encounter
-3. Tracks mood trends across multiple encounters
+3. Tracks mood trends across multiple encounters using raw scores
 4. Alerts clinicians when a significant change is detected
 5. Displays a mood timeline on the patient dashboard
 
@@ -258,37 +264,36 @@ class MoodDataPoint:
     def __init__(
         self,
         encounter_id: str,
-        depression_score: float,
-        anxiety_score: float,
-        confidence: float,
+        depression_severity: int,
+        anxiety_severity: int,
+        depression_raw: float,
+        anxiety_raw: float,
         screened_at: datetime,
     ):
         self.encounter_id = encounter_id
-        self.depression_score = depression_score
-        self.anxiety_score = anxiety_score
-        self.confidence = confidence
+        self.depression_severity = depression_severity
+        self.anxiety_severity = anxiety_severity
+        self.depression_raw = depression_raw
+        self.anxiety_raw = anxiety_raw
         self.screened_at = screened_at
 
 
 class MoodTrend:
     """Analyzed mood trend across multiple data points."""
 
-    def __init__(
-        self,
-        patient_id: str,
-        data_points: list[MoodDataPoint],
-    ):
+    DEP_LABELS = {0: "None", 1: "Mild-Moderate", 2: "Severe"}
+    ANX_LABELS = {0: "None", 1: "Mild", 2: "Moderate", 3: "Severe"}
+
+    def __init__(self, patient_id: str, data_points: list[MoodDataPoint]):
         self.patient_id = patient_id
         self.data_points = sorted(data_points, key=lambda d: d.screened_at)
 
     @property
     def depression_trend(self) -> str:
-        """Calculate depression trend direction."""
+        """Calculate depression trend using raw scores."""
         if len(self.data_points) < 2:
             return "insufficient_data"
-        scores = [d.depression_score for d in self.data_points[-5:]]
-        if len(scores) < 2:
-            return "insufficient_data"
+        scores = [d.depression_raw for d in self.data_points[-5:]]
         change = scores[-1] - scores[0]
         if change > 0.1:
             return "worsening"
@@ -298,12 +303,10 @@ class MoodTrend:
 
     @property
     def anxiety_trend(self) -> str:
-        """Calculate anxiety trend direction."""
+        """Calculate anxiety trend using raw scores."""
         if len(self.data_points) < 2:
             return "insufficient_data"
-        scores = [d.anxiety_score for d in self.data_points[-5:]]
-        if len(scores) < 2:
-            return "insufficient_data"
+        scores = [d.anxiety_raw for d in self.data_points[-5:]]
         change = scores[-1] - scores[0]
         if change > 0.1:
             return "worsening"
@@ -318,10 +321,10 @@ class MoodTrend:
             return False
         latest = self.data_points[-1]
         previous = self.data_points[-2]
-        # Alert if depression score jumped 0.2+ since last screening
-        dep_jump = latest.depression_score - previous.depression_score
-        anx_jump = latest.anxiety_score - previous.anxiety_score
-        return dep_jump > 0.2 or anx_jump > 0.2
+        # Alert if severity category increased
+        dep_jump = latest.depression_severity > previous.depression_severity
+        anx_jump = latest.anxiety_severity > previous.anxiety_severity
+        return dep_jump or anx_jump
 
     def to_dict(self) -> dict:
         return {
@@ -331,12 +334,16 @@ class MoodTrend:
             "anxiety_trend": self.anxiety_trend,
             "alert_needed": self.alert_needed,
             "latest_screening": {
-                "depression_score": round(
-                    self.data_points[-1].depression_score, 3
+                "depression_severity": self.data_points[-1].depression_severity,
+                "depression_label": self.DEP_LABELS.get(
+                    self.data_points[-1].depression_severity, "Unknown"
                 ),
-                "anxiety_score": round(
-                    self.data_points[-1].anxiety_score, 3
+                "anxiety_severity": self.data_points[-1].anxiety_severity,
+                "anxiety_label": self.ANX_LABELS.get(
+                    self.data_points[-1].anxiety_severity, "Unknown"
                 ),
+                "depression_raw": round(self.data_points[-1].depression_raw, 4),
+                "anxiety_raw": round(self.data_points[-1].anxiety_raw, 4),
                 "screened_at": self.data_points[-1].screened_at.isoformat(),
             }
             if self.data_points
@@ -344,8 +351,12 @@ class MoodTrend:
             "timeline": [
                 {
                     "encounter_id": d.encounter_id,
-                    "depression_score": round(d.depression_score, 3),
-                    "anxiety_score": round(d.anxiety_score, 3),
+                    "depression_severity": d.depression_severity,
+                    "depression_label": self.DEP_LABELS.get(d.depression_severity, "?"),
+                    "anxiety_severity": d.anxiety_severity,
+                    "anxiety_label": self.ANX_LABELS.get(d.anxiety_severity, "?"),
+                    "depression_raw": round(d.depression_raw, 4),
+                    "anxiety_raw": round(d.anxiety_raw, 4),
                     "screened_at": d.screened_at.isoformat(),
                 }
                 for d in self.data_points
@@ -379,10 +390,10 @@ async def get_mood_trend(patient_id: str):
 
     now = datetime.now(timezone.utc)
     mock_points = [
-        MoodDataPoint("ENC-001", 0.35, 0.30, 0.8, now - timedelta(days=90)),
-        MoodDataPoint("ENC-002", 0.40, 0.35, 0.85, now - timedelta(days=60)),
-        MoodDataPoint("ENC-003", 0.55, 0.45, 0.9, now - timedelta(days=30)),
-        MoodDataPoint("ENC-004", 0.60, 0.50, 0.9, now - timedelta(days=7)),
+        MoodDataPoint("ENC-001", 0, 0, 0.25, 0.20, now - timedelta(days=90)),
+        MoodDataPoint("ENC-002", 0, 1, 0.35, 0.55, now - timedelta(days=60)),
+        MoodDataPoint("ENC-003", 1, 1, 0.60, 0.65, now - timedelta(days=30)),
+        MoodDataPoint("ENC-004", 1, 2, 0.70, 0.80, now - timedelta(days=7)),
     ]
 
     trend = MoodTrend(patient_id=patient_id, data_points=mock_points)
@@ -400,8 +411,12 @@ import { useState, useEffect } from "react";
 
 interface TimelinePoint {
   encounter_id: string;
-  depression_score: number;
-  anxiety_score: number;
+  depression_severity: number;
+  depression_label: string;
+  anxiety_severity: number;
+  anxiety_label: string;
+  depression_raw: number;
+  anxiety_raw: number;
   screened_at: string;
 }
 
@@ -418,6 +433,14 @@ interface MoodTimelineProps {
   patientId: string;
 }
 
+const SEVERITY_BADGE: Record<string, string> = {
+  None: "bg-green-100 text-green-700",
+  Mild: "bg-yellow-100 text-yellow-700",
+  "Mild-Moderate": "bg-orange-100 text-orange-700",
+  Moderate: "bg-orange-100 text-orange-700",
+  Severe: "bg-red-100 text-red-700",
+};
+
 export function MoodTimeline({ patientId }: MoodTimelineProps) {
   const [trend, setTrend] = useState<MoodTrendData | null>(null);
 
@@ -430,33 +453,13 @@ export function MoodTimeline({ patientId }: MoodTimelineProps) {
 
   if (!trend) return <div className="text-sm text-gray-400">Loading...</div>;
 
-  const getTrendIcon = (direction: string) => {
-    switch (direction) {
-      case "worsening":
-        return "arrow-up text-red-500";
-      case "improving":
-        return "arrow-down text-green-500";
-      case "stable":
-        return "minus text-gray-500";
-      default:
-        return "question text-gray-400";
-    }
-  };
-
-  const maxScore = Math.max(
-    ...trend.timeline.flatMap((p) => [
-      p.depression_score,
-      p.anxiety_score,
-    ])
-  );
-
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-900">Mood Timeline</h3>
         {trend.alert_needed && (
           <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-700">
-            Alert: Significant Change Detected
+            Alert: Severity Increased
           </span>
         )}
       </div>
@@ -481,45 +484,26 @@ export function MoodTimeline({ patientId }: MoodTimelineProps) {
         </div>
       </div>
 
-      {/* Visual Timeline */}
-      <div className="space-y-2">
+      {/* Timeline */}
+      <div className="space-y-3">
         {trend.timeline.map((point, i) => (
-          <div key={i} className="flex items-center gap-3">
+          <div key={i} className="flex items-center gap-3 rounded bg-gray-50 p-3">
             <div className="w-20 text-xs text-gray-500">
               {new Date(point.screened_at).toLocaleDateString()}
             </div>
-            <div className="flex-1">
-              {/* Depression bar */}
-              <div className="mb-1 flex items-center gap-2">
-                <span className="w-8 text-xs text-gray-400">DEP</span>
-                <div className="h-3 flex-1 rounded-full bg-gray-100">
-                  <div
-                    className="h-3 rounded-full bg-blue-400"
-                    style={{
-                      width: `${(point.depression_score / Math.max(maxScore, 1)) * 100}%`,
-                    }}
-                  />
-                </div>
-                <span className="w-10 text-right text-xs text-gray-600">
-                  {(point.depression_score * 100).toFixed(0)}%
-                </span>
-              </div>
-              {/* Anxiety bar */}
-              <div className="flex items-center gap-2">
-                <span className="w-8 text-xs text-gray-400">ANX</span>
-                <div className="h-3 flex-1 rounded-full bg-gray-100">
-                  <div
-                    className="h-3 rounded-full bg-purple-400"
-                    style={{
-                      width: `${(point.anxiety_score / Math.max(maxScore, 1)) * 100}%`,
-                    }}
-                  />
-                </div>
-                <span className="w-10 text-right text-xs text-gray-600">
-                  {(point.anxiety_score * 100).toFixed(0)}%
-                </span>
-              </div>
+            <div className="flex flex-1 gap-2">
+              <span
+                className={`rounded px-2 py-0.5 text-xs font-medium ${SEVERITY_BADGE[point.depression_label] || "bg-gray-100"}`}
+              >
+                DEP: {point.depression_label}
+              </span>
+              <span
+                className={`rounded px-2 py-0.5 text-xs font-medium ${SEVERITY_BADGE[point.anxiety_label] || "bg-gray-100"}`}
+              >
+                ANX: {point.anxiety_label}
+              </span>
             </div>
+            <div className="text-xs text-gray-400">{point.encounter_id}</div>
           </div>
         ))}
       </div>
@@ -546,7 +530,7 @@ Expected:
   "total_screenings": 4,
   "depression_trend": "worsening",
   "anxiety_trend": "worsening",
-  "alert_needed": false,
+  "alert_needed": true,
   "timeline": [...]
 }
 ```
@@ -555,10 +539,10 @@ Expected:
 
 1. Open http://localhost:3000/patients/test-patient-001
 2. Verify the **Mood Timeline** panel shows:
-   - 4 screening data points
-   - Depression and anxiety bar charts
+   - 4 screening data points with severity badges
+   - Depression and anxiety severity labels (color-coded)
    - Trend direction (worsening/improving/stable)
-   - Alert badge if significant change detected
+   - Alert badge when severity increases between encounters
 
 ---
 
@@ -566,123 +550,133 @@ Expected:
 
 ### 4.1 Strengths
 
-- **Privacy by design:** Analyzes acoustic features, never speech content -- dramatically reduces HIPAA burden compared to transcription-based approaches
-- **Passive screening:** Can analyze ambient speech during routine interactions -- no dedicated questionnaire time required
-- **Open-source and free:** No per-analysis API fees after initial deployment -- scales to unlimited screenings at compute cost only
-- **Clinically validated:** Published peer-reviewed study (Annals of Family Medicine) with 71.3% sensitivity and 73.5% specificity
-- **Self-hosted:** All processing runs on-premise with zero data egress -- ideal for HIPAA-regulated environments
-- **Lightweight inference:** CPU-only, no GPU required -- runs on standard server hardware
-- **Content-agnostic:** Works with any 20 seconds of speech in any language -- patients do not need to answer specific questions
-- **Longitudinal tracking:** Enables mood monitoring across encounters -- detects trends before they become acute
+- **Self-hosted model available:** The DAM model runs entirely on-premise from Hugging Face -- no cloud dependency, no API fees, no data egress. This is the ideal HIPAA path.
+- **Apache 2.0 license:** DAM model can be used, modified, and deployed commercially without restriction.
+- **Clinically validated:** Published peer-reviewed study (Annals of Family Medicine) with 71.3% sensitivity and 73.5% specificity.
+- **Whisper backbone:** Built on a well-understood, widely-deployed foundation model with strong acoustic feature extraction.
+- **Multi-task learning:** Joint depression and anxiety prediction leverages shared representations for better accuracy on both tasks.
+- **Threshold tuning dataset:** The dam-dataset (~863 hours, ~35K individuals) enables customizing severity thresholds for specific patient populations.
+- **Multiple integration paths:** Self-hosted model (primary), PyPI SDK (fallback), and cloud API provide flexibility.
+- **Clinical scale mapping:** Output maps directly to PHQ-9 and GAD-7 severity categories -- familiar to clinicians.
 
 ### 4.2 Weaknesses
 
-- **Moderate accuracy:** 71.3% sensitivity means ~29% of true depression cases are missed; 73.5% specificity means ~27% of healthy patients are falsely flagged
-- **Open-source maintenance risk:** Kintsugi Health shut down -- no commercial entity maintaining the models long-term
-- **No FDA clearance:** Kintsugi's FDA De Novo submission was not completed before company closure -- regulatory status is ambiguous
-- **English-only validation:** Clinical validation study was conducted with US/Canadian English speakers -- accuracy for other languages is unvalidated
-- **Screening only:** Cannot diagnose or treat -- always requires clinician follow-up, adding to workload for false positives
-- **Bias concerns:** Training data demographics may not represent all patient populations equally -- accuracy may vary by age, gender, and ethnicity
-- **20-second minimum:** Requires sufficient speech duration -- very quiet or non-verbal patients cannot be screened
+- **Company shut down:** Kintsugi Health closed in February 2026. No commercial entity maintains the model or API. The cloud API and PyPI SDK may stop working.
+- **English-only:** DAM was trained and validated on predominantly American English speakers. Accuracy for other languages/accents is unvalidated.
+- **30-second minimum:** Requires sufficient speech duration -- very quiet or non-verbal patients cannot be screened.
+- **No FDA clearance:** Kintsugi's FDA De Novo submission was not completed before company closure.
+- **Moderate accuracy:** 71.3% sensitivity means ~29% of true depression cases are missed; 73.5% specificity means ~27% of healthy patients are falsely flagged.
+- **No content analysis:** Because DAM analyzes only acoustic features, it cannot identify specific stressors, ideation, or clinical context from what the patient says.
+- **Model size:** Whisper-Small EN backbone requires ~500MB RAM -- modest but not negligible for resource-constrained environments.
 
 ### 4.3 When to Use Kintsugi vs Alternatives
 
 | Scenario | Best Choice | Why |
 |----------|-------------|-----|
-| Passive mental health screening | **Kintsugi (Exp 35)** | Content-free analysis, no questionnaire burden |
+| Passive mental health screening | **Kintsugi DAM (Exp 35)** | Self-hosted, no transcription, clinical scale mapping |
 | Standard depression assessment | **PHQ-9 questionnaire** | Validated, accepted by insurers, regulatory clarity |
 | Clinical dictation/transcription | **Speechmatics (Exp 10/33)** | Speech recognition, not mental health screening |
-| Voice agent conversations | **ElevenLabs (Exp 30)** or **Flow API (Exp 33)** | Interactive voice agents, not passive screening |
-| Combined screening + dictation | **Kintsugi + Speechmatics** | Parallel analysis: acoustic features + transcription |
+| Voice agent conversations | **ElevenLabs (Exp 30)** or **Flow API (Exp 33)** | Interactive voice, not passive screening |
+| Combined screening + dictation | **Kintsugi + Speechmatics** | Parallel analysis: acoustic screening + transcription |
 | High-confidence diagnosis | **Clinician assessment (SCID-5)** | Gold standard, regulatory requirement |
 
 ### 4.4 HIPAA / Healthcare Considerations
 
-1. **Content-free design is a major advantage:** Since Kintsugi analyzes acoustic features (not speech content), the privacy exposure is dramatically lower than speech-to-text systems
-2. **Patient consent is still mandatory:** Even though speech content is not processed, patients must consent to voice biomarker screening -- document consent in the PMS
-3. **Results are PHI:** Screening scores linked to patient IDs are protected health information -- encrypt at rest and in transit, apply access controls
-4. **Advisory-only positioning:** Results must be presented as clinical decision support, not diagnosis -- add clear disclaimers in all UI and reports
-5. **Audit every screening:** Log when screenings occur, who initiated them, which encounters they are linked to, and the result categories (not raw scores for non-clinician views)
-6. **No raw audio storage:** Raw audio must be discarded immediately after feature extraction -- only the numerical feature vector and screening result are stored
-7. **Bias documentation:** Document known model limitations (English-only validation, potential demographic biases) in clinical governance materials
+| Consideration | DAM Model (Self-Hosted) | PyPI SDK / Cloud API |
+|---------------|------------------------|---------------------|
+| Audio leaves network | No | Yes |
+| BAA required | No (self-hosted) | Yes (but unavailable -- company shut down) |
+| PHI De-ID Gateway needed | No | Yes (mandatory) |
+| Patient consent | Required | Required |
+| Audit logging | Required | Required |
+| Results are PHI | Yes -- encrypt at rest and in transit | Yes -- encrypt at rest and in transit |
+| Advisory disclaimers | Required in all UI | Required in all UI |
 
 ---
 
 ## Part 5: Debugging Common Issues (15 min read)
 
-### Issue 1: All Patients Score as "Normal"
+### Issue 1: DAM Model Returns Unexpected Severity for Test Audio
 
-**Symptom:** Every screening returns depression and anxiety scores below threshold.
-**Cause:** Using heuristic fallback instead of trained models, or thresholds set too high.
-**Fix:** Verify trained model files exist in `kintsugi_model_path`. Check `engine._loaded` returns True. Lower thresholds if using heuristic for development.
+**Symptom:** Synthetic test tones produce non-zero depression/anxiety scores.
+**Cause:** The model expects real speech, not synthetic tones. The Whisper backbone may produce unpredictable features from non-speech audio.
+**Fix:** Test with real speech recordings (at least 30 seconds). Use the dam-dataset validation split for benchmarking.
 
-### Issue 2: Audio Feature Extraction Takes 10+ Seconds
+### Issue 2: `ImportError: No module named 'pipeline'`
 
-**Symptom:** `/api/screening/analyze` response time exceeds 10 seconds.
-**Cause:** librosa running pitch extraction (pyin) on long audio segments.
-**Fix:** Trim audio to 30 seconds maximum before feature extraction. Use `librosa.load(file, duration=30)`. Consider pre-computing features on the client.
+**Symptom:** DAM model fails to load.
+**Cause:** Model directory not in Python path, or Git LFS didn't download files.
+**Fix:**
+```bash
+cd pms-backend/app/integrations/kintsugi_dam
+git lfs pull
+ls pipeline.py  # Should exist
+```
 
-### Issue 3: Trend API Shows "insufficient_data"
+### Issue 3: Audio Duration Below Minimum
 
-**Symptom:** `/api/screening/trend/{id}` returns "insufficient_data" for all trends.
-**Cause:** Patient has fewer than 2 screening data points.
-**Fix:** At least 2 screenings are required for trend analysis. Run additional screenings or seed development data.
+**Symptom:** Screening returns null / 400 error.
+**Cause:** Audio has less than 30 seconds of content.
+**Fix:** DAM requires 30 seconds (not 20 seconds like the legacy Kintsugi API). The frontend enforces this with a countdown.
 
-### Issue 4: Screening Results Differ Between Server and Client Feature Extraction
+### Issue 4: Cloud API Returns 403
 
-**Symptom:** Same audio produces different scores when analyzed via `/analyze` vs `/analyze-features`.
-**Cause:** Client-side feature extraction uses different parameters than server-side.
-**Fix:** Ensure both use identical librosa parameters (n_mfcc=13, fmin=50, fmax=500, sr=16000). Compare feature vectors directly to identify discrepancies.
+**Symptom:** Cloud fallback fails with authentication error.
+**Cause:** API key invalid or Kintsugi API shut down.
+**Fix:** The cloud API is at risk of discontinuation. Verify `api.kintsugihealth.com` is reachable. If not, rely exclusively on the self-hosted DAM model.
 
-### Issue 5: Model File Compatibility Error
+### Issue 5: High Memory Usage at Startup
 
-**Symptom:** `RuntimeError: Error loading model` when loading `.pt` files.
-**Cause:** PyTorch version mismatch between model export and inference environment.
-**Fix:** Check model export PyTorch version. Install matching version: `pip install torch==2.x.x`. If unable to match, re-export the model with your local PyTorch version.
+**Symptom:** Backend uses ~1GB RAM after loading DAM model.
+**Cause:** Whisper-Small EN backbone loads weights into memory (~500MB).
+**Fix:** This is expected. Use the singleton pattern (one engine instance). Consider lazy loading -- load the model on first screening request, not at startup.
 
 ---
 
 ## Part 6: Practice Exercises (45 min)
 
-### Exercise 1: Ambient Telehealth Screening
+### Exercise 1: Threshold Tuning with dam-dataset
 
-Build a feature that passively screens patients during telehealth video calls:
-1. Capture audio from the telehealth WebSocket stream (already available for Speechmatics)
-2. Buffer 20 seconds of patient speech (filter out clinician speech if possible)
-3. Extract features and run biomarker analysis
-4. Display screening results to the clinician after the call ends
-5. Store results linked to the telehealth encounter
+Use the Hugging Face dam-dataset to tune severity thresholds for your patient population:
+
+1. Download the validation split: `load_dataset("KintsugiHealth/dam-dataset", split="validation")`
+2. Use the model's `tuning/indet_roc.py` module to find optimal binary thresholds for depression (PHQ-9 >= 10)
+3. Experiment with the indeterminate region budget (10%, 20%, 30%) to trade off certainty vs coverage
+4. Evaluate on the test split and compare sensitivity/specificity to published results (71.3%/73.5%)
 
 **Hints:**
-- Reuse the WebSocket audio capture from Speechmatics Flow API (Experiment 33)
-- Run feature extraction client-side to avoid transmitting audio
-- Display results only to clinicians (never to patients directly)
+- The dam-dataset includes `scores_depression`, `scores_anxiety`, `phq`, and `gad` columns
+- Use `BinaryLabeledScores` from `tuning/indet_roc.py` for ROC analysis
+- The `roc_curve(budget).sn_eq_sp()` method finds balanced sensitivity/specificity
 
 ### Exercise 2: PHQ-9 Comparison Dashboard
 
-Build a dashboard that compares Kintsugi voice biomarker scores with PHQ-9 questionnaire scores:
+Build a dashboard that compares DAM voice screening results with PHQ-9 questionnaire scores:
+
 1. For patients who have both voice screening and PHQ-9 scores, display side-by-side
-2. Calculate correlation between voice biomarker depression score and PHQ-9 total score
-3. Flag discrepancies where voice screening suggests elevated risk but PHQ-9 is normal (or vice versa)
-4. Track whether discrepancy cases had better outcomes when clinicians investigated further
+2. Show DAM severity level next to actual PHQ-9 score
+3. Flag discrepancies where DAM suggests different severity than PHQ-9
+4. Track whether discrepancy cases had better outcomes when clinicians investigated
 
 **Hints:**
 - PHQ-9 scores are stored in the PMS encounters table (0-27 scale)
-- Map Kintsugi depression score (0-1) to approximate PHQ-9 range for visual comparison
-- Use Chart.js or Recharts for the correlation scatter plot
+- Map DAM depression severity (0-2) to PHQ-9 ranges for visual comparison
+- Use Recharts for the comparison visualization
 
-### Exercise 3: Android On-Device Feature Extraction
+### Exercise 3: Ambient Telehealth Screening
 
-Build client-side feature extraction in the Android app:
-1. Implement MFCC, pitch, and energy extraction using Android's AudioRecord API
-2. Send only the feature vector (not audio) to the PMS backend
-3. Compare feature vectors with Python librosa output to ensure consistency
-4. Measure battery and CPU impact of on-device feature extraction
+Build a feature that passively screens patients during telehealth calls:
+
+1. Capture audio from the telehealth WebSocket stream
+2. Buffer 30+ seconds of patient speech
+3. Submit to DAM model for screening
+4. Display results to the clinician after the call ends
+5. Store results linked to the telehealth encounter
 
 **Hints:**
-- Use TarsosDSP library for audio feature extraction on Android
-- AudioRecord with 16kHz, 16-bit, mono configuration
-- Feature vector should be 35 floats -- same as the Python extractor
+- Reuse WebSocket audio capture from Speechmatics Flow API (Experiment 33)
+- Run DAM inference server-side after audio capture
+- Display results only to clinicians (never to patients directly)
 
 ---
 
@@ -696,10 +690,12 @@ pms-backend/
 │   ├── integrations/
 │   │   ├── kintsugi/
 │   │   │   ├── __init__.py
-│   │   │   ├── config.py           # Settings, enums, result dataclass
-│   │   │   ├── features.py         # Audio feature extraction (privacy-preserving)
-│   │   │   └── engine.py           # Biomarker inference engine
-│   │   └── kintsugi_models/        # Open-source model files (.pt)
+│   │   │   ├── config.py           # Settings, severity enums, result dataclass
+│   │   │   └── engine.py           # DAM inference + cloud API fallback
+│   │   └── kintsugi_dam/           # Cloned from HuggingFace (git submodule)
+│   │       ├── pipeline.py         # DAM Pipeline class
+│   │       ├── requirements.txt    # Model dependencies
+│   │       └── tuning/             # Threshold tuning utilities
 │   ├── api/routes/
 │   │   └── screening.py            # FastAPI screening endpoints
 │   ├── models/
@@ -721,28 +717,29 @@ pms-frontend/
 | API endpoints | `/api/screening/{action}` | `/api/screening/analyze` |
 | React components | PascalCase | `VoiceBiomarkerScreen.tsx` |
 | Python modules | snake_case | `mood_tracking.py` |
-| Model files | descriptive with `.pt` extension | `depression_model.pt` |
 | Database table | snake_case plural | `voice_biomarker_screenings` |
-| Feature vectors | numpy array, float32 | `np.ndarray (35,)` |
+| Severity categories | DAM integer output | `depression_severity: 0, 1, 2` |
 
 ### 7.3 PR Checklist
 
-- [ ] No speech content is processed, stored, or logged in any code path
+- [ ] Self-hosted DAM model used as primary inference path (not cloud API)
 - [ ] Patient consent check exists before screening activation
 - [ ] Screening results displayed with "advisory only" disclaimer
 - [ ] Patient ID is hashed in audit logs (never cleartext)
-- [ ] Audio is discarded after feature extraction (not stored)
-- [ ] Model files are not committed to git (use git-lfs or external storage)
-- [ ] Tests cover normal, elevated, and high-risk score paths
+- [ ] Audio is discarded after inference (not stored)
+- [ ] DAM model weights are not committed to git (use git-lfs or submodule)
+- [ ] Tests cover all severity levels (depression 0-2, anxiety 0-3)
 - [ ] Longitudinal trend analysis handles edge cases (0, 1, 2+ data points)
+- [ ] Cloud fallback gracefully degrades if API is unavailable
 
 ### 7.4 Security Reminders
 
-1. **Never store raw audio** -- extract features and discard immediately
+1. **Never store raw audio** -- run inference and discard immediately
 2. **Hash patient IDs in logs** -- use SHA-256, never log cleartext patient identifiers
 3. **Encrypt screening results** at rest -- AES-256 for the screening results table
 4. **Rate-limit screening API** -- prevent abuse by limiting analyses per user per hour
 5. **Display results to clinicians only** -- screening scores should never be shown to patients through the PMS
+6. **Self-hosted model is the HIPAA-preferred path** -- use cloud fallback only when necessary and with patient consent
 
 ---
 
@@ -753,7 +750,6 @@ pms-frontend/
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/screening/analyze` | POST | Analyze audio file for biomarkers |
-| `/api/screening/analyze-features` | POST | Analyze pre-extracted feature vector |
 | `/api/screening/trend/{patient_id}` | GET | Get longitudinal mood trend |
 | `/api/screening/health` | GET | Service health check |
 
@@ -761,13 +757,25 @@ pms-frontend/
 
 | File | Purpose |
 |------|---------|
-| `config.py` | Settings, thresholds, screening categories |
-| `features.py` | Privacy-preserving audio feature extraction |
-| `engine.py` | Kintsugi model inference engine |
+| `kintsugi_dam/pipeline.py` | DAM model Pipeline class (from Hugging Face) |
+| `kintsugi/config.py` | Settings, severity enums, result dataclass |
+| `kintsugi/engine.py` | DAM inference + cloud fallback engine |
 | `screening.py` (routes) | FastAPI API endpoints |
 | `mood_tracking.py` | Longitudinal trend analysis |
 | `VoiceBiomarkerScreen.tsx` | Recording + results UI |
 | `MoodTimeline.tsx` | Longitudinal mood timeline |
+
+### DAM Model Output Reference
+
+| Condition | Severity | Label | Clinical Scale |
+|-----------|----------|-------|---------------|
+| Depression | 0 | None | PHQ-9 <= 9 |
+| Depression | 1 | Mild-Moderate | PHQ-9 10-14 |
+| Depression | 2 | Severe | PHQ-9 >= 15 |
+| Anxiety | 0 | None | GAD-7 <= 4 |
+| Anxiety | 1 | Mild | GAD-7 5-9 |
+| Anxiety | 2 | Moderate | GAD-7 10-14 |
+| Anxiety | 3 | Severe | GAD-7 >= 15 |
 
 ### Clinical Validation Reference
 
@@ -775,17 +783,17 @@ pms-frontend/
 |--------|-------|--------|
 | Sensitivity (depression) | 71.3% | Annals of Family Medicine |
 | Specificity (depression) | 73.5% | Annals of Family Medicine |
-| PPV (depression) | 69.3% | Annals of Family Medicine |
-| NPV (depression) | 75.3% | Annals of Family Medicine |
-| Minimum audio duration | 20 seconds | Kintsugi clinical validation |
-| Gold standard comparison | SCID-5 + PHQ-9 (cutoff 10) | FDA De Novo submission |
+| Training data | ~863 hours, ~35K individuals | dam-dataset |
+| Minimum audio | 30 seconds of speech | DAM model card |
+| Foundation model | Whisper-Small EN | OpenAI |
+| License | Apache 2.0 | Hugging Face |
 
 ---
 
 ## Next Steps
 
-1. Deploy trained Kintsugi models (once available from open-source repository) and validate accuracy locally
+1. Tune severity thresholds using [dam-dataset](https://huggingface.co/datasets/KintsugiHealth/dam-dataset) for your patient population
 2. Build ambient telehealth screening by integrating with [Speechmatics Flow API (Exp 33)](33-SpeechmaticsFlow-Developer-Tutorial.md)
 3. Create PHQ-9 comparison dashboard to validate screening accuracy against established measures
-4. Implement Android on-device feature extraction for mobile clinical encounters
+4. Implement Android audio capture for mobile clinical encounters
 5. Review [ElevenLabs (Exp 30)](30-ElevenLabs-Developer-Tutorial.md) for combining voice agents with passive mental health screening
