@@ -129,7 +129,17 @@ A single PDF that mentions 3 drugs and 2 diagnoses produces 6 rules. Each rule c
 | `hcpcs_codes_found` | string[] | All HCPCS J-codes found anywhere in the document (not just target drugs — useful for cross-referencing) |
 | `policy_source_file` | string | Path to the PDF that this rule was extracted from |
 | `policy_last_downloaded` | string | ISO date when the source PDF was last downloaded |
-| `extraction_confidence` | string | `high` (2+ PA matches and 1+ step therapy match), `medium` (1+ PA match), or `low` (drug mentioned but no PA patterns matched) |
+| `extraction_confidence` | string | See [Confidence Levels](#confidence-levels) below |
+
+### Confidence Levels
+
+| Level | Criteria | What It Means |
+|-------|----------|---------------|
+| **high** | 2+ PA pattern matches **and** 1+ step therapy match | The document has strong, specific language about both prior authorization requirements and step therapy for this drug. Most actionable — safe to build automation rules from. |
+| **medium** | 1+ PA pattern match, no step therapy match | The document mentions PA requirements but doesn't discuss step therapy (or the extractor didn't find step therapy language). Likely accurate for PA status, but may be missing step therapy details. |
+| **low** | Drug mentioned but no PA patterns matched | The drug appears in the document, but no PA-specific language was found near it. The rule exists because the document is relevant, but we can't confirm whether PA is actually required. Treat as informational only. |
+
+**Why are most rules medium or low?** The current downloaded PDFs are broad PA requirement lists covering hundreds of drugs and procedures. The PA language found is generic to the whole document (e.g., "precertification is required for the Aetna Medicare" at the top of a 50-page list) rather than drug-specific criteria. The payer-specific clinical policy bulletins (Aetna CPBs, EviCore ophthalmology guidelines) that contain drug-specific PA criteria require Playwright to download from JS-rendered pages — once those are added, expect more high-confidence rules.
 
 ### How Fields Interact
 
