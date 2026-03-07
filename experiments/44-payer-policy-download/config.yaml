@@ -69,14 +69,37 @@ payers:
         url: "https://www.uhcprovider.com/en/policies-protocols/commercial-policies.html"
         description: "Medical policies — search for intravitreal/anti-VEGF"
       - type: "prior_auth"
-        url: "https://www.uhcprovider.com/en/prior-auth-advance-notification.html"
-        description: "Prior Authorization Requirements List"
-      - type: "formulary"
-        url: "https://www.uhc.com/member/pharmacy"
-        description: "Drug Formulary Search"
+        url: "https://www.uhcprovider.com/en/prior-auth-advance-notification/adv-notification-plan-reqs.html"
+        description: "Advance Notification and Prior Authorization Requirements"
       - type: "ma_coverage"
         url: "https://www.uhcprovider.com/en/health-plans-by-state/texas.html"
         description: "Texas Medicare Advantage Coverage Summary"
+      - type: "drug_lists"
+        url: "https://www.uhcprovider.com/en/resource-library/drug-lists-pharmacy.html"
+        description: "Drug Lists and Pharmacy Information"
+      - type: "specialty_drugs"
+        url: "https://www.uhcprovider.com/en/prior-auth-advance-notification/prior-auth-specialty-drugs.html"
+        description: "Clinical and Specialty Pharmacy PA Requirements"
+    # Direct PDF URLs discovered via Playwright (bypasses JS rendering)
+    direct_pdfs:
+      - url: "https://www.uhcprovider.com/content/dam/provider/docs/public/prior-auth/pa-requirements/medicare/Med-Adv-Dual-Eff-3-1-26.pdf"
+        filename: "UHC_Medicare_Advantage_PA_Requirements_Mar2026.pdf"
+        description: "UHC Medicare Advantage PA Requirements — Effective Mar 1 2026"
+      - url: "https://www.uhcprovider.com/content/dam/provider/docs/public/prior-auth/pa-requirements/commercial/UHC-Commercial-Advance-Notification-PA-Requirements-1-2026.pdf"
+        filename: "UHC_Commercial_PA_Requirements_Jan2026.pdf"
+        description: "UHC Commercial PA Requirements — Effective Jan 1 2026"
+      - url: "https://www.uhcprovider.com/content/dam/provider/docs/public/prior-auth/pa-requirements/multi/2026-Summary-of-Changes-AdvNotice-and-PriorAuth.pdf"
+        filename: "UHC_2026_Summary_of_Changes_PA.pdf"
+        description: "UHC 2026 Summary of Changes to PA Requirements"
+      - url: "https://www.uhcprovider.com/content/dam/provider/docs/public/prior-auth/COMM-Prior-Auth-Crosswalk-Table.pdf"
+        filename: "UHC_Prior_Auth_Crosswalk_Table.pdf"
+        description: "UHC Prior Auth Crosswalk Table (Commercial/MA/Community/Exchange)"
+      - url: "https://www.uhcprovider.com/content/dam/provider/docs/public/resources/edi/Digital-Solutions-Comparison-Guide.pdf"
+        filename: "UHC_Digital_Solutions_Comparison_Guide.pdf"
+        description: "UHC Digital PA Submission Solutions Comparison"
+      - url: "https://www.uhcprovider.com/content/dam/provider/docs/public/prior-auth/pa-requirements/medicare/UHC-Medicare-Therapies-Prior-Auth-Expansion-Outpatient-Therapy.pdf"
+        filename: "UHC_Medicare_Therapies_PA_Expansion.pdf"
+        description: "UHC Medicare Outpatient Therapies PA Expansion"
     search_keywords:
       - "intravitreal injection"
       - "aflibercept"
@@ -89,14 +112,44 @@ payers:
     type: "Medicare Advantage"
     sources:
       - type: "cpb"
-        url: "https://www.aetna.com/health-care-professionals/clinical-policy-bulletins.html"
-        description: "Clinical Policy Bulletins — search anti-VEGF, intravitreal"
+        url: "https://www.aetna.com/health-care-professionals/clinical-policy-bulletins/medical-clinical-policy-bulletins.html"
+        description: "Medical Clinical Policy Bulletins (CPBs)"
+        # WORKAROUND: Aetna CPBs are JS-rendered. The search page requires
+        # accepting terms via a modal dialog before results appear.
+        # Use --playwright mode to search and download CPBs.
+        needs_playwright: true
       - type: "precertification"
-        url: "https://www.aetna.com/health-care-professionals/precertification.html"
-        description: "Precertification / Prior Auth List"
-      - type: "formulary"
-        url: "https://www.aetna.com/individuals-families/find-a-medication.html"
-        description: "Formulary Search"
+        url: "https://www.aetna.com/health-care-professionals/precertification/precertification-lists.html"
+        description: "Precertification Lists and CPT Code Lookup"
+      - type: "part_b_drugs"
+        url: "https://www.aetna.com/health-care-professionals/medicare/part-b-drug-um.html"
+        description: "Medicare Part B Drug Utilization Management"
+        # WORKAROUND: This page is a JS stub (~1KB). Use --playwright mode
+        # or download the precertification list PDF directly instead.
+        needs_playwright: true
+    # Direct PDF URLs (bypasses JS rendering issues)
+    direct_pdfs:
+      - url: "https://www.aetna.com/content/dam/aetna/pdfs/aetnacom/healthcare-professionals/2026_Precert_List.pdf"
+        filename: "Aetna_2026_Precertification_List.pdf"
+        description: "Aetna 2026 Precertification List (master PA requirements)"
+        # WORKAROUND: Direct PDF URL returns 1KB redirect stub with custom
+        # User-Agent. Must use browser-like User-Agent header to download.
+      - url: "https://www.aetna.com/content/dam/aetna/pdfs/aetnacom/healthcare-professionals/documents-forms/bh_precert_list.pdf"
+        filename: "Aetna_BH_Precertification_List.pdf"
+        description: "Aetna Behavioral Health Precertification List"
+    # WORKAROUND: Aetna CPB URLs follow a pattern but are JS-rendered:
+    #   https://www.aetna.com/cpb/medical/data/NNN_NNN/XXXX.html
+    # These pages return ~1KB redirect stubs with requests.
+    # The CPB search requires accepting a terms modal first.
+    # Use --playwright mode to search for CPB numbers, then save
+    # the rendered page or use Playwright to navigate directly.
+    playwright_urls:
+      - url: "https://www.aetna.com/cpb/medical/data/700_799/0736.html"
+        filename: "Aetna_CPB_0736.html"
+        description: "CPB 0736 — search for anti-VEGF coverage"
+        # NOTE: CPB numbers may not correspond to expected topics.
+        # CPB 0736 was Hip Preservation Surgery, not anti-VEGF.
+        # Use the CPB search to find the correct bulletin number.
     search_keywords:
       - "anti-VEGF"
       - "intravitreal injection"
@@ -108,15 +161,31 @@ payers:
     name: "Blue Cross Blue Shield of Texas"
     type: "Commercial + Medicare Advantage"
     sources:
-      - type: "medical_policy"
-        url: "https://www.bcbstx.com/provider/clinical/medical-policies"
-        description: "Medical Policies — Ophthalmology"
-      - type: "prior_auth"
-        url: "https://www.bcbstx.com/provider/prior-authorization"
-        description: "Prior Authorization Requirements"
+      - type: "provider_home"
+        url: "https://www.bcbstx.com/provider"
+        description: "BCBSTX Provider Home — navigation hub for all provider resources"
+      - type: "clinical_resources"
+        url: "https://www.bcbstx.com/provider/standards-and-requirements/clinical-resources"
+        description: "Clinical Resources and Medical Policies"
+        # WORKAROUND: Returns 404. BCBSTX restructured their provider site.
+        # The provider home page at /provider has working navigation.
+        # Use --playwright mode to navigate from /provider to find the
+        # current medical policies and PA requirements pages.
+        needs_playwright: true
+      - type: "preauthorization"
+        url: "https://www.bcbstx.com/provider/standards-and-requirements/preauthorization"
+        description: "Preauthorization Requirements"
+        # WORKAROUND: Returns 404. Same restructuring issue.
+        needs_playwright: true
       - type: "availity"
         url: "https://www.availity.com"
         description: "Availity Portal (PA submission for BCBS)"
+    # WORKAROUND: BCBSTX medical policy PDFs are behind a JS-rendered
+    # search interface. The /provider page loads successfully and contains
+    # navigation to clinical resources, but the direct deep links 404.
+    # Strategy: Use --playwright to navigate from /provider, click through
+    # to medical policies, search for ophthalmology/intravitreal, and
+    # save the rendered search results and linked PDFs.
     search_keywords:
       - "intravitreal injection"
       - "anti-VEGF"
@@ -130,12 +199,20 @@ payers:
       - type: "medical_coverage"
         url: "https://www.humana.com/provider/medical-resources/clinical"
         description: "Medical Coverage Policies"
-      - type: "prior_auth"
-        url: "https://www.humana.com/provider/prior-authorization"
-        description: "Prior Authorization Requirements"
-      - type: "formulary"
-        url: "https://www.humana.com/member/pharmacy"
-        description: "Drug Formulary"
+      - type: "medical_resources"
+        url: "https://www.humana.com/provider/medical-resources"
+        description: "Provider Medical Resources Hub"
+      - type: "provider_tools"
+        url: "https://www.humana.com/provider"
+        description: "Humana Provider Portal Home"
+    # WORKAROUND: Humana's /provider/prior-authorization and /member/pharmacy
+    # URLs both return 404. The /provider/medical-resources/clinical page
+    # loads but is JS-rendered — PDF links are not visible to requests.
+    # The /provider page (home) loads and has navigation.
+    # Strategy: Use --playwright to navigate from /provider, find the
+    # current PA requirements and formulary pages, and download PDFs.
+    # Humana's PA lookup tool is interactive (requires entering CPT/HCPCS
+    # codes) and may need Playwright to query for 67028, J0178, etc.
     search_keywords:
       - "intravitreal injection"
       - "anti-VEGF"
@@ -146,18 +223,31 @@ payers:
     name: "Cigna Medicare Advantage"
     type: "Medicare Advantage"
     sources:
-      - type: "coverage_policy"
-        url: "https://www.cigna.com/health-care-providers/coverage-and-claims/coverage-policies"
-        description: "Coverage Policies — Ophthalmology"
-      - type: "prior_auth"
-        url: "https://www.cigna.com/health-care-providers/resources/prior-authorization"
-        description: "Prior Auth Requirements"
+      - type: "provider_home"
+        url: "https://www.cigna.com/health-care-providers"
+        description: "Cigna Provider Home — navigation hub"
       - type: "formulary"
         url: "https://www.cigna.com/medicare/part-d/drug-list"
         description: "Medicare Part D Drug List"
       - type: "evicore"
-        url: "https://www.evicore.com/resources/healthplan/cigna"
+        url: "https://www.evicore.com/healthplan/cigna"
         description: "EviCore Clinical Guidelines (Cigna delegates specialty PA)"
+        # WORKAROUND: Returns 404. EviCore has restructured. Try:
+        #   https://www.evicore.com/resources/clinical-guidelines
+        # This also 404s. EviCore guidelines may now be behind a login
+        # or embedded in the Cigna provider portal.
+        needs_playwright: true
+    # WORKAROUND: Cigna's coverage policies page
+    # (/health-care-providers/coverage-and-claims/coverage-policies) and
+    # PA requirements page (/health-care-providers/resources/prior-authorization)
+    # both return 404. Cigna has restructured under /health-care-providers.
+    # The /health-care-providers page loads successfully (140KB HTML).
+    # Strategy: Use --playwright to navigate from /health-care-providers,
+    # find current coverage policies and PA pages, and download PDFs.
+    # IMPORTANT: Cigna delegates many specialty PA decisions to EviCore.
+    # EviCore's ophthalmology guidelines are the key document for
+    # anti-VEGF PA rules. These may require contacting EviCore directly
+    # or accessing via the Cigna provider portal (login required).
     search_keywords:
       - "intravitreal"
       - "anti-VEGF"
@@ -172,8 +262,14 @@ output:
 
 # Download settings
 settings:
-  user_agent: "MarginLogic-PolicyDownloader/1.0 (Research; Texas Retina Associates)"
+  # WORKAROUND: Many payer CDNs (especially Aetna) reject non-browser
+  # User-Agent strings. Aetna PDFs return 1KB redirect stubs with custom
+  # UA but return full content with a Chrome-like UA.
+  user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
   request_delay_seconds: 2
   max_retries: 3
   timeout_seconds: 30
   verify_ssl: true
+  # Minimum file sizes to detect redirect stubs
+  min_pdf_bytes: 5000     # Real PDFs are >5KB; stubs are ~1KB
+  min_html_bytes: 2000    # Real HTML pages are >2KB; stubs are ~1KB
