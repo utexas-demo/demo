@@ -275,6 +275,11 @@ _No bug fixes documented yet._
 ### Payer Policy Download (Anti-VEGF PA Rule Library)
 - [PRD: Payer Policy Download PMS Integration](experiments/44-PRD-PayerPolicyDownload-PMS-Integration.md) — Automated download pipeline for anti-VEGF prior authorization policy documents from 6 major payers (CMS Medicare, UHC, Aetna, BCBSTX, Humana, Cigna) with structured rule extraction, SHA-256 integrity verification, and manifest tracking
 
+### UHC API Marketplace (Real-Time UHC Eligibility, PA, and Claims)
+- [PRD: UHC API Marketplace PMS Integration](experiments/46-PRD-UHCAPIMarketplace-PMS-Integration.md) — Real-time eligibility verification, benefit checks, prior authorization submission, and claim pre-validation via UHC's Optum Real APIs with OAuth 2.0, X12-to-JSON mapping, and Gold Card integration
+- [UHC API Marketplace Setup Guide](experiments/46-UHCAPIMarketplace-PMS-Developer-Setup-Guide.md) — OneHealthcare ID registration, sandbox credentials, OAuth client, FastAPI endpoints, PostgreSQL audit tables, and eligibility panel component
+- [UHC API Marketplace Developer Tutorial](experiments/46-UHCAPIMarketplace-Developer-Tutorial.md) — Hands-on onboarding: build a pre-visit workflow (eligibility → benefits → PA submission → claim pre-check) against UHC sandbox with HIPAA audit logging end-to-end
+
 ### CMS Coverage API (Real-Time Medicare Coverage Determination)
 - [PRD: CMS Coverage API PMS Integration](experiments/45-PRD-CMSCoverageAPI-PMS-Integration.md) — Real-time LCD/NCD lookup via CMS Coverage API v1.5 for automated Medicare coverage determination, replacing web scraping with structured JSON responses, PostgreSQL caching, and daily change detection
 - [CMS Coverage API Setup Guide](experiments/45-CMSCoverageAPI-PMS-Developer-Setup-Guide.md) — API client with automatic license token management, FastAPI endpoints, PostgreSQL cache schema, and Next.js coverage lookup component
