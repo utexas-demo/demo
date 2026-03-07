@@ -389,8 +389,48 @@ def generate_markdown(rules: list[dict], md_path: Path):
     for dc, info in sorted(drugs.items()):
         lines.append(f"| {dc} | {info['name']} | {len(info['payers'])} | {info['total']} | {info['pa_count']} |")
 
+    # --- Field reference ---
+    lines += [
+        "",
+        "---",
+        "",
+        "## Field Reference",
+        "",
+        "Each rule represents one **payer × drug × diagnosis** combination extracted from a downloaded PDF.",
+        "",
+        "| Field | Type | Description |",
+        "|-------|------|-------------|",
+        "| `payer_id` | string | Config key for the payer (e.g., `uhc`, `aetna`) |",
+        "| `payer_name` | string | Human-readable payer name |",
+        "| `drug_code` | string | HCPCS J-code (e.g., `J0178`). `GENERIC` if no specific drug named |",
+        "| `drug_name` | string | Brand and generic name, formatted as `Brand (generic)` |",
+        "| `procedure_code` | string | CPT `67028` if intravitreal injection is mentioned; empty otherwise |",
+        "| `diagnosis_group` | string | `wet_amd`, `dme`, `rvo`, `geographic_atrophy`, or `general_ophthalmology` (fallback) |",
+        "| `covered_icd10` | string[] | ICD-10 codes matching the diagnosis group's patterns |",
+        "| `pa_required` | bool | `true` if PA language was found (drives `pa_evidence`) |",
+        "| `pa_evidence` | string[] | Up to 5 text lines that matched PA patterns |",
+        "| `step_therapy_required` | bool | `true` if step therapy language was found |",
+        "| `step_therapy_evidence` | string[] | Up to 5 text lines that matched step therapy patterns |",
+        "| `required_documentation` | string[] | Up to 10 lines matching documentation patterns (OCT, visual acuity, etc.) |",
+        "| `auth_duration_months` | int/null | Authorization validity period in months, if stated |",
+        "| `auth_max_injections` | int/null | Max injections per approval period, if stated |",
+        "| `denial_triggers` | string[] | Up to 10 lines matching denial patterns |",
+        "| `hcpcs_codes_found` | string[] | All J-codes found anywhere in the source document |",
+        "| `policy_source_file` | string | Path to the PDF this rule was extracted from |",
+        "| `policy_last_downloaded` | string | ISO date of last download |",
+        "| `extraction_confidence` | string | `high` (2+ PA + 1+ step), `medium` (1+ PA), or `low` (drug mentioned, no PA patterns) |",
+        "",
+        "**Key interactions:**",
+        "- `pa_required` is `true` when `pa_evidence` is non-empty — the evidence lines are the proof",
+        "- `extraction_confidence` is derived from the count of `pa_evidence` and `step_therapy_evidence` matches",
+        "- `diagnosis_group` determines which ICD-10 patterns filter `covered_icd10`; `general_ophthalmology` is the fallback",
+        "- `drug_code` is the specific drug for this rule; `hcpcs_codes_found` is every J-code in the whole document",
+        "- `auth_duration_months` and `auth_max_injections` are independent limits (whichever comes first)",
+        "",
+    ]
+
     # --- Detailed rules by payer ---
-    lines += ["", "---", "", "## Rules by Payer", ""]
+    lines += ["---", "", "## Rules by Payer", ""]
 
     rules_by_payer = {}
     for r in rules:
