@@ -285,6 +285,11 @@ _No bug fixes documented yet._
 - [CMS Coverage API Setup Guide](experiments/45-CMSCoverageAPI-PMS-Developer-Setup-Guide.md) — API client with automatic license token management, FastAPI endpoints, PostgreSQL cache schema, and Next.js coverage lookup component
 - [CMS Coverage API Developer Tutorial](experiments/45-CMSCoverageAPI-Developer-Tutorial.md) — Hands-on onboarding: build a coverage check for intravitreal injections, query LCD ICD-10 codes, detect policy changes, and integrate with encounter workflows end-to-end
 
+### Availity API (Multi-Payer Clearinghouse — Eligibility, PA, Claims)
+- [PRD: Availity API PMS Integration](experiments/47-PRD-AvailityAPI-PMS-Integration.md) — Multi-payer clearinghouse integration via Availity REST API for unified eligibility (270/271), prior authorization (278), claim status (276/277), and care cost estimation across all 6 TRA-contracted payers through one set of credentials
+- [Availity API Setup Guide](experiments/47-AvailityAPI-PMS-Developer-Setup-Guide.md) — Developer portal registration, Demo plan subscription, OAuth 2.0 client with 5-minute token refresh, FastAPI endpoints, PostgreSQL audit schema, and multi-payer eligibility panel
+- [Availity API Developer Tutorial](experiments/47-AvailityAPI-Developer-Tutorial.md) — Hands-on onboarding: build a multi-payer batch eligibility checker, submit a PA to any connected payer, query claim status, and integrate with the PA Decision Engine end-to-end
+
 ### InfraNodus (Text Network Analysis & Clinical Knowledge Graphs)
 - [PRD: InfraNodus PMS Integration](experiments/41-PRD-InfraNodus-PMS-Integration.md) — Text network analysis transforming clinical encounter notes into interactive knowledge graphs via InfraNodus Cloud API (RapidAPI) with `doNotSave=true` PHI protection, PHI De-ID Gateway, topical cluster detection, structural gap identification, and MCP Server for developer workflows
 - [InfraNodus Setup Guide](experiments/41-InfraNodus-PMS-Developer-Setup-Guide.md) — Cloud API configuration via RapidAPI, MCP Server setup for Claude Code, PHI De-ID Gateway, Knowledge Graph Service, D3.js graph visualization, and gap analysis panel integration
