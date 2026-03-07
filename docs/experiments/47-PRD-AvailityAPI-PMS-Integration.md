@@ -93,7 +93,141 @@ flowchart TB
     style DB fill:#f3e5f5,stroke:#7b1fa2
 ```
 
-### 3.2 Deployment Model
+### 3.2 Prior Authorization Workflow
+
+The following diagram shows the end-to-end flow when a new prior authorization request is initiated, integrating data sources from Experiments 44, 45, 46, and 47.
+
+```mermaid
+flowchart TD
+    START(["PA Request Initiated<br/>(Provider / Staff / Encounter Trigger)"])
+
+    subgraph PMS_DATA["PMS Data Collection"]
+        PAT["Retrieve Patient Record<br/>/api/patients<br/>(member ID, DOB, payer info)"]
+        ENC["Retrieve Encounter<br/>/api/encounters<br/>(CPT, ICD-10, DOS)"]
+        RX["Retrieve Prescription<br/>/api/prescriptions<br/>(drug HCPCS code)"]
+    end
+
+    PAYER{"Identify<br/>Patient Payer"}
+
+    subgraph ELIG_CHECK["Step 1: Eligibility Verification"]
+        ELIG["Availity Coverages API<br/>POST /v1/coverages<br/>(X12 270/271)"]
+        ELIG_POLL["Poll GET /v1/coverages/{id}<br/>until status = 4 (Complete)"]
+    end
+
+    ELIG_OK{"Patient<br/>Eligible?"}
+    ELIG_FAIL(["Eligibility Failed<br/>→ Notify Staff"])
+
+    subgraph COVERAGE_RULES["Step 2: Coverage Rule Lookup"]
+        CMS_CHECK{"Payer =<br/>Medicare?"}
+        CMS_API["CMS Coverage API (Exp 45)<br/>GET /v1/lcd?search=<br/>LCD/NCD rules + ICD-10 codes"]
+        PAYER_PDF["Payer Policy Rules (Exp 44)<br/>payer_rules.json<br/>(step therapy, line of therapy,<br/>diagnosis requirements)"]
+    end
+
+    subgraph PA_DECISION["Step 3: PA Decision Engine"]
+        DECIDE{"PA Required<br/>for this procedure<br/>+ payer?"}
+        AUTO_APPROVE(["No PA Required<br/>→ Proceed to Scheduling"])
+        BUILD["Build PA Request<br/>(patient, provider, procedure,<br/>diagnosis, dates, quantity)"]
+    end
+
+    subgraph PAYER_CONFIG["Step 4: Payer-Specific Configuration"]
+        CFG_API["Availity Configurations API<br/>GET /v1/configurations<br/>(required fields, validations,<br/>subtypes per payer)"]
+        VALIDATE["Validate PA Request<br/>against payer rules"]
+    end
+
+    subgraph UHC_BRANCH["Step 4a: UHC-Specific Path"]
+        UHC_CHECK{"Payer =<br/>UHC?"}
+        GOLD_CARD["Check Gold Card Status<br/>UHC API (Exp 46)<br/>(92%+ approval rate?)"]
+        GOLD_OK{"Gold Card<br/>Eligible?"}
+        GOLD_SKIP(["Gold Card Auto-Approved<br/>→ Log & Proceed"])
+    end
+
+    subgraph PA_SUBMIT["Step 5: PA Submission"]
+        SUBMIT["Availity Service Reviews API<br/>POST /v2/service-reviews<br/>(X12 278)"]
+        POLL["Poll GET /v2/service-reviews/{id}<br/>until terminal status"]
+    end
+
+    subgraph PA_RESULT["Step 6: Result Processing"]
+        STATUS{"PA<br/>Status?"}
+        APPROVED(["Approved<br/>→ Store auth number<br/>→ Proceed to scheduling"])
+        DENIED(["Denied<br/>→ Store denial reason<br/>→ Alert staff for appeal"])
+        PENDED(["Pended / Info Requested<br/>→ Queue for staff review<br/>→ Attach clinical docs"])
+    end
+
+    subgraph AUDIT["Audit & Logging"]
+        LOG["PostgreSQL: pa_submissions<br/>(timestamp, user, patient,<br/>payer, status, auth #,<br/>response payload)"]
+    end
+
+    START --> PMS_DATA
+    PAT --> PAYER
+    ENC --> PAYER
+    RX --> PAYER
+    PAYER --> ELIG
+
+    ELIG --> ELIG_POLL
+    ELIG_POLL --> ELIG_OK
+
+    ELIG_OK -->|No| ELIG_FAIL
+    ELIG_OK -->|Yes| COVERAGE_RULES
+
+    CMS_CHECK -->|Yes| CMS_API
+    CMS_CHECK -->|No| PAYER_PDF
+    CMS_API --> PAYER_PDF
+
+    PAYER_PDF --> DECIDE
+
+    DECIDE -->|No| AUTO_APPROVE
+    DECIDE -->|Yes| BUILD
+
+    BUILD --> CFG_API
+    CFG_API --> VALIDATE
+
+    VALIDATE --> UHC_CHECK
+
+    UHC_CHECK -->|Yes| GOLD_CARD
+    UHC_CHECK -->|No| SUBMIT
+
+    GOLD_CARD --> GOLD_OK
+    GOLD_OK -->|Yes| GOLD_SKIP
+    GOLD_OK -->|No| SUBMIT
+
+    SUBMIT --> POLL
+    POLL --> STATUS
+
+    STATUS -->|Approved| APPROVED
+    STATUS -->|Denied| DENIED
+    STATUS -->|Pended| PENDED
+
+    APPROVED --> LOG
+    DENIED --> LOG
+    PENDED --> LOG
+    AUTO_APPROVE --> LOG
+    GOLD_SKIP --> LOG
+    ELIG_FAIL --> LOG
+
+    style PMS_DATA fill:#f0f7e8,stroke:#2e8b57
+    style ELIG_CHECK fill:#00558c,stroke:#00558c,color:#fff
+    style COVERAGE_RULES fill:#e8f4f8,stroke:#0071bc
+    style PA_DECISION fill:#fff3e0,stroke:#e65100
+    style PAYER_CONFIG fill:#00558c,stroke:#00558c,color:#fff
+    style UHC_BRANCH fill:#d4edda,stroke:#28a745
+    style PA_SUBMIT fill:#00558c,stroke:#00558c,color:#fff
+    style PA_RESULT fill:#f3e5f5,stroke:#7b1fa2
+    style AUDIT fill:#f3e5f5,stroke:#7b1fa2
+```
+
+**Workflow Summary:**
+
+| Step | System | Experiment | What Happens |
+|------|--------|------------|--------------|
+| 1. Eligibility | Availity Coverages API | Exp 47 | Verify patient is active and covered for the date of service |
+| 2. Coverage Rules | CMS Coverage API + Payer Policy Rules | Exp 45 + Exp 44 | Look up LCD/NCD rules (Medicare) and payer-specific PA requirements |
+| 3. PA Decision | PA Decision Engine | Internal | Determine if PA is required based on procedure + payer + diagnosis |
+| 4. Configuration | Availity Configurations API | Exp 47 | Get payer-specific field requirements and validations |
+| 4a. Gold Card | UHC API (optional) | Exp 46 | If UHC, check Gold Card auto-approval eligibility |
+| 5. Submission | Availity Service Reviews API | Exp 47 | Submit X12 278 PA request to the payer |
+| 6. Result | PA Decision Engine | Internal | Process approval/denial/pend and route to appropriate workflow |
+
+### 3.3 Deployment Model
 
 - **Cloud API**: Availity is a managed cloud clearinghouse. No self-hosting.
 - **Registration**: Create a developer account at `developer.availity.com`, register an application, subscribe to API products.
